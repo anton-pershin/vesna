@@ -3,9 +3,31 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { SHELL_CACHE, SHELL_RESOURCES } from '../src/offline.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const readJson = (relative) => JSON.parse(fs.readFileSync(path.join(root, relative), 'utf8'));
+
+test('service worker cache contract matches offline readiness resources', () => {
+  const serviceWorker = fs.readFileSync(path.join(root, 'public/sw.js'), 'utf8');
+  assert.match(serviceWorker, new RegExp(`const SHELL_CACHE = '${SHELL_CACHE}';`));
+  const resourceList = serviceWorker.match(/const SHELL_RESOURCES = \[([\s\S]*?)\];/);
+  assert.ok(resourceList, 'service worker shell resource declaration');
+  const workerResources = [...resourceList[1].matchAll(/'([^']+)'/g)].map((match) => match[1]);
+  assert.deepEqual(workerResources, SHELL_RESOURCES);
+  for (const resource of SHELL_RESOURCES) {
+    const file = resource === '/' ? 'public/index.html' : `public${resource}`;
+    assert.ok(fs.existsSync(path.join(root, file)), resource);
+  }
+  const browserModules = fs.readdirSync(path.join(root, 'public/modules'))
+    .filter((file) => file.endsWith('.js'))
+    .map((file) => `/modules/${file}`)
+    .sort();
+  assert.deepEqual(
+    SHELL_RESOURCES.filter((resource) => resource.startsWith('/modules/')).sort(),
+    browserModules,
+  );
+});
 
 test('PWA shell declares installable offline resources', () => {
   const manifest = readJson('public/manifest.webmanifest');
