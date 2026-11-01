@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#2dd4bf">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="icon" href="/icon.svg">
+  <link rel="stylesheet" href="/styles.css">
+  <title>Vesna playback probe</title>
+</head>
+<body>
+  <main>
+    <header>
+      <p class="eyebrow">M1 Android playback feasibility</p>
+      <h1>Vesna offline reader</h1>
+      <p id="status" role="status">Loading fixture…</p>
+    </header>
+    <section class="panel" aria-labelledby="fixture-heading">
+      <h2 id="fixture-heading">The Quiet Signal</h2>
+      <p>Complete local fixture · 30 minutes · 12 paragraphs</p>
+      <audio id="audio" preload="auto" controls></audio>
+      <div class="controls" aria-label="Playback controls">
+        <button id="play" type="button">Play</button>
+        <button id="pause" type="button">Pause</button>
+        <button id="previous" type="button">Previous paragraph</button>
+        <button id="next" type="button">Next paragraph</button>
+        <label>Speed <select id="speed"><option>0.75</option><option selected>1</option><option>1.25</option><option>1.5</option><option>2</option></select></label>
+        <label class="check"><input id="autoscroll" type="checkbox" checked> Auto-scroll</label>
+      </div>
+      <button id="download" type="button">Prepare offline fixture</button>
+      <p id="offline" role="status">Offline readiness: not checked</p>
+    </section>
+    <section aria-labelledby="reader-heading">
+      <h2 id="reader-heading">Reader</h2>
+      <p class="hint">Select a paragraph to play from that point.</p>
+      <ol id="reader" class="reader"></ol>
+    </section>
+  </main>
+  <script type="module" src="/app.js"></script>
+</body>
+</html>
