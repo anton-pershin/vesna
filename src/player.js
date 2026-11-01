@@ -15,6 +15,11 @@ export class PlaybackController {
     await this.audio.play();
   }
 
+  async playFromParagraph(id) {
+    this.seekToParagraph(id);
+    await this.play();
+  }
+
   pause() {
     this.audio.pause();
   }

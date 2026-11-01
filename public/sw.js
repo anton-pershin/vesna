@@ -1,8 +1,7 @@
-const CACHE = 'vesna-probe-fixture-v1';
+const CACHE = 'vesna-probe-shell-v1';
 const SHELL = [
-  '/', '/index.html', '/app.js', '/styles.css', '/manifest.webmanifest', '/icon.svg',
-  '/fixtures/manifest.json', '/fixtures/text.json', '/fixtures/timings.json', '/fixtures/audio/fixture.mp3',
-  '/modules/timing.js', '/modules/player.js', '/modules/storage.js', '/modules/media-session.js',
+  '/', '/index.html', '/app.js', '/styles.css', '/manifest.webmanifest', '/icon.svg', '/sw.js',
+  '/modules/timing.js', '/modules/player.js', '/modules/storage.js', '/modules/media-session.js', '/modules/offline.js',
 ];
 
 self.addEventListener('install', (event) => {

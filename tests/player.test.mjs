@@ -68,3 +68,14 @@ test('PlaybackController updates the active paragraph after time updates and rej
   assert.throws(() => player.setSpeed(0), /speed/);
   assert.throws(() => player.setSpeed(3.1), /speed/);
 });
+
+test('selecting a paragraph while paused seeks there and starts playback', async () => {
+  const audio = new FakeAudio();
+  const player = new PlaybackController(audio, timings);
+
+  await player.playFromParagraph('p2');
+
+  assert.equal(audio.currentTime, 10);
+  assert.equal(audio.playCalls, 1);
+  assert.equal(audio.paused, false);
+});

@@ -51,11 +51,13 @@ export class OfflineFixtureStore {
     ) {
       throw new Error('fixture is not complete');
     }
-    this.storage.setItem(this.key, JSON.stringify({
+    const published = {
       version: record.version,
       resources: [...record.resources],
       ready: true,
-    }));
+    };
+    if (typeof record.cacheName === 'string' && record.cacheName) published.cacheName = record.cacheName;
+    this.storage.setItem(this.key, JSON.stringify(published));
   }
 
   read() {

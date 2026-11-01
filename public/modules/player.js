@@ -9,6 +9,7 @@ export class PlaybackController {
     this.handleTimeUpdate();
   }
   async play() { await this.audio.play(); }
+  async playFromParagraph(id) { this.seekToParagraph(id); await this.play(); }
   pause() { this.audio.pause(); }
   setSpeed(speed) {
     if (!Number.isFinite(speed) || speed < 0.5 || speed > 3) throw new RangeError('speed must be between 0.5 and 3');

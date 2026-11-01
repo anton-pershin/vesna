@@ -1,6 +1,14 @@
 import { PlaybackController } from '/modules/player.js';
 import { PlaybackStateStore, OfflineFixtureStore } from '/modules/storage.js';
 import { registerMediaSession, updateMediaSession } from '/modules/media-session.js';
+import {
+  FIXTURE_RESOURCES,
+  REQUIRED_OFFLINE_RESOURCES,
+  SHELL_CACHE,
+  SHELL_RESOURCES,
+  replaceOfflineFixture,
+  waitForOfflineReadiness,
+} from '/modules/offline.js';
 
 const $ = (id) => document.getElementById(id);
 const audio = $('audio');
@@ -11,6 +19,9 @@ const offline = $('offline');
 const version = 'fixture-en-v1';
 let fixture;
 let player;
+const serviceWorkerRegistration = 'serviceWorker' in navigator
+  ? navigator.serviceWorker.register('/sw.js')
+  : null;
 
 async function loadFixture() {
   const [manifest, text, timings] = await Promise.all([
@@ -29,7 +40,11 @@ async function loadFixture() {
     const button = document.createElement('button');
     button.type = 'button';
     button.textContent = paragraph.text;
-    button.addEventListener('click', () => player.seekToParagraph(paragraph.id));
+    button.addEventListener('click', () => {
+      player.playFromParagraph(paragraph.id).catch((error) => {
+        status.textContent = `Playback error: ${error.message}`;
+      });
+    });
     item.append(button);
     return item;
   }));
@@ -74,17 +89,33 @@ audio.addEventListener('pause', saveState);
 audio.addEventListener('loadedmetadata', saveState);
 $('download').addEventListener('click', async () => {
   try {
-    const resources = ['/fixtures/manifest.json', '/fixtures/text.json', '/fixtures/timings.json', '/fixtures/audio/fixture.mp3'];
-    const responses = await Promise.all(resources.map((url) => fetch(url)));
-    if (responses.some((response) => !response.ok)) throw new Error('resource download failed');
-    const cache = await caches.open('vesna-probe-fixture-v1');
-    await Promise.all(resources.map((url, index) => cache.put(url, responses[index].clone())));
-    fixtureStore.publish({ version, resources });
+    const readyBeforeDownload = await waitForOfflineReadiness({
+      serviceWorker: navigator.serviceWorker,
+      registration: serviceWorkerRegistration,
+      cachesApi: caches,
+      requiredResources: SHELL_RESOURCES,
+      cacheNames: [SHELL_CACHE],
+    });
+    const published = await replaceOfflineFixture({
+      version,
+      resources: FIXTURE_RESOURCES,
+      fetchImpl: fetch,
+      cachesApi: caches,
+      fixtureStore,
+      requiredResources: REQUIRED_OFFLINE_RESOURCES,
+      cacheNames: [SHELL_CACHE],
+    });
+    await waitForOfflineReadiness({
+      serviceWorker: navigator.serviceWorker,
+      registration: readyBeforeDownload.registration,
+      cachesApi: caches,
+      requiredResources: REQUIRED_OFFLINE_RESOURCES,
+      cacheNames: [SHELL_CACHE, published.cacheName],
+    });
     offline.textContent = 'Offline readiness: complete.';
   } catch (error) {
     offline.textContent = `Offline readiness: failed (${error.message}).`;
   }
 });
 
-if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');
 loadFixture().catch((error) => { status.textContent = `Fixture error: ${error.message}`; });
