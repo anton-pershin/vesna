@@ -26,7 +26,7 @@ Status: **in progress — AC2 passed on target device; other device checks remai
 |---|---|---|
 | AC1 Probe structure and installation | blocked | User added a home-screen icon using Chrome's “Add to home screen” option. Chrome did not offer “Install app”. Confirm standalone PWA installation behavior on the target phone. |
 | AC2 Offline launch and readiness | pass | User saw “Offline readiness: complete”, disabled Wi-Fi and mobile data, closed Vesna, reopened it from the home-screen icon, and confirmed the reader and audio were available. |
-| AC3 Foreground playback and read-along | blocked | Test controls, paragraph boundaries, highlighting, and auto-scroll. |
+| AC3 Foreground playback and read-along | fail on initial deployment; retest pending | User reports paragraph tap starts from beginning, Previous/Next do not work, and highlight does not change. Updated playback seeking to wait for audio metadata and added a visible position slider. Retest on updated deployment. |
 | AC4 State restoration | blocked | Test non-zero position and non-default speed after reopen. |
 | AC5 Locked-screen playback | blocked | Observe at least 30 minutes across 12 paragraph boundaries. |
 | AC6 Other-application playback | blocked | Test with another application foregrounded. |

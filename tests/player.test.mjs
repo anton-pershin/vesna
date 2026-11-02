@@ -4,7 +4,8 @@ import { PlaybackController } from '../src/player.js';
 
 class FakeAudio {
   constructor() {
-    this.currentTime = 0;
+    this._currentTime = 0;
+    this.readyState = 1;
     this.duration = 30;
     this.playbackRate = 1;
     this.paused = true;
@@ -15,6 +16,16 @@ class FakeAudio {
 
   addEventListener(name, handler) {
     this.listeners.set(name, handler);
+  }
+
+  removeEventListener(name, handler) {
+    if (this.listeners.get(name) === handler) this.listeners.delete(name);
+  }
+
+  get currentTime() { return this._currentTime; }
+  set currentTime(value) {
+    if (this.readyState < 1) throw new Error('metadata not loaded');
+    this._currentTime = value;
   }
 
   async play() {
@@ -45,9 +56,9 @@ test('PlaybackController uses one audio element and exposes core controls', asyn
 
   await player.play();
   player.setSpeed(1.5);
-  player.seekToParagraph('p2');
-  player.nextParagraph();
-  player.previousParagraph();
+  await player.seekToParagraph('p2');
+  await player.nextParagraph();
+  await player.previousParagraph();
   player.pause();
 
   assert.equal(audio.playCalls, 1);
@@ -67,6 +78,24 @@ test('PlaybackController updates the active paragraph after time updates and rej
   assert.equal(player.activeParagraph, 'p3');
   assert.throws(() => player.setSpeed(0), /speed/);
   assert.throws(() => player.setSpeed(3.1), /speed/);
+});
+
+test('selecting a paragraph waits for audio metadata before seeking and playing', async () => {
+  const audio = new FakeAudio();
+  audio.readyState = 0;
+  const player = new PlaybackController(audio, timings);
+
+  const selected = player.playFromParagraph('p2');
+  assert.equal(audio.playCalls, 0);
+  assert.equal(audio.currentTime, 0);
+
+  audio.readyState = 1;
+  audio.emit('loadedmetadata');
+  await selected;
+
+  assert.equal(audio.currentTime, 10);
+  assert.equal(audio.playCalls, 1);
+  assert.equal(audio.paused, false);
 });
 
 test('selecting a paragraph while paused seeks there and starts playback', async () => {

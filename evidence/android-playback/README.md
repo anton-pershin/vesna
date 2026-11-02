@@ -34,9 +34,11 @@ With the network still disabled:
 2. Test seeking with the audio controls.
 3. Select speeds 0.75x, 1x, 1.25x, 1.5x, and 2x.
 4. Test previous paragraph, next paragraph, and selecting a paragraph to play from that point.
-5. Verify the active paragraph has a non-color visual indication and changes within one second of tested timing boundaries.
-6. Verify automatic scrolling follows the active paragraph.
-7. Disable **Auto-scroll** and verify highlighting continues while the reader stays in place.
+1. Start playback and allow it to run to a paragraph boundary, or use **Next paragraph** to jump to the next 150-second timing interval.
+2. Verify the active paragraph has a non-color visual indication and changes within one second of a tested timing boundary.
+3. Select a later paragraph. Playback must start at that paragraph, not at the beginning of the audio.
+4. Verify automatic scrolling follows the active paragraph.
+5. Disable **Auto-scroll** and verify highlighting continues while the reader stays in place.
 
 ## Resume and Media Session
 

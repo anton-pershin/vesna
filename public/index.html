@@ -19,7 +19,10 @@
     <section class="panel" aria-labelledby="fixture-heading">
       <h2 id="fixture-heading">The Quiet Signal</h2>
       <p>Complete local fixture · 30 minutes · 12 paragraphs</p>
-      <audio id="audio" preload="auto" controls></audio>
+    <audio id="audio" preload="auto" controls></audio>
+      <label class="seek-control" for="seekbar">Position</label>
+      <input id="seekbar" type="range" min="0" max="1805" step="1" value="0" aria-label="Playback position">
+      <output id="position" for="seekbar">0:00 / 30:05</output>
       <div class="controls" aria-label="Playback controls">
         <button id="play" type="button">Play</button>
         <button id="pause" type="button">Pause</button>

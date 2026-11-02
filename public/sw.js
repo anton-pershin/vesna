@@ -1,4 +1,4 @@
-const SHELL_CACHE = 'vesna-probe-shell-v1';
+const SHELL_CACHE = 'vesna-probe-shell-v2';
 const SHELL_RESOURCES = [
   '/', '/index.html', '/app.js', '/styles.css', '/manifest.webmanifest', '/icon.svg', '/sw.js',
   '/modules/timing.js', '/modules/player.js', '/modules/storage.js', '/modules/media-session.js', '/modules/offline.js',
@@ -9,7 +9,12 @@ self.addEventListener('install', (event) => {
 });
 
 self.addEventListener('activate', (event) => {
-  event.waitUntil(self.clients.claim());
+  event.waitUntil(Promise.all([
+    self.clients.claim(),
+    caches.keys().then((names) => Promise.all(names
+      .filter((name) => name.startsWith('vesna-probe-shell-') && name !== SHELL_CACHE)
+      .map((name) => caches.delete(name)))),
+  ]));
 });
 
 self.addEventListener('fetch', (event) => {

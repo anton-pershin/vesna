@@ -69,6 +69,20 @@ async function loadFixture() {
   });
 }
 
+function formatTime(seconds) {
+  if (!Number.isFinite(seconds) || seconds < 0) return '0:00';
+  const minutes = Math.floor(seconds / 60);
+  return `${minutes}:${String(Math.floor(seconds % 60)).padStart(2, '0')}`;
+}
+
+function updatePosition() {
+  if (!player || !Number.isFinite(audio.currentTime)) return;
+  const duration = Number.isFinite(audio.duration) ? audio.duration : fixture.manifest.duration_seconds;
+  $('seekbar').max = String(Math.floor(duration));
+  $('seekbar').value = String(Math.floor(audio.currentTime));
+  $('position').textContent = `${formatTime(audio.currentTime)} / ${formatTime(duration)}`;
+}
+
 function saveState() {
   if (!player || !Number.isFinite(audio.currentTime)) return;
   stateStore.save({ version, position: audio.currentTime, speed: audio.playbackRate });
@@ -79,14 +93,24 @@ function saveState() {
   }
 }
 
-$('play').addEventListener('click', () => player.play());
+$('play').addEventListener('click', () => player.play().catch((error) => { status.textContent = `Playback error: ${error.message}`; }));
 $('pause').addEventListener('click', () => player.pause());
-$('previous').addEventListener('click', () => player.previousParagraph());
-$('next').addEventListener('click', () => player.nextParagraph());
+$('previous').addEventListener('click', () => player.previousParagraph().catch((error) => { status.textContent = `Seek error: ${error.message}`; }));
+$('next').addEventListener('click', () => player.nextParagraph().catch((error) => { status.textContent = `Seek error: ${error.message}`; }));
+$('seekbar').addEventListener('input', (event) => {
+  const position = Number(event.target.value);
+  $('position').textContent = `${formatTime(position)} / ${formatTime(audio.duration || fixture.manifest.duration_seconds)}`;
+});
+$('seekbar').addEventListener('change', (event) => {
+  player.seek(Number(event.target.value)).catch((error) => { status.textContent = `Seek error: ${error.message}`; });
+});
 $('speed').addEventListener('change', (event) => { player.setSpeed(Number(event.target.value)); saveState(); });
 audio.addEventListener('timeupdate', saveState);
+audio.addEventListener('timeupdate', updatePosition);
+audio.addEventListener('seeking', updatePosition);
+audio.addEventListener('durationchange', updatePosition);
 audio.addEventListener('pause', saveState);
-audio.addEventListener('loadedmetadata', saveState);
+audio.addEventListener('loadedmetadata', () => { saveState(); updatePosition(); });
 $('download').addEventListener('click', async () => {
   try {
     const readyBeforeDownload = await waitForOfflineReadiness({

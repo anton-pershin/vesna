@@ -15,6 +15,9 @@ test('service worker cache contract matches offline readiness resources', () => 
   assert.ok(resourceList, 'service worker shell resource declaration');
   const workerResources = [...resourceList[1].matchAll(/'([^']+)'/g)].map((match) => match[1]);
   assert.deepEqual(workerResources, SHELL_RESOURCES);
+  assert.match(serviceWorker, /caches\.keys\(\)/);
+  assert.match(serviceWorker, /vesna-probe-shell-/);
+  assert.match(serviceWorker, /caches\.delete\(name\)/);
   for (const resource of SHELL_RESOURCES) {
     const file = resource === '/' ? 'public/index.html' : `public${resource}`;
     assert.ok(fs.existsSync(path.join(root, file)), resource);
@@ -37,6 +40,14 @@ test('PWA shell declares installable offline resources', () => {
   for (const resource of ['public/index.html', 'public/app.js', 'public/styles.css', 'public/sw.js']) {
     assert.ok(fs.existsSync(path.join(root, resource)), resource);
   }
+  const html = fs.readFileSync(path.join(root, 'public/index.html'), 'utf8');
+  assert.match(html, /id="audio"[^>]*controls/);
+  assert.match(html, /id="seekbar"/);
+  assert.match(html, /aria-label="Playback position"/);
+  const app = fs.readFileSync(path.join(root, 'public/app.js'), 'utf8');
+  assert.match(app, /\$\('seekbar'\)\.addEventListener\('change'/);
+  assert.match(app, /audio\.addEventListener\('timeupdate', updatePosition\)/);
+  assert.match(html, /id="play"/);
 });
 
 test('fixture metadata, text, and timings share one version and twelve paragraphs', () => {

@@ -16,7 +16,7 @@ export class PlaybackController {
   }
 
   async playFromParagraph(id) {
-    this.seekToParagraph(id);
+    await this.seekToParagraph(id);
     await this.play();
   }
 
@@ -31,31 +31,46 @@ export class PlaybackController {
     this.audio.playbackRate = speed;
   }
 
-  seek(position) {
+  async seek(position) {
+    await this.waitForMetadata();
     this.audio.currentTime = Math.max(0, position);
     this.handleTimeUpdate();
   }
 
-  seekBy(offset) {
-    this.seek(this.audio.currentTime + offset);
+  async waitForMetadata() {
+    if (this.audio.readyState >= 1) return;
+    await new Promise((resolve, reject) => {
+      const cleanup = () => {
+        this.audio.removeEventListener('loadedmetadata', onReady);
+        this.audio.removeEventListener('error', onError);
+      };
+      const onReady = () => { cleanup(); resolve(); };
+      const onError = () => { cleanup(); reject(new Error('audio metadata failed to load')); };
+      this.audio.addEventListener('loadedmetadata', onReady, { once: true });
+      this.audio.addEventListener('error', onError, { once: true });
+    });
   }
 
-  seekToParagraph(id) {
+  async seekBy(offset) {
+    await this.seek(this.audio.currentTime + offset);
+  }
+
+  async seekToParagraph(id) {
     const timing = this.timings.find((candidate) => candidate.id === id);
     if (!timing) throw new Error(`unknown paragraph: ${id}`);
-    this.seek(timing.start);
+    await this.seek(timing.start);
   }
 
-  nextParagraph() {
+  async nextParagraph() {
     const index = this.timings.findIndex((timing) => timing.id === this.activeParagraph);
     const next = this.timings[Math.min(index + 1, this.timings.length - 1)];
-    if (next) this.seekToParagraph(next.id);
+    if (next) await this.seekToParagraph(next.id);
   }
 
-  previousParagraph() {
+  async previousParagraph() {
     const index = this.timings.findIndex((timing) => timing.id === this.activeParagraph);
     const previous = this.timings[Math.max(index - 1, 0)];
-    if (previous) this.seekToParagraph(previous.id);
+    if (previous) await this.seekToParagraph(previous.id);
   }
 
   handleTimeUpdate() {
