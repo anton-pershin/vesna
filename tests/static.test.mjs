@@ -15,6 +15,8 @@ test('service worker cache contract matches offline readiness resources', () => 
   assert.ok(resourceList, 'service worker shell resource declaration');
   const workerResources = [...resourceList[1].matchAll(/'([^']+)'/g)].map((match) => match[1]);
   assert.deepEqual(workerResources, SHELL_RESOURCES);
+  assert.ok(!SHELL_RESOURCES.includes('/'), 'root uses the cached index fallback, not a cache key');
+  assert.ok(SHELL_RESOURCES.includes('/index.html'));
   assert.match(serviceWorker, /caches\.keys\(\)/);
   assert.match(serviceWorker, /vesna-probe-shell-/);
   assert.match(serviceWorker, /caches\.delete\(name\)/);

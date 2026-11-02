@@ -1,6 +1,6 @@
-export const SHELL_CACHE = 'vesna-probe-shell-v3';
+export const SHELL_CACHE = 'vesna-probe-shell-v4';
 export const SHELL_RESOURCES = [
-  '/', '/index.html', '/app.js', '/styles.css', '/manifest.webmanifest', '/icon.svg', '/sw.js',
+  '/index.html', '/app.js', '/styles.css', '/manifest.webmanifest', '/icon.svg', '/sw.js',
   '/modules/timing.js', '/modules/player.js', '/modules/storage.js', '/modules/media-session.js', '/modules/offline.js',
 ];
 export const FIXTURE_RESOURCES = [
