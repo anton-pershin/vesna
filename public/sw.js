@@ -1,4 +1,4 @@
-const SHELL_CACHE = 'vesna-probe-shell-v2';
+const SHELL_CACHE = 'vesna-probe-shell-v3';
 const SHELL_RESOURCES = [
   '/', '/index.html', '/app.js', '/styles.css', '/manifest.webmanifest', '/icon.svg', '/sw.js',
   '/modules/timing.js', '/modules/player.js', '/modules/storage.js', '/modules/media-session.js', '/modules/offline.js',
@@ -19,5 +19,11 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
-  event.respondWith(caches.match(event.request).then((cached) => cached || fetch(event.request)));
+  event.respondWith(caches.match(event.request).then((cached) => {
+    if (cached) return cached;
+    if (event.request.mode === 'navigate') {
+      return caches.match(new URL('/index.html', self.location.origin)).then((shell) => shell || fetch(event.request));
+    }
+    return fetch(event.request);
+  }));
 });

@@ -18,6 +18,8 @@ test('service worker cache contract matches offline readiness resources', () => 
   assert.match(serviceWorker, /caches\.keys\(\)/);
   assert.match(serviceWorker, /vesna-probe-shell-/);
   assert.match(serviceWorker, /caches\.delete\(name\)/);
+  assert.match(serviceWorker, /event\.request\.mode === 'navigate'/);
+  assert.match(serviceWorker, /new URL\('\/index\.html', self\.location\.origin\)/);
   for (const resource of SHELL_RESOURCES) {
     const file = resource === '/' ? 'public/index.html' : `public${resource}`;
     assert.ok(fs.existsSync(path.join(root, file)), resource);

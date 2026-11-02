@@ -39,6 +39,22 @@ function fixtureStore() {
   return new OfflineFixtureStore(new MemoryStorage());
 }
 
+test('offline readiness matches absolute cache keys for same-origin paths', async () => {
+  const cachesApi = new FakeCaches();
+  const shell = await cachesApi.open('shell-cache');
+  await shell.put('https://vesna.test/', new FakeResponse());
+  const result = await waitForOfflineReadiness({
+    serviceWorker: {
+      register: async () => ({ ready: Promise.resolve({ active: {} }) }),
+    },
+    cachesApi,
+    requiredResources: ['/'],
+    cacheNames: ['shell-cache'],
+    origin: 'https://vesna.test',
+  });
+  assert.ok(result.active);
+});
+
 test('offline readiness waits for an active registration and verifies every required cache resource', async () => {
   const cachesApi = new FakeCaches();
   const shell = await cachesApi.open('shell-cache');
