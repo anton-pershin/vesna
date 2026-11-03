@@ -46,6 +46,7 @@ class FakeAudio {
     if (this.readyState < 1) throw new Error('metadata not loaded');
     this._currentTime = value;
     this.emit('seeking');
+    this.emit('seeked');
   }
 
   async play() {
@@ -171,6 +172,35 @@ test('restore playback state keeps saving suspended until the saved seek complet
   assert.deepEqual(restoringStates, [true, false]);
   assert.equal(audio.currentTime, 20);
   assert.equal(audio.playbackRate, 1.5);
+});
+
+test('restore waits for the browser seeked event before completing and publishing the saved position', async () => {
+  const audio = new FakeAudio();
+  audio.readyState = 0;
+  audio.seeking = false;
+  Object.defineProperty(audio, 'currentTime', {
+    get() { return this._currentTime; },
+    set(value) { this._currentTime = value; this.seeking = true; },
+  });
+  const player = new PlaybackController(audio, timings);
+  const restoringStates = [];
+  const restore = restorePlaybackState(player, { position: 20, speed: 2 }, (restoring) => {
+    restoringStates.push(restoring);
+  });
+
+  audio.readyState = 1;
+  audio.listeners.set('seeked', []);
+  audio.emit('loadedmetadata');
+  await new Promise((resolve) => setImmediate(resolve));
+
+  assert.equal(audio.currentTime, 20);
+  assert.deepEqual(restoringStates, [true]);
+  assert.equal(audio.listeners.get('seeked').length, 1);
+
+  audio.emit('seeked');
+  audio.seeking = false;
+  await restore;
+  assert.deepEqual(restoringStates, [true, false]);
 });
 
 test('selecting a paragraph while paused seeks there and starts playback', async () => {

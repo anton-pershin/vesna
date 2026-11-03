@@ -43,7 +43,26 @@ export class PlaybackController {
 
   async seek(position) {
     await this.waitForMetadata();
-    this.audio.currentTime = Math.max(0, position);
+    const duration = Number.isFinite(this.audio.duration) ? this.audio.duration : position;
+    const target = Math.max(0, Math.min(position, duration));
+    let cleanup;
+    const waitForSeek = new Promise((resolve, reject) => {
+      const onSeeked = () => { cleanup(); resolve(); };
+      const onError = () => { cleanup(); reject(new Error('audio seek failed')); };
+      cleanup = () => {
+        this.audio.removeEventListener('seeked', onSeeked);
+        this.audio.removeEventListener('error', onError);
+      };
+      this.audio.addEventListener('seeked', onSeeked, { once: true });
+      this.audio.addEventListener('error', onError, { once: true });
+    });
+    this.audio.currentTime = target;
+    if (!this.audio.seeking) {
+      cleanup();
+      this.handleTimeUpdate();
+      return;
+    }
+    await waitForSeek;
     this.handleTimeUpdate();
   }
 
