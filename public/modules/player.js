@@ -1,5 +1,15 @@
 import { resolveParagraph } from './timing.js';
 
+export async function restorePlaybackState(player, state, onRestoring = () => {}) {
+  onRestoring(true);
+  try {
+    player.setSpeed(state.speed);
+    await player.seek(state.position);
+  } finally {
+    onRestoring(false);
+  }
+}
+
 export class PlaybackController {
   constructor(audio, timings, onParagraph = () => {}) {
     this.audio = audio;

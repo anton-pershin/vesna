@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { PlaybackController } from '../src/player.js';
+import { PlaybackController, restorePlaybackState } from '../src/player.js';
 
 class FakeAudio {
   constructor() {
@@ -96,6 +96,29 @@ test('selecting a paragraph waits for audio metadata before seeking and playing'
   assert.equal(audio.currentTime, 10);
   assert.equal(audio.playCalls, 1);
   assert.equal(audio.paused, false);
+});
+
+test('restore playback state keeps saving suspended until the saved seek completes', async () => {
+  const audio = new FakeAudio();
+  audio.readyState = 0;
+  const player = new PlaybackController(audio, timings);
+  const savingStates = [];
+  const restoringStates = [];
+  const restore = restorePlaybackState(player, { position: 20, speed: 1.5 }, (restoring) => {
+    restoringStates.push(restoring);
+  });
+
+  assert.deepEqual(restoringStates, [true]);
+  savingStates.push(restoringStates.at(-1) ? 'suppressed' : audio.currentTime);
+  audio.readyState = 1;
+  audio.emit('loadedmetadata');
+  await restore;
+  savingStates.push(restoringStates.at(-1) ? 'suppressed' : audio.currentTime);
+
+  assert.deepEqual(savingStates, ['suppressed', 20]);
+  assert.deepEqual(restoringStates, [true, false]);
+  assert.equal(audio.currentTime, 20);
+  assert.equal(audio.playbackRate, 1.5);
 });
 
 test('selecting a paragraph while paused seeks there and starts playback', async () => {

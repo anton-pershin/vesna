@@ -1,4 +1,4 @@
-import { PlaybackController } from '/modules/player.js';
+import { PlaybackController, restorePlaybackState } from '/modules/player.js';
 import { PlaybackStateStore, OfflineFixtureStore } from '/modules/storage.js';
 import { registerMediaSession, updateMediaSession } from '/modules/media-session.js';
 import {
@@ -19,6 +19,7 @@ const offline = $('offline');
 const version = 'fixture-en-v1';
 let fixture;
 let player;
+let restoringPlaybackState = false;
 const serviceWorkerRegistration = 'serviceWorker' in navigator
   ? navigator.serviceWorker.register('/sw.js')
   : null;
@@ -59,9 +60,11 @@ async function loadFixture() {
   });
   const saved = stateStore.load(version);
   if (saved) {
-    player.setSpeed(saved.speed);
-    player.seek(saved.position);
+    await restorePlaybackState(player, saved, (restoring) => {
+      restoringPlaybackState = restoring;
+    });
     $('speed').value = String(saved.speed);
+    updatePosition();
     status.textContent = `Restored position ${Math.floor(saved.position)} seconds at ${saved.speed}×.`;
   } else status.textContent = 'Fixture ready.';
   registerMediaSession(navigator.mediaSession, player, {
@@ -84,7 +87,7 @@ function updatePosition() {
 }
 
 function saveState() {
-  if (!player || !Number.isFinite(audio.currentTime)) return;
+  if (restoringPlaybackState || !player || !Number.isFinite(audio.currentTime)) return;
   stateStore.save({ version, position: audio.currentTime, speed: audio.playbackRate });
   if (Number.isFinite(audio.duration)) {
     updateMediaSession(navigator.mediaSession, {
