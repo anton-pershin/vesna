@@ -1,5 +1,6 @@
 import { PlaybackController, PlaybackRestoreGuard, restorePlaybackState } from '/modules/player.js';
 import { SeekBarController } from '/modules/seekbar.js';
+import { runFixtureDownload } from '/modules/fixture-download.js';
 import { PlaybackStateStore, OfflineFixtureStore } from '/modules/storage.js';
 import { registerMediaSession, updateMediaSession } from '/modules/media-session.js';
 import {
@@ -214,28 +215,32 @@ $('download').addEventListener('click', async () => {
     if (!manifestResponse.ok) throw new Error('fixture manifest download failed');
     const downloadManifest = await manifestResponse.json();
     const downloadVersion = downloadManifest.version;
-    const published = await replaceOfflineFixture({
-      version: downloadVersion,
-      resources: FIXTURE_RESOURCES,
-      fetchImpl: fetchFixtureFromNetwork,
-      cachesApi: caches,
-      fixtureStore,
-      requiredResources: REQUIRED_OFFLINE_RESOURCES,
-      cacheNames: [SHELL_CACHE],
+    const { reloaded } = await runFixtureDownload({
+      currentVersion: version,
+      downloadVersion,
+      pause: () => audio.pause(),
+      replace: () => replaceOfflineFixture({
+        version: downloadVersion,
+        resources: FIXTURE_RESOURCES,
+        fetchImpl: fetchFixtureFromNetwork,
+        cachesApi: caches,
+        fixtureStore,
+        requiredResources: REQUIRED_OFFLINE_RESOURCES,
+        cacheNames: [SHELL_CACHE],
+      }),
+      reload: () => {
+        // Reload the complete fixture so old text and timings never use new audio bytes.
+        window.location.reload();
+      },
+      verify: (published) => waitForOfflineReadiness({
+        serviceWorker: navigator.serviceWorker,
+        registration: readyBeforeDownload.registration,
+        cachesApi: caches,
+        requiredResources: REQUIRED_OFFLINE_RESOURCES,
+        cacheNames: [SHELL_CACHE, published.cacheName],
+      }),
     });
-    await waitForOfflineReadiness({
-      serviceWorker: navigator.serviceWorker,
-      registration: readyBeforeDownload.registration,
-      cachesApi: caches,
-      requiredResources: REQUIRED_OFFLINE_RESOURCES,
-      cacheNames: [SHELL_CACHE, published.cacheName],
-    });
-    if (downloadVersion !== version) {
-      // Reload the complete fixture so old text and timings never use new audio bytes.
-      audio.pause();
-      window.location.reload();
-      return;
-    }
+    if (reloaded) return;
     offline.textContent = `Offline readiness: complete for ${downloadVersion}.`;
   } catch (error) {
     offline.textContent = `Offline readiness: failed (${error.message}).`;

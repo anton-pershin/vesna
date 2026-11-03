@@ -5,7 +5,7 @@ const FIXTURE_DOWNLOAD_HEADER = 'X-Vesna-Fixture-Download';
 const SHELL_RESOURCES = [
   '/index.html', '/app.js', '/styles.css', '/manifest.webmanifest', '/icon.svg',
   '/icon-192.png', '/icon-512.png', '/icon-maskable-512.png', '/sw.js',
-  '/modules/timing.js', '/modules/player.js', '/modules/seekbar.js', '/modules/storage.js', '/modules/media-session.js', '/modules/offline.js',
+  '/modules/timing.js', '/modules/player.js', '/modules/seekbar.js', '/modules/storage.js', '/modules/media-session.js', '/modules/offline.js', '/modules/fixture-download.js',
 ];
 
 function parseSingleRange(value, size) {
@@ -64,25 +64,38 @@ async function responseForCachedRequest(request, cached) {
   return new Response(bytes.slice(start, end + 1), { status: 206, headers });
 }
 
-async function matchPublishedFixture(request) {
+async function readPublishedFixture() {
   const pointerCache = await caches.open(FIXTURE_POINTER_CACHE);
   const pointerUrl = new URL(FIXTURE_POINTER_RESOURCE, self.location.origin).href;
   const pointerResponse = await pointerCache.match(pointerUrl);
-  if (!pointerResponse) return undefined;
+  if (!pointerResponse) return null;
   const record = await pointerResponse.json();
-  if (!record || typeof record.cacheName !== 'string' || !record.cacheName ||
+  if (!record || typeof record.version !== 'string' ||
+      typeof record.cacheName !== 'string' || !record.cacheName ||
       !Array.isArray(record.resources)) {
     throw new Error('invalid offline fixture pointer');
   }
+  return record;
+}
+
+async function matchPublishedFixture(request) {
   const path = new URL(request.url).pathname;
-  const isFixtureResource = record.resources.some((resource) => (
-    typeof resource === 'string' && new URL(resource, self.location.origin).pathname === path
-  ));
-  if (!isFixtureResource) return undefined;
-  const fixtureCache = await caches.open(record.cacheName);
-  const cached = await fixtureCache.match(request);
-  if (!cached) throw new Error(`published fixture resource is missing: ${path}`);
-  return cached;
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const record = await readPublishedFixture();
+    if (!record) return undefined;
+    const isFixtureResource = record.resources.some((resource) => (
+      typeof resource === 'string' && new URL(resource, self.location.origin).pathname === path
+    ));
+    if (!isFixtureResource) return undefined;
+    const fixtureCache = await caches.open(record.cacheName);
+    const cached = await fixtureCache.match(request);
+    if (cached) return cached;
+    const latest = await readPublishedFixture();
+    if (latest?.cacheName === record.cacheName && latest.version === record.version) {
+      throw new Error(`published fixture resource is missing: ${path}`);
+    }
+  }
+  throw new Error('published fixture changed repeatedly during a request');
 }
 
 self.addEventListener('install', (event) => {

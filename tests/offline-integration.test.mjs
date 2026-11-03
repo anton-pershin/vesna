@@ -5,6 +5,9 @@ import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
 import {
   FIXTURE_DOWNLOAD_HEADER,
+  FIXTURE_LOCK,
+  FIXTURE_POINTER_CACHE,
+  FIXTURE_POINTER_RESOURCE,
   FIXTURE_RESOURCES,
   readOfflineFixturePointer,
   replaceOfflineFixture,
@@ -338,4 +341,173 @@ test('concurrent replacements on one store are serialized and a later failure ca
     cacheName: firstPublished.cacheName,
   });
   await assertWorkerFixture(worker, 'v2');
+});
+
+test('publication rollback uses the authoritative pointer when localStorage diverges', async () => {
+  const v2 = makeFixture('v2');
+  const { cachesApi, fixtureStore, worker } = createWorld(async (request) => (
+    fixtureResponse(v2, new URL(request.url).pathname)
+  ));
+  const v1 = await seedPublishedFixture(cachesApi, fixtureStore);
+  const pointerCache = await cachesApi.open(FIXTURE_POINTER_CACHE);
+  const originalPointerPut = pointerCache.put.bind(pointerCache);
+  const pointerWrites = [];
+  pointerCache.put = async (request, response) => {
+    const record = await response.clone().json();
+    pointerWrites.push(record.version);
+    await originalPointerPut(request, response);
+  };
+
+  fixtureStore.read = () => null;
+  const quotaError = new Error('fixture storage quota exceeded');
+  quotaError.name = 'QuotaExceededError';
+  fixtureStore.publish = (record) => {
+    assert.equal(record.version, 'v2');
+    assert.deepEqual(pointerWrites, ['v2'], 'the v2 pointer write precedes localStorage publication');
+    throw quotaError;
+  };
+
+  await assert.rejects(
+    replaceThroughWorker({ worker, fixtureStore, cachesApi, version: 'v2' }),
+    (error) => {
+      assert.equal(error, quotaError);
+      return true;
+    },
+  );
+
+  assert.deepEqual(pointerWrites, ['v2', 'v1'], 'the failed v2 pointer is rolled back');
+  assert.deepEqual(await readOfflineFixturePointer(cachesApi, ORIGIN), v1.pointer);
+  assert.ok((await cachesApi.keys()).includes(v1.cacheName));
+  assert.ok(!(await cachesApi.keys()).includes('fixture-v2'), 'failed v2 staging cache is removed');
+  await assertWorkerFixture(worker, 'v1');
+});
+
+test('Web Lock serializes legacy migration and replacement across store instances', async (t) => {
+  const storage = new MemoryStorage();
+  const firstStore = new OfflineFixtureStore(storage);
+  const secondStore = new OfflineFixtureStore(storage);
+  const cachesApi = new NamedCacheStorage();
+  const v2 = makeFixture('v2');
+  const downloads = [];
+  const worker = createWorker(cachesApi, async (request) => {
+    const path = new URL(request.url).pathname;
+    downloads.push(path);
+    return fixtureResponse(v2, path);
+  });
+  const v1 = await seedPublishedFixture(cachesApi, firstStore);
+  const pointerCache = await cachesApi.open(FIXTURE_POINTER_CACHE);
+  await pointerCache.delete(new URL(FIXTURE_POINTER_RESOURCE, ORIGIN).href);
+
+  const originalPointerPut = pointerCache.put.bind(pointerCache);
+  let notifyMigrationPointerWrite;
+  const migrationPointerWrite = new Promise((resolve) => { notifyMigrationPointerWrite = resolve; });
+  let releaseMigrationPointerWrite;
+  const migrationGate = new Promise((resolve) => { releaseMigrationPointerWrite = resolve; });
+  let migrationWasGated = false;
+  pointerCache.put = async (request, response) => {
+    const record = await response.clone().json();
+    if (record.version === 'v1' && !migrationWasGated) {
+      migrationWasGated = true;
+      notifyMigrationPointerWrite();
+      await migrationGate;
+    }
+    await originalPointerPut(request, response);
+  };
+
+  const navigatorDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'navigator');
+  t.after(() => {
+    if (navigatorDescriptor) Object.defineProperty(globalThis, 'navigator', navigatorDescriptor);
+    else delete globalThis.navigator;
+  });
+  const lockRequests = [];
+  let activeCriticalSections = 0;
+  let maxActiveCriticalSections = 0;
+  let lockQueue = Promise.resolve();
+  const locks = {
+    request(name, options, operation) {
+      lockRequests.push({ name, options });
+      const run = lockQueue.then(async () => {
+        activeCriticalSections += 1;
+        maxActiveCriticalSections = Math.max(maxActiveCriticalSections, activeCriticalSections);
+        try {
+          return await operation();
+        } finally {
+          activeCriticalSections -= 1;
+        }
+      });
+      lockQueue = run.catch(() => {});
+      return run;
+    },
+  };
+  Object.defineProperty(globalThis, 'navigator', {
+    configurable: true,
+    writable: true,
+    value: { locks },
+  });
+
+  const migration = restoreOfflineFixturePointer({
+    cachesApi,
+    fixtureStore: firstStore,
+    origin: ORIGIN,
+  });
+  await migrationPointerWrite;
+  const replacement = replaceThroughWorker({
+    worker,
+    fixtureStore: secondStore,
+    cachesApi,
+    version: 'v2',
+  });
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.deepEqual(downloads, [], 'replacement waits for the other store\'s migration');
+
+  releaseMigrationPointerWrite();
+  const [migrated, published] = await Promise.all([migration, replacement]);
+
+  assert.deepEqual(migrated, v1.pointer);
+  assert.deepEqual(lockRequests, [
+    { name: FIXTURE_LOCK, options: { mode: 'exclusive' } },
+    { name: FIXTURE_LOCK, options: { mode: 'exclusive' } },
+  ]);
+  assert.equal(maxActiveCriticalSections, 1);
+  assert.deepEqual(downloads, FIXTURE_RESOURCES);
+  assert.deepEqual(secondStore.read(), published);
+  assert.deepEqual(await readOfflineFixturePointer(cachesApi, ORIGIN), {
+    version: 'v2',
+    resources: FIXTURE_RESOURCES,
+    cacheName: published.cacheName,
+  });
+  await assertWorkerFixture(worker, 'v2');
+});
+
+test('worker retries with the new generation when the old cache disappears mid-read', async () => {
+  const v2 = makeFixture('v2');
+  const { cachesApi, fixtureStore, worker } = createWorld(async (request) => (
+    fixtureResponse(v2, new URL(request.url).pathname)
+  ));
+  const v1 = await seedPublishedFixture(cachesApi, fixtureStore);
+  const originalOpen = cachesApi.open.bind(cachesApi);
+  let notifyOldCacheOpen;
+  const oldCacheOpen = new Promise((resolve) => { notifyOldCacheOpen = resolve; });
+  let releaseOldCacheOpen;
+  const oldCacheGate = new Promise((resolve) => { releaseOldCacheOpen = resolve; });
+  let oldCacheOpenWasGated = false;
+  cachesApi.open = async (name) => {
+    if (name === v1.cacheName && !oldCacheOpenWasGated) {
+      oldCacheOpenWasGated = true;
+      notifyOldCacheOpen();
+      await oldCacheGate;
+    }
+    return originalOpen(name);
+  };
+
+  const pendingResponse = worker.get('/fixtures/text.json');
+  await oldCacheOpen;
+  await replaceThroughWorker({ worker, fixtureStore, cachesApi, version: 'v2' });
+  assert.deepEqual(cachesApi.deleteAttempts, [v1.cacheName]);
+
+  releaseOldCacheOpen();
+  const response = await pendingResponse;
+  assert.equal(response.status, 200);
+  assert.equal(response.headers.get('X-Fixture-Version'), 'v2');
+  assert.equal(await response.text(), bodyText(v2.bodies.get('/fixtures/text.json')));
 });

@@ -47,7 +47,7 @@ jobs:
         run: >-
           node --input-type=module -e
           "await Promise.all(
-          ['media-session', 'offline', 'player', 'seekbar', 'storage', 'timing']
+          ['media-session', 'offline', 'player', 'seekbar', 'storage', 'timing', 'fixture-download']
           .map((name) => import('./public/modules/' + name + '.js')))"
 
       - name: Run tests

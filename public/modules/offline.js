@@ -2,7 +2,7 @@ export const SHELL_CACHE = 'vesna-probe-shell-v12';
 export const SHELL_RESOURCES = [
   '/index.html', '/app.js', '/styles.css', '/manifest.webmanifest', '/icon.svg',
   '/icon-192.png', '/icon-512.png', '/icon-maskable-512.png', '/sw.js',
-  '/modules/timing.js', '/modules/player.js', '/modules/seekbar.js', '/modules/storage.js', '/modules/media-session.js', '/modules/offline.js',
+  '/modules/timing.js', '/modules/player.js', '/modules/seekbar.js', '/modules/storage.js', '/modules/media-session.js', '/modules/offline.js', '/modules/fixture-download.js',
 ];
 export const FIXTURE_RESOURCES = [
   '/fixtures/manifest.json', '/fixtures/text.json', '/fixtures/timings.json', '/fixtures/audio/fixture.mp3',
@@ -11,12 +11,24 @@ export const REQUIRED_OFFLINE_RESOURCES = [...SHELL_RESOURCES, ...FIXTURE_RESOUR
 export const FIXTURE_POINTER_CACHE = 'vesna-probe-fixture-pointer-v1';
 export const FIXTURE_POINTER_RESOURCE = '/__vesna_offline_fixture_pointer__';
 export const FIXTURE_DOWNLOAD_HEADER = 'X-Vesna-Fixture-Download';
+export const FIXTURE_LOCK = 'vesna-offline-fixture';
 
-const replacementQueues = new WeakMap();
+const fixtureQueues = new WeakMap();
 
 function resolveCacheRequest(url, origin) {
   const base = origin ?? globalThis.location?.origin;
   return base ? new URL(url, base).href : url;
+}
+
+function withFixtureLock(fixtureStore, operation) {
+  const locks = globalThis.navigator?.locks;
+  if (typeof locks?.request === 'function') {
+    return locks.request(FIXTURE_LOCK, { mode: 'exclusive' }, operation);
+  }
+  const previous = fixtureQueues.get(fixtureStore) ?? Promise.resolve();
+  const run = previous.catch(() => {}).then(operation);
+  fixtureQueues.set(fixtureStore, run.catch(() => {}));
+  return run;
 }
 
 async function cachedResponse(cache, url, origin) {
@@ -65,15 +77,25 @@ async function clearOfflineFixturePointer(cachesApi, origin) {
   await cache.delete(pointerRequest(origin));
 }
 
-export async function restoreOfflineFixturePointer({ cachesApi, fixtureStore, origin }) {
-  const existing = await readOfflineFixturePointer(cachesApi, origin);
-  if (existing) return existing;
+async function readLegacyFixture(cachesApi, fixtureStore, origin) {
   const legacy = fixtureStore.read();
   if (!legacy?.cacheName) return null;
   const record = fixtureRecord(legacy);
   const cache = await cachesApi.open(record.cacheName);
   await verifyCachedResources(cache, record.resources, origin);
-  return writeOfflineFixturePointer(cachesApi, record, origin);
+  return record;
+}
+
+async function restoreOfflineFixturePointerNow({ cachesApi, fixtureStore, origin }) {
+  const existing = await readOfflineFixturePointer(cachesApi, origin);
+  if (existing) return existing;
+  const legacy = await readLegacyFixture(cachesApi, fixtureStore, origin);
+  if (!legacy) return null;
+  return writeOfflineFixturePointer(cachesApi, legacy, origin);
+}
+
+export function restoreOfflineFixturePointer(options) {
+  return withFixtureLock(options.fixtureStore, () => restoreOfflineFixturePointerNow(options));
 }
 
 export async function verifyCachedResources(cache, resources, origin) {
@@ -193,7 +215,8 @@ async function replaceOfflineFixtureNow({
     throw new TypeError('fixture download dependencies are required');
   }
   const stagingName = cacheName ?? `vesna-probe-fixture-${version}-${Date.now()}`;
-  const previous = fixtureStore.read();
+  const previous = await readOfflineFixturePointer(cachesApi, origin)
+    ?? await readLegacyFixture(cachesApi, fixtureStore, origin);
   if (previous?.cacheName === stagingName) throw new Error('staging cache must differ from the active cache');
   let keepStaging = false;
 
@@ -251,13 +274,10 @@ export function replaceOfflineFixture(options) {
   if (!fixtureStore || (typeof fixtureStore !== 'object' && typeof fixtureStore !== 'function')) {
     return Promise.reject(new TypeError('fixture download dependencies are required'));
   }
-  const previous = replacementQueues.get(fixtureStore) ?? Promise.resolve();
-  const run = previous.catch(() => {}).then(() => replaceOfflineFixtureNow({
+  return withFixtureLock(fixtureStore, () => replaceOfflineFixtureNow({
     requiredResources: options.resources,
     cacheNames: [],
     fetchImpl: globalThis.fetch,
     ...options,
   }));
-  replacementQueues.set(fixtureStore, run.catch(() => {}));
-  return run;
 }

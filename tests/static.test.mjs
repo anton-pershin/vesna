@@ -73,7 +73,7 @@ test('PWA shell declares installable offline resources', () => {
   assert.match(app, /seekBy: \(offset\) => replacePlaybackPosition/);
   assert.match(app, /fetchImpl: fetchFixtureFromNetwork/);
   assert.match(app, /await restoreOfflineFixturePointer/);
-  assert.match(app, /downloadVersion !== version/);
+  assert.match(app, /currentVersion: version/);
   assert.match(app, /\$\('build'\)/);
   assert.match(html, /id="build"/);
   assert.match(app, /seekbarController/);
