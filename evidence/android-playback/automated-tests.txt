@@ -1,0 +1,61 @@
+
+> test
+> node --test tests/*.test.mjs
+
+✔ registerMediaSession publishes metadata and delegates supported actions (4.117343ms)
+✔ updateMediaSession publishes a valid track position (0.521029ms)
+✔ offline readiness matches absolute cache keys for same-origin paths (2.515151ms)
+✔ offline readiness waits for the installing worker before checking its shell cache (7.690855ms)
+✔ offline readiness waits for an active registration and verifies every required cache resource (0.683837ms)
+✔ offline readiness rejects when the shell is incomplete (1.468043ms)
+✔ fixture replacement verifies the new cache before publishing and removes the old cache afterward (5.133247ms)
+✔ failed fixture replacement preserves the ready fixture and metadata (0.735219ms)
+✔ seekbar seeks as the user moves the slider, without waiting for a release event (3.564622ms)
+✔ seekbar keeps the user-selected value while dragging and commits seek when released (12.883243ms)
+✔ seekbar supports touch dragging and keyboard change events (0.488387ms)
+✔ PlaybackController uses one audio element and exposes core controls (2.534726ms)
+✔ PlaybackController updates the active paragraph after time updates and rejects invalid speed (0.804611ms)
+✔ selecting a paragraph waits for audio metadata before seeking and playing (0.994492ms)
+✔ restore playback state keeps saving suspended until the saved seek completes (0.551746ms)
+✔ restore waits for the browser seeked event before completing and publishing the saved position (6.6247ms)
+✔ restore rejects a no-op seek instead of publishing the saved position (1.542681ms)
+✔ restore rejects seeked when the actual media position does not match the target (5.006024ms)
+✔ seek does not clamp a valid position to a transient zero duration (0.517056ms)
+✔ seek reports a timeout when the browser never completes the seek (6.261296ms)
+✔ seekbar synchronizes the slider when a seek completes (1.048913ms)
+✔ selecting a paragraph while paused seeks there and starts playback (0.26688ms)
+✔ serves an explicit single range from a complete cached response (45.091806ms)
+▶ serves open-ended and suffix ranges and clamps the end
+  ✔ bytes=12- (1.703797ms)
+  ✔ bytes=-5 (1.610037ms)
+  ✔ bytes=14-99 (1.502573ms)
+✔ serves open-ended and suffix ranges and clamps the end (5.612247ms)
+▶ returns 416 for unsatisfiable, unsupported, and multiple ranges
+  ✔ bytes=16- (1.729963ms)
+  ✔ bytes=7-6 (1.336519ms)
+  ✔ bytes=-0 (1.39437ms)
+  ✔ bytes=0-1,4-5 (1.087466ms)
+  ✔ items=0-1 (1.485944ms)
+  ✔ bytes=invalid (1.142235ms)
+✔ returns 416 for unsatisfiable, unsupported, and multiple ranges (10.323748ms)
+✔ returns an ordinary cached response unchanged (1.06381ms)
+✔ static server returns exact audio ranges over HTTP (136.503442ms)
+✔ service worker cache contract matches offline readiness resources (5.082076ms)
+✔ PWA shell declares installable offline resources (1.107223ms)
+✔ fixture metadata, text, and timings share one version and twelve paragraphs (0.583048ms)
+✔ offline evidence procedure exists (0.575876ms)
+✔ PlaybackStateStore restores position, speed, and fixture version (1.912236ms)
+✔ PlaybackStateStore rejects unknown or invalid fixture versions (0.979443ms)
+✔ OfflineFixtureStore publishes complete replacements atomically (0.625686ms)
+✔ resolveParagraph returns the interval containing the playback position (1.00956ms)
+✔ resolveParagraph chooses the next paragraph at an exact boundary (0.17896ms)
+✔ resolveParagraph returns no paragraph outside the fixture (0.138406ms)
+✔ resolveParagraph rejects malformed or overlapping timing data (0.510742ms)
+ℹ tests 47
+ℹ suites 0
+ℹ pass 47
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 260.426327

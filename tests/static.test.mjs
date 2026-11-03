@@ -52,7 +52,12 @@ test('PWA shell declares installable offline resources', () => {
   assert.match(app, /new SeekBarController\(\$\('seekbar'\), audio, player/);
   assert.match(app, /audio\.addEventListener\('timeupdate', updatePosition\)/);
   assert.match(app, /audio\.addEventListener\('seeked', saveState\)/);
-  assert.match(app, /addEventListener\('pagehide', saveState\)/);
+  assert.match(app, /window\.addEventListener\('pagehide', saveState\)/);
+  assert.doesNotMatch(app, /audio\.addEventListener\('pagehide', saveState\)/);
+  assert.match(app, /actual audio position \$\{Math\.floor\(restoredPosition\)\}/);
+  assert.match(app, /failedRestore \|\| !player/);
+  assert.match(app, /\$\('build'\)/);
+  assert.match(html, /id="build"/);
   assert.match(app, /seekbarController/);
   assert.match(html, /id="play"/);
 });

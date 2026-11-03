@@ -4,17 +4,18 @@ export async function restorePlaybackState(player, state, onRestoring = () => {}
   onRestoring(true);
   try {
     player.setSpeed(state.speed);
-    await player.seek(state.position);
+    return await player.seek(state.position);
   } finally {
     onRestoring(false);
   }
 }
 
 export class PlaybackController {
-  constructor(audio, timings, onParagraph = () => {}) {
+  constructor(audio, timings, onParagraph = () => {}, { seekTimeoutMs = 15000 } = {}) {
     this.audio = audio;
     this.timings = timings;
     this.onParagraph = onParagraph;
+    this.seekTimeoutMs = seekTimeoutMs;
     this.activeParagraph = null;
     this.audio.addEventListener('timeupdate', () => this.handleTimeUpdate());
     this.audio.addEventListener('seeking', () => this.handleTimeUpdate());
@@ -42,28 +43,47 @@ export class PlaybackController {
   }
 
   async seek(position) {
+    if (!Number.isFinite(position) || position < 0) {
+      throw new RangeError('seek position must be a non-negative number');
+    }
     await this.waitForMetadata();
-    const duration = Number.isFinite(this.audio.duration) ? this.audio.duration : position;
-    const target = Math.max(0, Math.min(position, duration));
+    const duration = this.audio.duration;
+    const target = Number.isFinite(duration) && duration > 0
+      ? Math.min(position, duration)
+      : position;
     let cleanup;
     const waitForSeek = new Promise((resolve, reject) => {
+      let timeout;
       const onSeeked = () => { cleanup(); resolve(); };
       const onError = () => { cleanup(); reject(new Error('audio seek failed')); };
       cleanup = () => {
+        clearTimeout(timeout);
         this.audio.removeEventListener('seeked', onSeeked);
         this.audio.removeEventListener('error', onError);
       };
       this.audio.addEventListener('seeked', onSeeked, { once: true });
       this.audio.addEventListener('error', onError, { once: true });
+      timeout = setTimeout(() => {
+        cleanup();
+        reject(new Error(`audio seek timed out at ${target} seconds`));
+      }, this.seekTimeoutMs);
     });
-    this.audio.currentTime = target;
-    if (!this.audio.seeking) {
+
+    try {
+      this.audio.currentTime = target;
+      if (this.audio.seeking) await waitForSeek;
+      else cleanup();
+      const actual = this.audio.currentTime;
+      if (!Number.isFinite(actual) || Math.abs(actual - target) > 1) {
+        throw new Error(`audio seek did not reach ${target} seconds (actual ${actual})`);
+      }
+      return actual;
+    } catch (error) {
       cleanup();
+      throw error;
+    } finally {
       this.handleTimeUpdate();
-      return;
     }
-    await waitForSeek;
-    this.handleTimeUpdate();
   }
 
   async waitForMetadata() {

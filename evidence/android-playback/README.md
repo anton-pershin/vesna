@@ -7,6 +7,9 @@ This procedure is for the installed PWA served from an HTTPS origin. Desktop che
 - Record the tested commit and deployed HTTPS origin.
 - On the Huawei Pura 80 Pro, record Android version and Chrome version.
 - Use the production HTTPS deployment, not the local HTTP development server.
+- Record the **Probe build** value on the page. It must match the deployment being tested.
+- When replacing an older probe build, first record any failure diagnostics. While online, use Chrome site settings to clear and reset the old site. Open the site again and confirm the new build before the download. This step removes old shell caches and saved playback state.
+- Confirm that an audio request with header `Range: bytes=1000-1999` returns status `206`, not `200`. Record this as a deployment check; it does not replace a phone test.
 - Keep the fixture page open until its audio resource has fully downloaded and **Offline readiness: complete** is shown.
 - Do not use credentials, external content, or network-dependent fixture resources.
 
@@ -42,12 +45,13 @@ With the network still disabled:
 
 ## Resume and Media Session
 
-1. Stop at a non-zero position and select a non-default speed.
+1. Seek to 530 seconds, select 2×, and pause. Confirm that both the native audio control and the separate **Position** control show the non-zero position before closing the PWA.
 2. Close and reopen the installed PWA while offline.
-3. Verify the selected fixture version, position, and speed are restored.
-4. With playback running, lock the screen. Record the controls exposed by Chrome and the device.
-5. Test lock-screen play/pause and seek controls when available.
-6. Test headset play/pause if a headset is available. Record unavailable controls as unavailable, not as an implementation failure.
+3. Verify the selected fixture version and 2× speed. Compare the actual audio position in the status with the native audio control and the separate **Position** control.
+4. If restoration fails, record the complete status message, including media state, and the **Probe build** value. Do not clear site data before recording this information.
+5. With playback running, lock the screen. Record the controls exposed by Chrome and the device.
+6. Test lock-screen play/pause and seek controls when available.
+7. Test headset play/pause if a headset is available. Record unavailable controls as unavailable, not as an implementation failure.
 
 ## Locked-screen continuity (AC5)
 

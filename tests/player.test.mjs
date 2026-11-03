@@ -216,6 +216,81 @@ test('restore waits for the browser seeked event before completing and publishin
   assert.deepEqual(restoringStates, [true, false]);
 });
 
+test('restore rejects a no-op seek instead of publishing the saved position', async () => {
+  const audio = new FakeAudio();
+  Object.defineProperty(audio, 'currentTime', {
+    get() { return this._currentTime; },
+    set() { this._currentTime = 0; },
+  });
+  const player = new PlaybackController(audio, timings);
+
+  await assert.rejects(
+    restorePlaybackState(player, { position: 20, speed: 2 }),
+    /did not reach 20 seconds.*actual 0/,
+  );
+  assert.equal(audio.currentTime, 0);
+});
+
+test('restore rejects seeked when the actual media position does not match the target', async () => {
+  const audio = new FakeAudio();
+  audio.seeking = false;
+  Object.defineProperty(audio, 'currentTime', {
+    get() { return this._currentTime; },
+    set() { this._currentTime = 0; this.seeking = true; },
+  });
+  const player = new PlaybackController(audio, timings);
+  const restore = restorePlaybackState(player, { position: 20, speed: 2 });
+
+  await new Promise((resolve) => setImmediate(resolve));
+  audio.seeking = false;
+  audio.emit('seeked');
+
+  await assert.rejects(restore, /did not reach 20 seconds.*actual 0/);
+});
+
+test('seek does not clamp a valid position to a transient zero duration', async () => {
+  const audio = new FakeAudio();
+  audio.duration = 0;
+  const player = new PlaybackController(audio, timings);
+
+  await player.seek(20);
+
+  assert.equal(audio.currentTime, 20);
+});
+
+test('seek reports a timeout when the browser never completes the seek', async () => {
+  const audio = new FakeAudio();
+  Object.defineProperty(audio, 'currentTime', {
+    get() { return this._currentTime; },
+    set(value) { this._currentTime = value; this.seeking = true; },
+  });
+  const player = new PlaybackController(audio, timings, () => {}, { seekTimeoutMs: 5 });
+
+  await assert.rejects(player.seek(20), /timed out at 20 seconds/);
+});
+
+test('seekbar synchronizes the slider when a seek completes', async () => {
+  const audio = new FakeAudio();
+  const player = new PlaybackController(audio, timings);
+  const slider = new FakeSlider();
+  const seekbar = new SeekBarController(slider, audio, player);
+  audio.seeking = false;
+  Object.defineProperty(audio, 'currentTime', {
+    get() { return this._currentTime; },
+    set(value) { this._currentTime = value; this.seeking = true; },
+  });
+
+  const seek = player.seek(20);
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(slider.value, '0');
+  audio.seeking = false;
+  audio.emit('seeked');
+  await seek;
+
+  assert.equal(slider.value, '20');
+  assert.ok(seekbar);
+});
+
 test('selecting a paragraph while paused seeks there and starts playback', async () => {
   const audio = new FakeAudio();
   const player = new PlaybackController(audio, timings);

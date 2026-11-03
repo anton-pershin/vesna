@@ -11,20 +11,24 @@ import {
   waitForOfflineReadiness,
 } from '/modules/offline.js';
 
+const PROBE_BUILD = '2026-11-03-ac4-r1';
 const $ = (id) => document.getElementById(id);
 const audio = $('audio');
 const stateStore = new PlaybackStateStore(localStorage);
 const fixtureStore = new OfflineFixtureStore(localStorage);
 const status = $('status');
 const offline = $('offline');
-const version = 'fixture-en-v1';
+let version;
 let fixture;
 let player;
 let seekbarController;
 let restoringPlaybackState = false;
+let failedRestore = null;
 const serviceWorkerRegistration = 'serviceWorker' in navigator
   ? navigator.serviceWorker.register('/sw.js')
   : null;
+
+$('build').textContent = `Probe build: ${PROBE_BUILD}`;
 
 async function loadFixture() {
   const [manifest, text, timings] = await Promise.all([
@@ -35,6 +39,7 @@ async function loadFixture() {
   if (manifest.version !== text.version || manifest.version !== timings.version) {
     throw new Error('fixture versions do not match');
   }
+  version = manifest.version;
   fixture = { manifest, text, timings };
   audio.src = `/fixtures/${manifest.audio}`;
   $('reader').replaceChildren(...text.paragraphs.map((paragraph) => {
@@ -44,6 +49,7 @@ async function loadFixture() {
     button.type = 'button';
     button.textContent = paragraph.text;
     button.addEventListener('click', () => {
+      failedRestore = null;
       player.playFromParagraph(paragraph.id).catch((error) => {
         status.textContent = `Playback error: ${error.message}`;
       });
@@ -64,15 +70,31 @@ async function loadFixture() {
     $('position').textContent = `${formatTime(position)} / ${formatTime(audio.duration || fixture.manifest.duration_seconds)}`;
   });
   $('seekbar').max = String(Math.floor(fixture.manifest.duration_seconds));
-  const saved = stateStore.load(version);
+
+  let saved = null;
+  let statusMessage = `Fixture ${version} ready. No saved playback state; starting at 0 seconds at 1×.`;
+  try {
+    saved = stateStore.load(version);
+  } catch (error) {
+    statusMessage = `Playback state error for ${version}: ${error.message}. Starting at 0 seconds at 1×.`;
+  }
   if (saved) {
-    await restorePlaybackState(player, saved, (restoring) => {
-      restoringPlaybackState = restoring;
-    });
     $('speed').value = String(saved.speed);
-    updatePosition();
-    status.textContent = `Restored position ${Math.floor(saved.position)} seconds at ${saved.speed}×.`;
-  } else status.textContent = 'Fixture ready.';
+    try {
+      const restoredPosition = await restorePlaybackState(player, saved, (restoring) => {
+        restoringPlaybackState = restoring;
+      });
+      seekbarController.syncFromAudio();
+      updatePosition();
+      statusMessage = `Restored ${version} at actual audio position ${Math.floor(restoredPosition)} seconds at ${saved.speed}×.`;
+    } catch (error) {
+      failedRestore = saved;
+      seekbarController.syncFromAudio();
+      updatePosition();
+      statusMessage = `Restore failed for ${version}: saved position ${Math.floor(saved.position)} seconds, actual audio position ${Math.floor(audio.currentTime)} seconds at ${saved.speed}×. ${error.message}. ${describeAudioState()}`;
+    }
+  }
+  status.textContent = statusMessage;
   registerMediaSession(navigator.mediaSession, player, {
     title: manifest.title, artist: 'Vesna probe', album: 'Offline fixture',
   });
@@ -84,6 +106,18 @@ function formatTime(seconds) {
   return `${minutes}:${String(Math.floor(seconds % 60)).padStart(2, '0')}`;
 }
 
+function formatRanges(ranges) {
+  const result = [];
+  for (let index = 0; index < ranges.length; index += 1) {
+    result.push(`${ranges.start(index).toFixed(1)}-${ranges.end(index).toFixed(1)}`);
+  }
+  return result.join(', ') || 'none';
+}
+
+function describeAudioState() {
+  return `Media state: readyState=${audio.readyState}, duration=${audio.duration}, seeking=${audio.seeking}, seekable=${formatRanges(audio.seekable)}, buffered=${formatRanges(audio.buffered)}, error=${audio.error?.code ?? 'none'}.`;
+}
+
 function updatePosition() {
   if (!player || !Number.isFinite(audio.currentTime)) return;
   const duration = Number.isFinite(audio.duration) ? audio.duration : fixture.manifest.duration_seconds;
@@ -92,7 +126,7 @@ function updatePosition() {
 }
 
 function saveState() {
-  if (restoringPlaybackState || !player || !Number.isFinite(audio.currentTime)) return;
+  if (restoringPlaybackState || failedRestore || !player || !Number.isFinite(audio.currentTime)) return;
   stateStore.save({ version, position: audio.currentTime, speed: audio.playbackRate });
   if (Number.isFinite(audio.duration)) {
     updateMediaSession(navigator.mediaSession, {
@@ -103,16 +137,28 @@ function saveState() {
 
 $('play').addEventListener('click', () => player.play().catch((error) => { status.textContent = `Playback error: ${error.message}`; }));
 $('pause').addEventListener('click', () => player.pause());
-$('previous').addEventListener('click', () => player.previousParagraph().catch((error) => { status.textContent = `Seek error: ${error.message}`; }));
-$('next').addEventListener('click', () => player.nextParagraph().catch((error) => { status.textContent = `Seek error: ${error.message}`; }));
+$('previous').addEventListener('click', () => {
+  failedRestore = null;
+  player.previousParagraph().catch((error) => { status.textContent = `Seek error: ${error.message}`; });
+});
+$('next').addEventListener('click', () => {
+  failedRestore = null;
+  player.nextParagraph().catch((error) => { status.textContent = `Seek error: ${error.message}`; });
+});
+$('seekbar').addEventListener('input', () => { failedRestore = null; });
+$('seekbar').addEventListener('change', () => { failedRestore = null; });
 $('speed').addEventListener('change', (event) => { player.setSpeed(Number(event.target.value)); saveState(); });
 audio.addEventListener('timeupdate', saveState);
 audio.addEventListener('timeupdate', updatePosition);
 audio.addEventListener('seeking', updatePosition);
+audio.addEventListener('seeked', () => {
+  // A completed non-zero native-control seek can replace a failed restore.
+  if (audio.currentTime > 1) failedRestore = null;
+});
 audio.addEventListener('seeked', saveState);
 audio.addEventListener('durationchange', updatePosition);
 audio.addEventListener('pause', saveState);
-audio.addEventListener('pagehide', saveState);
+window.addEventListener('pagehide', saveState);
 audio.addEventListener('loadedmetadata', () => { saveState(); updatePosition(); });
 $('download').addEventListener('click', async () => {
   try {

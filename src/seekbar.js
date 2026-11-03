@@ -24,6 +24,7 @@ export class SeekBarController {
     });
     audio.addEventListener('timeupdate', () => this.syncFromAudio());
     audio.addEventListener('seeking', () => this.syncFromAudio());
+    audio.addEventListener('seeked', () => this.syncFromAudio());
     audio.addEventListener('loadedmetadata', () => this.syncFromAudio());
     this.syncFromAudio();
   }

@@ -285,7 +285,7 @@ The probe uses a local fixture in development and stores a verified copy for off
 10. Implement Media Session metadata and action handlers. Test registration and delegation in a browser-capable environment; leave device-only controls for manual testing.
 11. Implement read-along highlighting, optional auto-scroll, and accessible non-color active-state styling. Test updates after time progression, seek, pause, resume, speed changes, and restored state.
 12. Run automated tests and static checks on the implementation host.
-13. Deploy the probe to an HTTPS origin reachable by the phone. Record the exact URL and commit in the evidence file.
+13. Deploy the probe to an HTTPS origin reachable by the phone. Use a static host that returns single-range `206` responses for audio. Record the exact URL and commit in the evidence file.
 14. Run the complete target-phone procedure with Wi-Fi and mobile data disabled during offline and locked-screen tests.
 15. Store automated output and raw device observations under `evidence/android-playback/`.
 16. Decide the feasibility result from AC1–AC7. If the result is not pass, stop and revise the architecture before implementing the full Vesna content workflow.
@@ -299,7 +299,8 @@ The probe uses a local fixture in development and stores a verified copy for off
 | `src/` or `app/` | New: PWA shell, reader, playback, timing, storage, service-worker, and Media Session components. The exact directory is selected during implementation and must remain consistent with the tests. |
 | `public/manifest.webmanifest` | New: install metadata and icons. |
 | `public/fixtures/` | New: fixture manifest, text, paragraph timing data, and audio resource. |
-| `tests/` | New: unit and browser-level tests for timing, playback state, storage, offline readiness, and version integrity. |
+| `scripts/static_server.py` | New: dependency-free static server with single-range audio responses and optional TLS. |
+| `tests/` | New: unit and browser-level tests for timing, playback state, storage, offline readiness, HTTP ranges, and version integrity. |
 | `evidence/android-playback/README.md` | New: device-test procedure and evidence format. |
 | `evidence/android-playback/result.md` | New: completed target-phone result, created during verification. |
 | `README.md` | New or modified: local development, HTTPS deployment, installation, offline test, and evidence instructions. |
