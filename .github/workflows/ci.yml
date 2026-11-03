@@ -1,0 +1,59 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Check JavaScript syntax
+        run: |
+          find src public tests -type f \( -name '*.js' -o -name '*.mjs' \) -print0 |
+            xargs -0 -r -n1 node --check
+
+      - name: Check Python syntax
+        run: >-
+          python3 -c
+          "import ast, pathlib;
+          ast.parse(pathlib.Path('scripts/static_server.py').read_text(encoding='utf-8'))"
+
+      - name: Smoke-test deployed module imports
+        run: >-
+          node --input-type=module -e
+          "await Promise.all(
+          ['media-session', 'offline', 'player', 'seekbar', 'storage', 'timing']
+          .map((name) => import('./public/modules/' + name + '.js')))"
+
+      - name: Run tests
+        run: npm test
+
+      - name: Verify tests leave the checkout clean
+        run: |
+          git status --short
+          test -z "$(git status --porcelain)"
