@@ -40,7 +40,19 @@ test('PWA shell declares installable offline resources', () => {
   const manifest = readJson('public/manifest.webmanifest');
   assert.equal(manifest.name, 'Vesna Android playback probe');
   assert.equal(manifest.display, 'standalone');
-  assert.ok(manifest.icons.length > 0);
+  for (const size of [192, 512]) {
+    const icon = manifest.icons.find((candidate) => (
+      candidate.type === 'image/png' && candidate.sizes === `${size}x${size}` && candidate.purpose === 'any'
+    ));
+    assert.ok(icon, `manifest has a ${size}px PNG icon`);
+    const bytes = fs.readFileSync(path.join(root, `public${icon.src}`));
+    assert.equal(bytes.subarray(1, 4).toString(), 'PNG');
+    assert.equal(bytes.readUInt32BE(16), size);
+    assert.equal(bytes.readUInt32BE(20), size);
+  }
+  assert.ok(manifest.icons.some((icon) => (
+    icon.src === '/icon-maskable-512.png' && icon.type === 'image/png' && icon.purpose === 'maskable'
+  )));
   for (const resource of ['public/index.html', 'public/app.js', 'public/styles.css', 'public/sw.js']) {
     assert.ok(fs.existsSync(path.join(root, resource)), resource);
   }
