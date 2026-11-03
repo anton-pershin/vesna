@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {
   PlaybackStateStore,
   OfflineFixtureStore,
-} from '../src/storage.js';
+} from '../public/modules/storage.js';
 
 class MemoryStorage {
   values = new Map();

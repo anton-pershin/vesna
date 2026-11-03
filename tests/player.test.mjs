@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { SeekBarController } from '../src/seekbar.js';
-import { PlaybackController, PlaybackRestoreGuard, restorePlaybackState } from '../src/player.js';
+import { SeekBarController } from '../public/modules/seekbar.js';
+import { PlaybackController, PlaybackRestoreGuard, restorePlaybackState } from '../public/modules/player.js';
 
 class FakeSlider {
   constructor() {
@@ -289,6 +289,28 @@ test('seekbar synchronizes the slider when a seek completes', async () => {
 
   assert.equal(slider.value, '20');
   assert.ok(seekbar);
+});
+
+test('seekBy clamps backward media actions at the start of the audio', async () => {
+  const audio = new FakeAudio();
+  audio.currentTime = 5;
+  const player = new PlaybackController(audio, timings);
+
+  await player.seekBy(-10);
+
+  assert.equal(audio.currentTime, 0);
+});
+
+test('a verified media-session seek can replace a failed restore', async () => {
+  const audio = new FakeAudio();
+  const player = new PlaybackController(audio, timings);
+  const guard = new PlaybackRestoreGuard();
+  guard.fail({ position: 20, speed: 2 });
+
+  await guard.replace(() => player.seekBy(-10));
+
+  assert.equal(guard.blocked, false);
+  assert.equal(audio.currentTime, 0);
 });
 
 test('metadata timeout rejects restore and releases the restoring state', async () => {

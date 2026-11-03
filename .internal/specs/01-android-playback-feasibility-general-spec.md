@@ -276,12 +276,12 @@ The probe uses a local fixture in development and stores a verified copy for off
 1. Create the shared implementation branch from `origin/main` and preserve this spec on the branch.
 2. Select a browser-only implementation stack that does not require a package installation for the first probe unless the existing project configuration is extended explicitly.
 3. Create the PWA manifest, application shell, reader page, and accessible control layout.
-4. Create a deterministic fixture manifest with one version identifier, at least 12 paragraphs, paragraph text, and timing intervals covering at least 30 minutes of audio.
-5. Add or generate the fixture audio and verify its duration and decodability with a local media tool. Do not commit credentials or proprietary source material.
+4. Create a deterministic fixture manifest with one version identifier, at least 12 paragraphs, paragraph text, timing intervals covering at least 30 minutes of audio, and the audio byte length and SHA-256 digest.
+5. Add or generate the fixture audio and verify its duration, decodability, byte length, and SHA-256 digest with local tools. Do not commit credentials or proprietary source material.
 6. Implement the pure timing resolver and tests for normal playback, exact boundaries, seeks before and after intervals, end-of-file behavior, and malformed timing data.
 7. Implement the audio-player state machine around one HTML audio element. Test play, pause, seek, speed, paragraph navigation, completion, and stale-version rejection.
-8. Implement browser-storage persistence for fixture versions, playback position, speed, and offline readiness. Test interrupted and incomplete download states.
-9. Implement the service worker and offline resource loading. Test a fresh install, completed download, network-disabled launch, and missing-resource failure.
+8. Implement browser-storage persistence for fixture versions, playback position, speed, and offline readiness. Serialize fixture replacements and publish one active-cache pointer only after metadata and audio-integrity checks. Test interrupted, incomplete, mismatched, and concurrent download states.
+9. Implement the service worker and offline resource loading. Serve fixture resources only from the published cache and bypass cached responses for replacement downloads. Test a fresh install, completed download, network-disabled launch, missing-resource failure, orphan caches, and old-cache cleanup failure.
 10. Implement Media Session metadata and action handlers. Test registration and delegation in a browser-capable environment; leave device-only controls for manual testing.
 11. Implement read-along highlighting, optional auto-scroll, and accessible non-color active-state styling. Test updates after time progression, seek, pause, resume, speed changes, and restored state.
 12. Run automated tests and static checks on the implementation host.
@@ -296,7 +296,7 @@ The probe uses a local fixture in development and stores a verified copy for off
 |------|--------|
 | `.internal/specs/01-android-playback-feasibility-general-spec.md` | New: this implementation contract. |
 | `package.json` | New: only if a JavaScript test or build runner is selected. Keep dependencies minimal. |
-| `src/` or `app/` | New: PWA shell, reader, playback, timing, storage, service-worker, and Media Session components. The exact directory is selected during implementation and must remain consistent with the tests. |
+| `public/modules/` | New: canonical browser modules for playback, timing, storage, offline readiness, and Media Session. Tests import these served files directly. |
 | `public/manifest.webmanifest` | New: install metadata and icons. |
 | `public/fixtures/` | New: fixture manifest, text, paragraph timing data, and audio resource. |
 | `scripts/static_server.py` | New: dependency-free static server with single-range audio responses and optional TLS. |

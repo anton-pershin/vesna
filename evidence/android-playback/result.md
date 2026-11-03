@@ -1,10 +1,10 @@
 # Android playback feasibility result
 
-Status: **pass — AC1–AC7 pass on the target device**
+Status: **pass — AC1–AC8 pass; M1 feasibility and the quality review are complete**
 
 ## Test identity
 
-- Tested commit: `0a65263`
+- Device-tested commits: `0a65263` (initial M1 checks); `277d068` with server correction `752415f` (quality-build regression)
 - HTTPS origin: `https://45.129.142.83/`
 - Phone model: `Huawei Pura 80 Pro`
 - Android version: `Android 12; LMR-LX9 Build/HUAWEILMR-L29; 31; REL` (from `chrome://version`)
@@ -16,11 +16,15 @@ Status: **pass — AC1–AC7 pass on the target device**
 ## Automated checks
 
 - Command: `npm test`
-- Result: 54 passed, 0 failed during AC4 repair verification. Raw output: `evidence/android-playback/automated-tests.txt`.
-- Fixture duration: `1805.000` seconds (generated synthetic local MP3)
+- M1 result: 54 passed, 0 failed during AC4 repair verification. Raw output: `evidence/android-playback/automated-tests.txt`.
+- Quality-review result: 70 passed, 0 failed, including real-worker replacement, cross-tab race, and stalled-TLS-client integration tests. Raw output: `evidence/android-playback/quality-review-tests.txt`.
+- Fixture duration: `1805.061224` seconds, measured with `ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 public/fixtures/audio/fixture.mp3`
+- Fixture SHA-256: `124cbb44009162acd05b8fff413910c0cd0f8e05df4400d29f6b8c3b65f1da76`. The committed MP3 is the canonical fixture binary.
 - Fixture version: `fixture-en-v1`
 - Paragraph count: `12`
 - Deployment check on `2026-11-03`: commit `0a65263`, probe build `2026-11-03-ac1-ac4-r4`, and shell cache `vesna-probe-shell-v11` are served from the HTTPS origin. A request for bytes `1000-1999` returned `206 Partial Content`, the required headers, and the exact 1000-byte body.
+- Quality deployment check on `2026-11-03`: commit `277d068`, probe build `2026-11-03-quality-r5`, and shell cache `vesna-probe-shell-v12` are served from the HTTPS origin. The new download module and audio-integrity metadata are present. The range check returned the exact 1000-byte body. PR #3 CI passed.
+- Availability correction: The quality build became unreachable when a client stalled its TLS handshake inside the server's accept loop. Commit `752415f` moves handshakes to worker threads and adds connection timeouts. The live stalled-client check then returned `200` and build `2026-11-03-quality-r5` from a second client.
 
 ## Acceptance record
 
@@ -30,9 +34,10 @@ Status: **pass — AC1–AC7 pass on the target device**
 | AC2 Offline launch and readiness | pass | On the repaired deployment, the user reports that the offline launch and readiness checks work as expected. |
 | AC3 Foreground playback and read-along | pass | On the repaired deployment, the user reports that the foreground playback and read-along checks work as expected. |
 | AC4 State restoration | pass | On the repaired deployment, the user reports that the specified 530-second, 2×, offline close-and-reopen procedure works as expected. This supersedes the earlier failure recorded below. |
-| AC5 Locked-screen playback | pass | The user reports that the complete locked-screen procedure works as expected with the network disabled. |
-| AC6 Other-application playback | pass | The user reports that playback with another application in the foreground works as expected. |
-| AC7 Version and resource integrity | pass | Automated fixture metadata uses `fixture-en-v1` across text, timings, and audio manifest; incomplete replacement is rejected by storage tests. |
+| AC5 Locked-screen playback | pass | The user reports that the complete locked-screen procedure works as expected with the network disabled. Chrome and the device exposed no lock-screen media controls; this is recorded as unavailable, not as an implementation failure. |
+| AC6 Other-application playback | pass | Playback continued with another application in the foreground. Headset play/pause worked. Return to Vesna showed the correct position and highlight. No interruptions occurred. |
+| AC7 Version and resource integrity | pass | The corrected implementation uses explicit publication, network downloads, staged metadata/audio validation, origin-wide locking, and worker generation retries. Real-worker tests cover orphan caches, deletion failure, rollback, concurrent replacement, migration, and cache deletion during a read. Independent re-review passed all findings. |
+| AC8 Evidence and decision | pass | AC1–AC7 have recorded passing results. The quality-build phone regression passed, 70 automated tests pass, and PR #3 CI is green. The feasibility decision is recorded below. |
 
 ## Raw observations
 
@@ -41,10 +46,12 @@ Status: **pass — AC1–AC7 pass on the target device**
 - Offline launch and foreground playback: On `2026-11-03`, the user reported that the quick offline checks work as expected on the repaired deployment.
 - State restoration on `2026-11-03`: The user reported that AC4 works as expected on the repaired deployment. The test used a 530-second position and 2× speed during an offline close and reopen.
 - Earlier state-restoration failure: On the older deployment, the status reported a restored 530-second position at 2×, but both position controls showed zero. The repair added a new shell cache, byte-range responses, actual-position verification, failure diagnostics, and saved-state protection.
-- Locked-screen playback on `2026-11-03`: The user reported that AC5 works as expected. The procedure used the complete 30:05 fixture at 1× with the screen locked and the network disabled.
-- Other-application playback on `2026-11-03`: The user reported that AC6 works as expected. The procedure crossed a paragraph boundary while another application was in the foreground.
+- Locked-screen playback on `2026-11-03`: The user reported that AC5 works as expected. The procedure used the complete 30:05 fixture at 1× with the screen locked and the network disabled. Chrome and the device exposed no lock-screen media controls.
+- Other-application playback on `2026-11-03`: The user reported that AC6 works as expected. The procedure crossed a paragraph boundary while another application was in the foreground. Headset play/pause worked. Returning to Vesna showed the correct position and highlight. No interruptions occurred.
+- Quality-build regression on `2026-11-03`: After the TLS availability correction, the user opened build `2026-11-03-quality-r5` and reported that offline restoration, playback checks, the complete locked-screen regression, and the other-application/headset regression all work as expected.
+- Availability on `2026-11-03`: The user reported that the app did not load. The HTTPS service was active but its TCP backlog was full. A stalled client blocked the TLS accept loop. The server fix and live second-client verification are recorded above.
 - Fixture limitation: The audio is synthetic and does not contain spoken paragraphs. These results verify playback and timing behavior, not speech quality or speech/text alignment.
 
 ## Overall decision
 
-`pass`. AC1–AC7 pass on the Huawei Pura 80 Pro, and the required test identity fields are recorded. This result authorizes a follow-up Vesna implementation spec to use one complete audio file with paragraph timing data and Media Session controls. It does not verify speech quality, speech/text alignment, comourat integration, or TTS integration.
+`pass`. AC1–AC7 pass on the Huawei Pura 80 Pro, including the affected-path regression on the quality build. AC8 passes because the device observations, automated output, and this decision are recorded. This result authorizes the M2 specification after the quality-review PR is merged. The results do not verify speech quality, speech/text alignment, comourat integration, or TTS integration.

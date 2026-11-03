@@ -3,8 +3,8 @@ import assert from 'node:assert/strict';
 import {
   replaceOfflineFixture,
   waitForOfflineReadiness,
-} from '../src/offline.js';
-import { OfflineFixtureStore } from '../src/storage.js';
+} from '../public/modules/offline.js';
+import { OfflineFixtureStore } from '../public/modules/storage.js';
 
 class MemoryStorage {
   values = new Map();
@@ -33,14 +33,16 @@ class FakeWorker {
 }
 
 class FakeResponse {
-  constructor(ok = true) { this.ok = ok; }
-  clone() { return new FakeResponse(this.ok); }
+  constructor(ok = true, value = null) { this.ok = ok; this.value = value; }
+  clone() { return new FakeResponse(this.ok, this.value); }
+  async json() { return this.value; }
 }
 
 class FakeCache {
   constructor() { this.values = new Map(); }
   async put(url, response) { this.values.set(url, response); }
   async match(url) { return this.values.get(url); }
+  async delete(url) { return this.values.delete(url); }
 }
 
 class FakeCaches {
@@ -157,7 +159,7 @@ test('fixture replacement verifies the new cache before publishing and removes t
     version: 'fixture-v2',
     resources: ['/fixtures/manifest.json', '/fixtures/text.json', '/fixtures/timings.json'],
     cacheName: 'fixture-new',
-    fetchImpl: async () => new FakeResponse(),
+    fetchImpl: async () => new FakeResponse(true, { version: 'fixture-v2' }),
     cachesApi,
     fixtureStore: store,
     requiredResources: ['/fixtures/manifest.json', '/fixtures/text.json', '/fixtures/timings.json'],

@@ -4,6 +4,8 @@
   "language": "en",
   "duration_seconds": 1805,
   "audio": "audio/fixture.mp3",
+  "audio_bytes": 1805288,
+  "audio_sha256": "124cbb44009162acd05b8fff413910c0cd0f8e05df4400d29f6b8c3b65f1da76",
   "text": "text.json",
   "timings": "timings.json",
   "paragraph_count": 12

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { registerMediaSession, updateMediaSession } from '../src/media-session.js';
+import { registerMediaSession, updateMediaSession } from '../public/modules/media-session.js';
 
 test('registerMediaSession publishes metadata and delegates supported actions', () => {
   const handlers = new Map();
@@ -30,6 +30,10 @@ test('registerMediaSession publishes metadata and delegates supported actions', 
   assert.deepEqual(calls, [
     'play', 'pause', ['seek', -7], ['seek', 5], ['seek', 18],
   ]);
+});
+
+test('registerMediaSession allows an unavailable Media Session API', () => {
+  assert.doesNotThrow(() => registerMediaSession(null, {}, {}));
 });
 
 test('updateMediaSession publishes a valid track position', () => {

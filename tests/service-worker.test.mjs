@@ -27,8 +27,12 @@ function createFetchHandler(cached) {
     },
   };
   const caches = {
-    async match() {
-      return cached;
+    async open(name) {
+      return {
+        async match() {
+          return name === 'vesna-probe-shell-v12' ? cached : undefined;
+        },
+      };
     },
   };
   const context = vm.createContext({

@@ -1,17 +1,20 @@
 import { PlaybackController, PlaybackRestoreGuard, restorePlaybackState } from '/modules/player.js';
 import { SeekBarController } from '/modules/seekbar.js';
+import { runFixtureDownload } from '/modules/fixture-download.js';
 import { PlaybackStateStore, OfflineFixtureStore } from '/modules/storage.js';
 import { registerMediaSession, updateMediaSession } from '/modules/media-session.js';
 import {
+  FIXTURE_DOWNLOAD_HEADER,
   FIXTURE_RESOURCES,
   REQUIRED_OFFLINE_RESOURCES,
   SHELL_CACHE,
   SHELL_RESOURCES,
   replaceOfflineFixture,
+  restoreOfflineFixturePointer,
   waitForOfflineReadiness,
 } from '/modules/offline.js';
 
-const PROBE_BUILD = '2026-11-03-ac1-ac4-r4';
+const PROBE_BUILD = '2026-11-03-quality-r5';
 const $ = (id) => document.getElementById(id);
 const audio = $('audio');
 const stateStore = new PlaybackStateStore(localStorage);
@@ -32,6 +35,7 @@ const serviceWorkerRegistration = 'serviceWorker' in navigator
 $('build').textContent = `Probe build: ${PROBE_BUILD}`;
 
 async function loadFixture() {
+  await restoreOfflineFixturePointer({ cachesApi: caches, fixtureStore });
   const [manifest, text, timings] = await Promise.all([
     fetch('/fixtures/manifest.json').then((response) => response.json()),
     fetch('/fixtures/text.json').then((response) => response.json()),
@@ -100,8 +104,21 @@ async function loadFixture() {
     }
   }
   status.textContent = statusMessage;
-  registerMediaSession(navigator.mediaSession, player, {
+  const mediaSessionPlayer = {
+    play: () => player.play(),
+    pause: () => player.pause(),
+    seek: (position) => replacePlaybackPosition(() => player.seek(position)),
+    seekBy: (offset) => replacePlaybackPosition(() => player.seekBy(offset)),
+  };
+  registerMediaSession(navigator.mediaSession, mediaSessionPlayer, {
     title: manifest.title, artist: 'Vesna probe', album: 'Offline fixture',
+  });
+}
+
+function fetchFixtureFromNetwork(url) {
+  return fetch(url, {
+    cache: 'no-store',
+    headers: { [FIXTURE_DOWNLOAD_HEADER]: '1' },
   });
 }
 
@@ -181,7 +198,11 @@ audio.addEventListener('durationchange', updatePosition);
 audio.addEventListener('pause', saveState);
 window.addEventListener('pagehide', saveState);
 audio.addEventListener('loadedmetadata', () => { saveState(); updatePosition(); });
+let downloadInProgress = false;
 $('download').addEventListener('click', async () => {
+  if (downloadInProgress) return;
+  downloadInProgress = true;
+  $('download').disabled = true;
   try {
     const readyBeforeDownload = await waitForOfflineReadiness({
       serviceWorker: navigator.serviceWorker,
@@ -190,25 +211,42 @@ $('download').addEventListener('click', async () => {
       requiredResources: SHELL_RESOURCES,
       cacheNames: [SHELL_CACHE],
     });
-    const published = await replaceOfflineFixture({
-      version,
-      resources: FIXTURE_RESOURCES,
-      fetchImpl: fetch,
-      cachesApi: caches,
-      fixtureStore,
-      requiredResources: REQUIRED_OFFLINE_RESOURCES,
-      cacheNames: [SHELL_CACHE],
+    const manifestResponse = await fetchFixtureFromNetwork('/fixtures/manifest.json');
+    if (!manifestResponse.ok) throw new Error('fixture manifest download failed');
+    const downloadManifest = await manifestResponse.json();
+    const downloadVersion = downloadManifest.version;
+    const { reloaded } = await runFixtureDownload({
+      currentVersion: version,
+      downloadVersion,
+      pause: () => audio.pause(),
+      replace: () => replaceOfflineFixture({
+        version: downloadVersion,
+        resources: FIXTURE_RESOURCES,
+        fetchImpl: fetchFixtureFromNetwork,
+        cachesApi: caches,
+        fixtureStore,
+        requiredResources: REQUIRED_OFFLINE_RESOURCES,
+        cacheNames: [SHELL_CACHE],
+      }),
+      reload: () => {
+        // Reload the complete fixture so old text and timings never use new audio bytes.
+        window.location.reload();
+      },
+      verify: (published) => waitForOfflineReadiness({
+        serviceWorker: navigator.serviceWorker,
+        registration: readyBeforeDownload.registration,
+        cachesApi: caches,
+        requiredResources: REQUIRED_OFFLINE_RESOURCES,
+        cacheNames: [SHELL_CACHE, published.cacheName],
+      }),
     });
-    await waitForOfflineReadiness({
-      serviceWorker: navigator.serviceWorker,
-      registration: readyBeforeDownload.registration,
-      cachesApi: caches,
-      requiredResources: REQUIRED_OFFLINE_RESOURCES,
-      cacheNames: [SHELL_CACHE, published.cacheName],
-    });
-    offline.textContent = 'Offline readiness: complete.';
+    if (reloaded) return;
+    offline.textContent = `Offline readiness: complete for ${downloadVersion}.`;
   } catch (error) {
     offline.textContent = `Offline readiness: failed (${error.message}).`;
+  } finally {
+    downloadInProgress = false;
+    $('download').disabled = false;
   }
 });
 
