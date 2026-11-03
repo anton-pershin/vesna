@@ -63,6 +63,10 @@ class RangeRequestHandler(SimpleHTTPRequestHandler):
 
     protocol_version = "HTTP/1.1"
 
+    def setup(self):
+        self.request.settimeout(30)
+        super().setup()
+
     def end_headers(self):
         self.send_header("Accept-Ranges", "bytes")
         super().end_headers()
@@ -121,6 +125,26 @@ class RangeRequestHandler(SimpleHTTPRequestHandler):
             remaining -= len(chunk)
 
 
+class StaticThreadingHTTPServer(ThreadingHTTPServer):
+    """Accept TCP connections without waiting for their TLS handshakes."""
+
+    request_queue_size = 64
+
+    def __init__(self, server_address, handler, ssl_context=None):
+        self.ssl_context = ssl_context
+        super().__init__(server_address, handler)
+
+    def get_request(self):
+        request, address = super().get_request()
+        if self.ssl_context is not None:
+            request = self.ssl_context.wrap_socket(
+                request,
+                server_side=True,
+                do_handshake_on_connect=False,
+            )
+        return request, address
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--bind", default="127.0.0.1")
@@ -133,13 +157,13 @@ def main():
         parser.error("--certificate and --key must be used together")
 
     handler = partial(RangeRequestHandler, directory=args.directory)
-    server = ThreadingHTTPServer((args.bind, args.port), handler)
+    context = None
     scheme = "http"
     if args.certificate:
         context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
         context.load_cert_chain(args.certificate, args.key)
-        server.socket = context.wrap_socket(server.socket, server_side=True)
         scheme = "https"
+    server = StaticThreadingHTTPServer((args.bind, args.port), handler, ssl_context=context)
 
     host, port = server.server_address[:2]
     print(f"Serving {args.directory} at {scheme}://{host}:{port}", flush=True)

@@ -1,19 +1,23 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { spawn } from 'node:child_process';
-import { readFile } from 'node:fs/promises';
+import { spawn, execFileSync } from 'node:child_process';
+import { readFile, mkdtemp, rm } from 'node:fs/promises';
 import { once } from 'node:events';
+import net from 'node:net';
+import https from 'node:https';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
-async function startServer(t) {
+async function startServer(t, extraArgs = []) {
   const child = spawn('python3', [
     'scripts/static_server.py',
     '--directory', 'public',
     '--bind', '127.0.0.1',
     '--port', '0',
+    ...extraArgs,
   ], { cwd: root, stdio: ['ignore', 'pipe', 'pipe'] });
   t.after(async () => {
     if (child.exitCode !== null || child.signalCode !== null) return;
@@ -43,7 +47,8 @@ async function startServer(t) {
       reject(new Error(`static server exited with ${code}: ${errors}`));
     });
   });
-  return { child, origin: `http://127.0.0.1:${port}` };
+  const scheme = extraArgs.includes('--certificate') ? 'https' : 'http';
+  return { child, origin: `${scheme}://127.0.0.1:${port}` };
 }
 
 test('static server returns exact audio ranges over HTTP', async (t) => {
@@ -78,4 +83,32 @@ test('static server returns exact audio ranges over HTTP', async (t) => {
     headers: { Range: `bytes=${fixture.byteLength}-,${fixture.byteLength + 1}-` },
   });
   assert.equal(multipleUnsatisfiable.status, 416);
+});
+
+test('a stalled TLS handshake does not block other HTTPS clients', async (t) => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), 'vesna-tls-test-'));
+  t.after(() => rm(directory, { recursive: true, force: true }));
+  const certificate = path.join(directory, 'certificate.pem');
+  const key = path.join(directory, 'key.pem');
+  execFileSync('openssl', [
+    'req', '-x509', '-newkey', 'rsa:2048', '-nodes', '-days', '1',
+    '-subj', '/CN=localhost', '-keyout', key, '-out', certificate,
+  ], { stdio: 'ignore' });
+  const { origin } = await startServer(t, ['--certificate', certificate, '--key', key]);
+  const { port } = new URL(origin);
+  const stalled = net.connect(Number(port), '127.0.0.1');
+  t.after(() => { stalled.destroy(); });
+  await once(stalled, 'connect');
+
+  const agent = new https.Agent({ rejectUnauthorized: false });
+  t.after(() => { agent.destroy(); });
+  const response = await new Promise((resolve, reject) => {
+    const request = https.get(`${origin}/fixtures/manifest.json`, { agent }, resolve);
+    request.setTimeout(5000, () => request.destroy(new Error('HTTPS request timed out')));
+    request.once('error', reject);
+  });
+  assert.equal(response.statusCode, 200);
+  const ended = once(response, 'end');
+  response.resume();
+  await ended;
 });
