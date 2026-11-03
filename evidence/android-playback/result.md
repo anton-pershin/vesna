@@ -1,13 +1,13 @@
 # Android playback feasibility result
 
-Status: **in progress — AC2–AC6 pass on the target device; automated AC7 passes; AC1 remains blocked**
+Status: **pass — AC1–AC7 pass on the target device**
 
 ## Test identity
 
 - Tested commit: `0a65263`
 - HTTPS origin: `https://45.129.142.83/`
 - Phone model: `Huawei Pura 80 Pro`
-- Android version: not available from the device settings
+- Android version: `Android 12; LMR-LX9 Build/HUAWEILMR-L29; 31; REL` (from `chrome://version`)
 - EMUI version: `15.0.0`
 - Chrome version: `138.0.7204.157`
 - Test date: `2026-11-03` (latest checks reported by user)
@@ -26,7 +26,7 @@ Status: **in progress — AC2–AC6 pass on the target device; automated AC7 pas
 
 | Criterion | Result (pass/fail/blocked) | Raw observation / reproduction |
 |---|---|---|
-| AC1 Probe structure and installation | blocked | Earlier, Chrome offered “Add to home screen” but not “Install app”. The tested deployment includes the PNG icon repair. The latest response did not state the installation action or whether the reader opens as a standalone app. The Android version is also unavailable; the user can record only EMUI `15.0.0`. |
+| AC1 Probe structure and installation | pass | The user confirms that the repaired probe is installed and works as a separate app. Chrome reports `Android 12; LMR-LX9 Build/HUAWEILMR-L29; 31; REL`. |
 | AC2 Offline launch and readiness | pass | On the repaired deployment, the user reports that the offline launch and readiness checks work as expected. |
 | AC3 Foreground playback and read-along | pass | On the repaired deployment, the user reports that the foreground playback and read-along checks work as expected. |
 | AC4 State restoration | pass | On the repaired deployment, the user reports that the specified 530-second, 2×, offline close-and-reopen procedure works as expected. This supersedes the earlier failure recorded below. |
@@ -36,8 +36,8 @@ Status: **in progress — AC2–AC6 pass on the target device; automated AC7 pas
 
 ## Raw observations
 
-- Operating system: The user can record EMUI `15.0.0`, but not an Android version, from the device settings. Chrome is `138.0.7204.157`.
-- Installation: Earlier, Chrome offered “Add to home screen” but no “Install app”. The icon launched Vesna. The latest response did not describe the installation result on the repaired deployment.
+- Operating system: Device settings expose EMUI `15.0.0`. The operating-system line in `chrome://version` is `Android 12; LMR-LX9 Build/HUAWEILMR-L29; 31; REL`. Chrome is `138.0.7204.157`.
+- Installation: The user confirms that the repaired probe is installed and works as a separate app on `2026-11-03`.
 - Offline launch and foreground playback: On `2026-11-03`, the user reported that the quick offline checks work as expected on the repaired deployment.
 - State restoration on `2026-11-03`: The user reported that AC4 works as expected on the repaired deployment. The test used a 530-second position and 2× speed during an offline close and reopen.
 - Earlier state-restoration failure: On the older deployment, the status reported a restored 530-second position at 2×, but both position controls showed zero. The repair added a new shell cache, byte-range responses, actual-position verification, failure diagnostics, and saved-state protection.
@@ -47,4 +47,4 @@ Status: **in progress — AC2–AC6 pass on the target device; automated AC7 pas
 
 ## Overall decision
 
-`blocked` by AC1. AC2–AC6 pass on the Huawei Pura 80 Pro, and automated AC7 passes. A `pass` requires AC1–AC7 to pass on the target phone and the required test identity fields to be recorded.
+`pass`. AC1–AC7 pass on the Huawei Pura 80 Pro, and the required test identity fields are recorded. This result authorizes a follow-up Vesna implementation spec to use one complete audio file with paragraph timing data and Media Session controls. It does not verify speech quality, speech/text alignment, comourat integration, or TTS integration.
