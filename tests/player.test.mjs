@@ -70,6 +70,19 @@ const timings = [
   { id: 'p3', start: 20, end: 30 },
 ];
 
+test('seekbar seeks as the user moves the slider, without waiting for a release event', () => {
+  const audio = new FakeAudio();
+  const player = new PlaybackController(audio, timings);
+  const slider = new FakeSlider();
+  new SeekBarController(slider, audio, player);
+
+  slider.emit('pointerdown');
+  slider.value = '24';
+  slider.emit('input');
+
+  assert.equal(audio.currentTime, 24);
+});
+
 test('seekbar keeps the user-selected value while dragging and commits seek when released', async () => {
   const audio = new FakeAudio();
   const player = new PlaybackController(audio, timings);

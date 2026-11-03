@@ -13,6 +13,7 @@ export class SeekBarController {
     slider.addEventListener('input', (event) => {
       this.pendingPosition = Number(event.target.value);
       this.onPosition(this.pendingPosition);
+      this.commit();
     });
     slider.addEventListener('pointerup', () => this.finishDrag());
     slider.addEventListener('pointercancel', () => this.finishDrag());
@@ -42,10 +43,14 @@ export class SeekBarController {
   }
 
   commit() {
-    if (this.commitQueued || !Number.isFinite(this.pendingPosition)) return;
+    if (!Number.isFinite(this.pendingPosition)) return;
+    if (this.audio.readyState >= 1) {
+      this.audio.currentTime = this.pendingPosition;
+      return;
+    }
+    if (this.commitQueued) return;
     this.commitQueued = true;
-    const position = this.pendingPosition;
-    Promise.resolve(this.player.seek(position))
+    Promise.resolve(this.player.seek(this.pendingPosition))
       .catch(() => {})
       .finally(() => {
         this.commitQueued = false;
