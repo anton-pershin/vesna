@@ -1,4 +1,4 @@
-const SHELL_CACHE = 'vesna-probe-shell-v10';
+const SHELL_CACHE = 'vesna-probe-shell-v11';
 const SHELL_RESOURCES = [
   '/index.html', '/app.js', '/styles.css', '/manifest.webmanifest', '/icon.svg',
   '/icon-192.png', '/icon-512.png', '/icon-maskable-512.png', '/sw.js',
@@ -17,9 +17,11 @@ function parseSingleRange(value, size) {
   }
 
   const start = Number(match[1]);
+  const requestedEnd = match[2] ? Number(match[2]) : null;
+  if (requestedEnd !== null && requestedEnd < start) return undefined;
   if (start >= size) return null;
-  const end = match[2] ? Math.min(Number(match[2]), size - 1) : size - 1;
-  return end >= start ? { start, end } : null;
+  const end = requestedEnd === null ? size - 1 : Math.min(requestedEnd, size - 1);
+  return { start, end };
 }
 
 function parseRangeHeader(header, size) {

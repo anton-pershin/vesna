@@ -96,7 +96,6 @@ test('serves open-ended and suffix ranges and clamps the end', async (t) => {
 test('returns 416 only for valid ranges with no satisfiable part', async (t) => {
   const ranges = [
     'bytes=16-',
-    'bytes=7-6',
     'bytes=-0',
     'bytes=16-,17-',
   ];
@@ -119,6 +118,8 @@ test('ignores malformed, unsupported, and unhandled multiple ranges', async (t) 
     'bytes=0-1,4-5',
     'items=0-1',
     'bytes=invalid',
+    'bytes=7-6',
+    'bytes=99-1',
     'bytes=0-1,',
   ];
 

@@ -29,10 +29,13 @@ def parse_single_range(value, size):
         return max(size - suffix_length, 0), size - 1
 
     start = int(first)
+    requested_end = int(last) if last else None
+    if requested_end is not None and requested_end < start:
+        return _IGNORE_RANGE
     if start >= size:
         return None
-    end = min(int(last), size - 1) if last else size - 1
-    return (start, end) if end >= start else None
+    end = size - 1 if requested_end is None else min(requested_end, size - 1)
+    return start, end
 
 
 def parse_range(header, size):

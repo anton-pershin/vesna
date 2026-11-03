@@ -59,7 +59,7 @@ test('static server returns exact audio ranges over HTTP', async (t) => {
   assert.equal(unsatisfiable.status, 416);
   assert.equal(unsatisfiable.headers.get('Content-Range'), `bytes */${fixture.byteLength}`);
 
-  for (const range of ['bytes=invalid', 'items=0-1', 'bytes=0-1,4-5']) {
+  for (const range of ['bytes=invalid', 'bytes=7-6', 'items=0-1', 'bytes=0-1,4-5']) {
     const ignored = await fetch(audioUrl, { method: 'HEAD', headers: { Range: range } });
     assert.equal(ignored.status, 200, range);
     assert.equal(ignored.headers.get('Content-Range'), null, range);
