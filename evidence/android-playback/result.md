@@ -5,7 +5,7 @@ Status: **in progress — AC2 and AC3 pass; AC4 failed on latest device check; A
 ## Test identity
 
 - Tested commit: `c8f6117`
-- Repair state awaiting deployment and device retest: local branch tip after `c8f6117`; see git history for the exact commits
+- Deployed repair commit awaiting device retest: `0a65263`
 - HTTPS origin: `https://45.129.142.83/`
 - Phone model: `Huawei Pura 80 Pro`
 - Android version: not recorded
@@ -20,6 +20,7 @@ Status: **in progress — AC2 and AC3 pass; AC4 failed on latest device check; A
 - Fixture duration: `1805.000` seconds (generated synthetic local MP3)
 - Fixture version: `fixture-en-v1`
 - Paragraph count: `12`
+- Deployment check on `2026-11-03`: commit `0a65263`, probe build `2026-11-03-ac1-ac4-r4`, and shell cache `vesna-probe-shell-v11` are served from the HTTPS origin. A request for bytes `1000-1999` returned `206 Partial Content`, the required headers, and the exact 1000-byte body.
 
 ## Acceptance record
 
