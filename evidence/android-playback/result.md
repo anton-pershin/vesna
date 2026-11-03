@@ -23,6 +23,7 @@ Status: **in progress — AC1–AC7 pass their recorded checks; the AC8 decision
 - Fixture version: `fixture-en-v1`
 - Paragraph count: `12`
 - Deployment check on `2026-11-03`: commit `0a65263`, probe build `2026-11-03-ac1-ac4-r4`, and shell cache `vesna-probe-shell-v11` are served from the HTTPS origin. A request for bytes `1000-1999` returned `206 Partial Content`, the required headers, and the exact 1000-byte body.
+- Quality deployment check on `2026-11-03`: commit `277d068`, probe build `2026-11-03-quality-r5`, and shell cache `vesna-probe-shell-v12` are served from the HTTPS origin. The new download module and audio-integrity metadata are present. The range check returned the exact 1000-byte body. PR #3 CI passed.
 
 ## Acceptance record
 
