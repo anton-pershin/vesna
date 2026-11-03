@@ -93,14 +93,12 @@ test('serves open-ended and suffix ranges and clamps the end', async (t) => {
   }
 });
 
-test('returns 416 for unsatisfiable, unsupported, and multiple ranges', async (t) => {
+test('returns 416 only for valid ranges with no satisfiable part', async (t) => {
   const ranges = [
     'bytes=16-',
     'bytes=7-6',
     'bytes=-0',
-    'bytes=0-1,4-5',
-    'items=0-1',
-    'bytes=invalid',
+    'bytes=16-,17-',
   ];
 
   for (const range of ranges) {
@@ -112,6 +110,24 @@ test('returns 416 for unsatisfiable, unsupported, and multiple ranges', async (t
       assert.equal(response.headers.get('Content-Length'), '0');
       assert.equal(response.headers.get('Accept-Ranges'), 'bytes');
       assert.equal(response.headers.get('Content-Type'), 'audio/mpeg');
+    });
+  }
+});
+
+test('ignores malformed, unsupported, and unhandled multiple ranges', async (t) => {
+  const ranges = [
+    'bytes=0-1,4-5',
+    'items=0-1',
+    'bytes=invalid',
+    'bytes=0-1,',
+  ];
+
+  for (const range of ranges) {
+    await t.test(range, async () => {
+      const response = await createFetchHandler(fixtureResponse())(rangeRequest(range));
+      assert.equal(response.status, 200);
+      assert.equal(response.headers.get('Content-Range'), null);
+      assert.equal(await response.text(), fixtureText);
     });
   }
 });

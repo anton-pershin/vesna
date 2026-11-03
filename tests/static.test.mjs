@@ -61,13 +61,14 @@ test('PWA shell declares installable offline resources', () => {
   assert.match(html, /id="seekbar"/);
   assert.match(html, /aria-label="Playback position"/);
   const app = fs.readFileSync(path.join(root, 'public/app.js'), 'utf8');
-  assert.match(app, /new SeekBarController\(\$\('seekbar'\), audio, player/);
+  assert.match(app, /new SeekBarController\(\$\('seekbar'\), audio, seekbarPlayer/);
   assert.match(app, /audio\.addEventListener\('timeupdate', updatePosition\)/);
-  assert.match(app, /audio\.addEventListener\('seeked', saveState\)/);
+  assert.match(app, /restoreGuard\.completeNativeSeek\(target, audio\.currentTime\)/);
   assert.match(app, /window\.addEventListener\('pagehide', saveState\)/);
   assert.doesNotMatch(app, /audio\.addEventListener\('pagehide', saveState\)/);
   assert.match(app, /actual audio position \$\{Math\.floor\(restoredPosition\)\}/);
-  assert.match(app, /failedRestore \|\| !player/);
+  assert.match(app, /restoreGuard\.blocked \|\| !player/);
+  assert.match(app, /await restoreGuard\.replace\(operation\)/);
   assert.match(app, /\$\('build'\)/);
   assert.match(html, /id="build"/);
   assert.match(app, /seekbarController/);

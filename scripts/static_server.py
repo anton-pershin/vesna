@@ -9,13 +9,16 @@ from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 
 
-_RANGE_PATTERN = re.compile(r"bytes=(\d*)-(\d*)", re.IGNORECASE)
+_RANGE_PATTERN = re.compile(r"^bytes=(.*)$", re.IGNORECASE)
+_SINGLE_RANGE_PATTERN = re.compile(r"^(\d*)-(\d*)$")
+_IGNORE_RANGE = object()
 
 
-def parse_range(header, size):
-    """Return inclusive byte offsets for one valid, satisfiable range."""
-    match = _RANGE_PATTERN.fullmatch(header.strip())
-    if not match or size == 0 or (not match[1] and not match[2]):
+def parse_single_range(value, size):
+    match = _SINGLE_RANGE_PATTERN.fullmatch(value.strip())
+    if not match or (not match[1] and not match[2]):
+        return _IGNORE_RANGE
+    if size == 0:
         return None
 
     first, last = match.groups()
@@ -30,6 +33,26 @@ def parse_range(header, size):
         return None
     end = min(int(last), size - 1) if last else size - 1
     return (start, end) if end >= start else None
+
+
+def parse_range(header, size):
+    """Return offsets, None for unsatisfiable ranges, or the ignore marker."""
+    match = _RANGE_PATTERN.fullmatch(header.strip())
+    if not match:
+        return _IGNORE_RANGE
+    values = match[1].split(",")
+    satisfiable = []
+    for value in values:
+        parsed = parse_single_range(value, size)
+        if parsed is _IGNORE_RANGE:
+            return _IGNORE_RANGE
+        if parsed is not None:
+            satisfiable.append(parsed)
+    if not satisfiable:
+        return None
+    if len(values) > 1:
+        return _IGNORE_RANGE
+    return satisfiable[0]
 
 
 class RangeRequestHandler(SimpleHTTPRequestHandler):
@@ -59,6 +82,9 @@ class RangeRequestHandler(SimpleHTTPRequestHandler):
         stat = os.fstat(source.fileno())
         size = stat.st_size
         selected_range = parse_range(self.headers["Range"], size)
+        if selected_range is _IGNORE_RANGE:
+            source.close()
+            return super().send_head()
         if selected_range is None:
             source.close()
             self.send_response(416)

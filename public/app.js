@@ -1,4 +1,4 @@
-import { PlaybackController, restorePlaybackState } from '/modules/player.js';
+import { PlaybackController, PlaybackRestoreGuard, restorePlaybackState } from '/modules/player.js';
 import { SeekBarController } from '/modules/seekbar.js';
 import { PlaybackStateStore, OfflineFixtureStore } from '/modules/storage.js';
 import { registerMediaSession, updateMediaSession } from '/modules/media-session.js';
@@ -11,7 +11,7 @@ import {
   waitForOfflineReadiness,
 } from '/modules/offline.js';
 
-const PROBE_BUILD = '2026-11-03-ac1-ac4-r2';
+const PROBE_BUILD = '2026-11-03-ac1-ac4-r3';
 const $ = (id) => document.getElementById(id);
 const audio = $('audio');
 const stateStore = new PlaybackStateStore(localStorage);
@@ -23,7 +23,8 @@ let fixture;
 let player;
 let seekbarController;
 let restoringPlaybackState = false;
-let failedRestore = null;
+let nativeSeekTarget = null;
+const restoreGuard = new PlaybackRestoreGuard();
 const serviceWorkerRegistration = 'serviceWorker' in navigator
   ? navigator.serviceWorker.register('/sw.js')
   : null;
@@ -49,8 +50,7 @@ async function loadFixture() {
     button.type = 'button';
     button.textContent = paragraph.text;
     button.addEventListener('click', () => {
-      failedRestore = null;
-      player.playFromParagraph(paragraph.id).catch((error) => {
+      replacePlaybackPosition(() => player.playFromParagraph(paragraph.id)).catch((error) => {
         status.textContent = `Playback error: ${error.message}`;
       });
     });
@@ -66,8 +66,13 @@ async function loadFixture() {
     }
     saveState();
   });
-  seekbarController = new SeekBarController($('seekbar'), audio, player, (position) => {
+  const seekbarPlayer = {
+    seek: (position) => replacePlaybackPosition(() => player.seek(position)),
+  };
+  seekbarController = new SeekBarController($('seekbar'), audio, seekbarPlayer, (position) => {
     $('position').textContent = `${formatTime(position)} / ${formatTime(audio.duration || fixture.manifest.duration_seconds)}`;
+  }, (error) => {
+    status.textContent = `Seek error: ${error.message}`;
   });
   $('seekbar').max = String(Math.floor(fixture.manifest.duration_seconds));
 
@@ -88,7 +93,7 @@ async function loadFixture() {
       updatePosition();
       statusMessage = `Restored ${version} at actual audio position ${Math.floor(restoredPosition)} seconds at ${saved.speed}×.`;
     } catch (error) {
-      failedRestore = saved;
+      restoreGuard.fail(saved);
       seekbarController.syncFromAudio();
       updatePosition();
       statusMessage = `Restore failed for ${version}: saved position ${Math.floor(saved.position)} seconds, actual audio position ${Math.floor(audio.currentTime)} seconds at ${saved.speed}×. ${error.message}. ${describeAudioState()}`;
@@ -126,7 +131,7 @@ function updatePosition() {
 }
 
 function saveState() {
-  if (restoringPlaybackState || failedRestore || !player || !Number.isFinite(audio.currentTime)) return;
+  if (restoringPlaybackState || restoreGuard.blocked || !player || !Number.isFinite(audio.currentTime)) return;
   stateStore.save({ version, position: audio.currentTime, speed: audio.playbackRate });
   if (Number.isFinite(audio.duration)) {
     updateMediaSession(navigator.mediaSession, {
@@ -135,27 +140,43 @@ function saveState() {
   }
 }
 
+async function replacePlaybackPosition(operation) {
+  nativeSeekTarget = null;
+  const result = await restoreGuard.replace(operation);
+  saveState();
+  return result;
+}
+
 $('play').addEventListener('click', () => player.play().catch((error) => { status.textContent = `Playback error: ${error.message}`; }));
 $('pause').addEventListener('click', () => player.pause());
 $('previous').addEventListener('click', () => {
-  failedRestore = null;
-  player.previousParagraph().catch((error) => { status.textContent = `Seek error: ${error.message}`; });
+  replacePlaybackPosition(() => player.previousParagraph())
+    .catch((error) => { status.textContent = `Seek error: ${error.message}`; });
 });
 $('next').addEventListener('click', () => {
-  failedRestore = null;
-  player.nextParagraph().catch((error) => { status.textContent = `Seek error: ${error.message}`; });
+  replacePlaybackPosition(() => player.nextParagraph())
+    .catch((error) => { status.textContent = `Seek error: ${error.message}`; });
 });
-$('seekbar').addEventListener('input', () => { failedRestore = null; });
-$('seekbar').addEventListener('change', () => { failedRestore = null; });
 $('speed').addEventListener('change', (event) => { player.setSpeed(Number(event.target.value)); saveState(); });
 audio.addEventListener('timeupdate', saveState);
 audio.addEventListener('timeupdate', updatePosition);
-audio.addEventListener('seeking', updatePosition);
-audio.addEventListener('seeked', () => {
-  // A completed non-zero native-control seek can replace a failed restore.
-  if (audio.currentTime > 1) failedRestore = null;
+audio.addEventListener('seeking', () => {
+  if (restoringPlaybackState || player?.pendingSeekCount > 0) nativeSeekTarget = null;
+  else nativeSeekTarget = audio.currentTime;
+  updatePosition();
 });
-audio.addEventListener('seeked', saveState);
+audio.addEventListener('seeked', () => {
+  if (nativeSeekTarget !== null) {
+    const target = nativeSeekTarget;
+    nativeSeekTarget = null;
+    if (!restoreGuard.completeNativeSeek(target, audio.currentTime)) {
+      status.textContent = `Seek error: native controls did not reach ${target} seconds (actual ${audio.currentTime}).`;
+      return;
+    }
+  }
+  saveState();
+});
+audio.addEventListener('error', () => { nativeSeekTarget = null; });
 audio.addEventListener('durationchange', updatePosition);
 audio.addEventListener('pause', saveState);
 window.addEventListener('pagehide', saveState);

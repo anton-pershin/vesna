@@ -1,12 +1,12 @@
 export class SeekBarController {
-  constructor(slider, audio, player, onPosition = () => {}) {
+  constructor(slider, audio, player, onPosition = () => {}, onError = () => {}) {
     this.slider = slider;
     this.audio = audio;
     this.player = player;
     this.onPosition = onPosition;
+    this.onError = onError;
     this.dragging = false;
     this.pendingPosition = Number(slider.value) || 0;
-    this.commitQueued = false;
 
     slider.addEventListener('pointerdown', () => { this.dragging = true; });
     slider.addEventListener('touchstart', () => { this.dragging = true; }, { passive: true });
@@ -45,17 +45,8 @@ export class SeekBarController {
 
   commit() {
     if (!Number.isFinite(this.pendingPosition)) return;
-    if (this.audio.readyState >= 1) {
-      this.audio.currentTime = this.pendingPosition;
-      return;
-    }
-    if (this.commitQueued) return;
-    this.commitQueued = true;
     Promise.resolve(this.player.seek(this.pendingPosition))
-      .catch(() => {})
-      .finally(() => {
-        this.commitQueued = false;
-        this.syncFromAudio();
-      });
+      .catch((error) => { this.onError(error); })
+      .finally(() => { this.syncFromAudio(); });
   }
 }

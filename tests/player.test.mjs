@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { SeekBarController } from '../src/seekbar.js';
-import { PlaybackController, restorePlaybackState } from '../src/player.js';
+import { PlaybackController, PlaybackRestoreGuard, restorePlaybackState } from '../src/player.js';
 
 class FakeSlider {
   constructor() {
@@ -289,6 +289,58 @@ test('seekbar synchronizes the slider when a seek completes', async () => {
 
   assert.equal(slider.value, '20');
   assert.ok(seekbar);
+});
+
+test('metadata timeout rejects restore and releases the restoring state', async () => {
+  const audio = new FakeAudio();
+  audio.readyState = 0;
+  const player = new PlaybackController(audio, timings, () => {}, { seekTimeoutMs: 5 });
+  const restoringStates = [];
+
+  await assert.rejects(
+    restorePlaybackState(player, { position: 20, speed: 2 }, (restoring) => {
+      restoringStates.push(restoring);
+    }),
+    /metadata wait timed out/,
+  );
+  assert.deepEqual(restoringStates, [true, false]);
+  assert.equal(player.pendingSeekCount, 0);
+});
+
+test('failed restore followed by a failed user seek preserves the saved state on pagehide', async () => {
+  const audio = new FakeAudio();
+  Object.defineProperty(audio, 'currentTime', {
+    get() { return this._currentTime; },
+    set() { this._currentTime = 0; },
+  });
+  const player = new PlaybackController(audio, timings);
+  const guard = new PlaybackRestoreGuard();
+  const saved = { position: 20, speed: 2 };
+
+  await assert.rejects(restorePlaybackState(player, saved));
+  guard.fail(saved);
+  await assert.rejects(guard.replace(() => player.seek(25)));
+
+  let persisted = { ...saved };
+  if (!guard.blocked) persisted = { ...saved, position: audio.currentTime };
+  assert.equal(guard.blocked, true);
+  assert.equal(persisted.position, 20);
+});
+
+test('restore guard clears only after a verified replacement position', async () => {
+  const audio = new FakeAudio();
+  const player = new PlaybackController(audio, timings);
+  const guard = new PlaybackRestoreGuard();
+  guard.fail({ position: 20, speed: 2 });
+
+  assert.equal(guard.completeNativeSeek(25, 0), false);
+  assert.equal(guard.blocked, true);
+  assert.equal(guard.completeNativeSeek(0, 0), true);
+  assert.equal(guard.blocked, false);
+
+  guard.fail({ position: 20, speed: 2 });
+  await guard.replace(() => player.seek(0));
+  assert.equal(guard.blocked, false);
 });
 
 test('selecting a paragraph while paused seeks there and starts playback', async () => {

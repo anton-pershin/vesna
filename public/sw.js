@@ -1,13 +1,14 @@
-const SHELL_CACHE = 'vesna-probe-shell-v9';
+const SHELL_CACHE = 'vesna-probe-shell-v10';
 const SHELL_RESOURCES = [
   '/index.html', '/app.js', '/styles.css', '/manifest.webmanifest', '/icon.svg',
   '/icon-192.png', '/icon-512.png', '/icon-maskable-512.png', '/sw.js',
   '/modules/timing.js', '/modules/player.js', '/modules/seekbar.js', '/modules/storage.js', '/modules/media-session.js', '/modules/offline.js',
 ];
 
-function parseRangeHeader(header, size) {
-  const match = /^bytes=(\d*)-(\d*)$/i.exec(header.trim());
-  if (!match || size === 0 || (!match[1] && !match[2])) return null;
+function parseSingleRange(value, size) {
+  const match = /^(\d*)-(\d*)$/.exec(value.trim());
+  if (!match || (!match[1] && !match[2])) return undefined;
+  if (size === 0) return null;
 
   if (!match[1]) {
     const suffixLength = Number(match[2]);
@@ -21,16 +22,32 @@ function parseRangeHeader(header, size) {
   return end >= start ? { start, end } : null;
 }
 
+function parseRangeHeader(header, size) {
+  const match = /^bytes=(.*)$/i.exec(header.trim());
+  if (!match) return undefined;
+  const values = match[1].split(',');
+  const satisfiable = [];
+  for (const value of values) {
+    const parsed = parseSingleRange(value, size);
+    if (parsed === undefined) return undefined;
+    if (parsed !== null) satisfiable.push(parsed);
+  }
+  if (satisfiable.length === 0) return null;
+  if (values.length > 1) return undefined;
+  return satisfiable[0];
+}
+
 async function responseForCachedRequest(request, cached) {
   const range = request.headers.get('Range');
   if (range === null || cached.status !== 200) return cached;
 
-  const bytes = new Uint8Array(await cached.arrayBuffer());
+  const bytes = new Uint8Array(await cached.clone().arrayBuffer());
   const headers = new Headers(cached.headers);
   headers.set('Accept-Ranges', 'bytes');
   const parsed = parseRangeHeader(range, bytes.byteLength);
 
-  if (!parsed) {
+  if (parsed === undefined) return cached;
+  if (parsed === null) {
     headers.set('Content-Range', `bytes */${bytes.byteLength}`);
     headers.set('Content-Length', '0');
     return new Response(null, { status: 416, headers });
