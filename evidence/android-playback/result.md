@@ -1,16 +1,16 @@
 # Android playback feasibility result
 
-Status: **in progress — AC2 and AC3 pass; AC4 failed on latest device check; AC1, AC5, and AC6 remain blocked**
+Status: **in progress — AC2–AC6 pass on the target device; automated AC7 passes; AC1 remains blocked**
 
 ## Test identity
 
-- Tested commit: `c8f6117`
-- Deployed repair commit awaiting device retest: `0a65263`
+- Tested commit: `0a65263`
 - HTTPS origin: `https://45.129.142.83/`
 - Phone model: `Huawei Pura 80 Pro`
-- Android version: not recorded
-- Chrome version: not recorded
-- Test date: `2026-11-02` (reported by user)
+- Android version: not available from the device settings
+- EMUI version: `15.0.0`
+- Chrome version: `138.0.7204.157`
+- Test date: `2026-11-03` (latest checks reported by user)
 - Network state during offline tests: Wi-Fi and mobile data disabled, as instructed
 
 ## Automated checks
@@ -26,28 +26,25 @@ Status: **in progress — AC2 and AC3 pass; AC4 failed on latest device check; A
 
 | Criterion | Result (pass/fail/blocked) | Raw observation / reproduction |
 |---|---|---|
-| AC1 Probe structure and installation | blocked; install metadata repair awaiting retest | User added a home-screen icon using Chrome's “Add to home screen” option. Chrome did not offer “Install app”. The manifest now has 192 px and 512 px PNG icons and a separate maskable PNG icon. Confirm standalone PWA installation behavior on the target phone. |
-| AC2 Offline launch and readiness | pass | User saw “Offline readiness: complete”, disabled Wi-Fi and mobile data, closed Vesna, reopened it from the home-screen icon, and confirmed the reader and audio were available. |
-| AC3 Foreground playback and read-along | pass | On the current deployment, the user reports the Position slider works again. Prior target-device checks also confirmed paragraph selection, Previous/Next, and Auto-scroll. |
-| AC4 State restoration | fail on latest device check; repair awaiting retest | On offline refresh, status says "Restored position 530 seconds at 2×", but both the audio play bar and the Position slider show 0. Non-default speed restores. The repair adds shell cache v11, cached and online byte-range support, actual-position verification, failure diagnostics, and saved-state protection. No phone result is available for the repair. Do not claim AC4 passes. |
-| AC5 Locked-screen playback | blocked | Observe at least 30 minutes across 12 paragraph boundaries. |
-| AC6 Other-application playback | blocked | Test with another application foregrounded. |
+| AC1 Probe structure and installation | blocked | Earlier, Chrome offered “Add to home screen” but not “Install app”. The tested deployment includes the PNG icon repair. The latest response did not state the installation action or whether the reader opens as a standalone app. The Android version is also unavailable; the user can record only EMUI `15.0.0`. |
+| AC2 Offline launch and readiness | pass | On the repaired deployment, the user reports that the offline launch and readiness checks work as expected. |
+| AC3 Foreground playback and read-along | pass | On the repaired deployment, the user reports that the foreground playback and read-along checks work as expected. |
+| AC4 State restoration | pass | On the repaired deployment, the user reports that the specified 530-second, 2×, offline close-and-reopen procedure works as expected. This supersedes the earlier failure recorded below. |
+| AC5 Locked-screen playback | pass | The user reports that the complete locked-screen procedure works as expected with the network disabled. |
+| AC6 Other-application playback | pass | The user reports that playback with another application in the foreground works as expected. |
 | AC7 Version and resource integrity | pass | Automated fixture metadata uses `fixture-en-v1` across text, timings, and audio manifest; incomplete replacement is rejected by storage tests. |
 
 ## Raw observations
 
-- Installation: Chrome offered “Add to home screen” but no “Install app”. The icon launches Vesna. Whether Chrome installed it as a standalone PWA is not confirmed. The PNG and maskable icon repair has no device result yet.
-- Offline launch: The user reported “Offline readiness: complete”. With Wi-Fi and mobile data disabled, closing and reopening Vesna showed the reader and audio.
-- Foreground playback: Play, pause, speed control, paragraph selection, Previous paragraph, Next paragraph, and Position slider work on the current deployment, according to user reports.
-- Highlighting and timing boundaries: Active paragraph highlighting and Auto-scroll reported working on the current deployment. Fixture audio is synthetic and does not contain spoken paragraphs.
-- Seeking and paragraph controls: Reported working on current deployment.
-- State restoration: Non-default speed restores. Status reports "Restored position 530 seconds at 2×", but audio and Position bars remain at 0 after offline refresh.
-- Development audit after that observation: shell cache v7 did not change when later player fixes were deployed, so an existing client could keep the old modules. A production request for `Range: bytes=1000-1999` returned `200 OK` and the complete MP3. These findings require a new deployment and phone retest; they do not change the recorded AC4 failure into a pass.
-- Lock-screen controls: Not yet tested.
-- Locked-screen continuity: Not yet tested.
-- Other-application playback: Not yet tested.
-- Interruptions and recovery: Not yet tested.
+- Operating system: The user can record EMUI `15.0.0`, but not an Android version, from the device settings. Chrome is `138.0.7204.157`.
+- Installation: Earlier, Chrome offered “Add to home screen” but no “Install app”. The icon launched Vesna. The latest response did not describe the installation result on the repaired deployment.
+- Offline launch and foreground playback: On `2026-11-03`, the user reported that the quick offline checks work as expected on the repaired deployment.
+- State restoration on `2026-11-03`: The user reported that AC4 works as expected on the repaired deployment. The test used a 530-second position and 2× speed during an offline close and reopen.
+- Earlier state-restoration failure: On the older deployment, the status reported a restored 530-second position at 2×, but both position controls showed zero. The repair added a new shell cache, byte-range responses, actual-position verification, failure diagnostics, and saved-state protection.
+- Locked-screen playback on `2026-11-03`: The user reported that AC5 works as expected. The procedure used the complete 30:05 fixture at 1× with the screen locked and the network disabled.
+- Other-application playback on `2026-11-03`: The user reported that AC6 works as expected. The procedure crossed a paragraph boundary while another application was in the foreground.
+- Fixture limitation: The audio is synthetic and does not contain spoken paragraphs. These results verify playback and timing behavior, not speech quality or speech/text alignment.
 
 ## Overall decision
 
-`blocked` until the remaining target-phone checks pass. AC2, AC3, and automated AC7 have passed. A `pass` requires AC1–AC7 to pass on the Huawei Pura 80 Pro.
+`blocked` by AC1. AC2–AC6 pass on the Huawei Pura 80 Pro, and automated AC7 passes. A `pass` requires AC1–AC7 to pass on the target phone and the required test identity fields to be recorded.
