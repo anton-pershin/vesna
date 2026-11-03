@@ -1,4 +1,7 @@
-const SHELL_CACHE = 'vesna-probe-shell-v11';
+const SHELL_CACHE = 'vesna-probe-shell-v12';
+const FIXTURE_POINTER_CACHE = 'vesna-probe-fixture-pointer-v1';
+const FIXTURE_POINTER_RESOURCE = '/__vesna_offline_fixture_pointer__';
+const FIXTURE_DOWNLOAD_HEADER = 'X-Vesna-Fixture-Download';
 const SHELL_RESOURCES = [
   '/index.html', '/app.js', '/styles.css', '/manifest.webmanifest', '/icon.svg',
   '/icon-192.png', '/icon-512.png', '/icon-maskable-512.png', '/sw.js',
@@ -61,6 +64,27 @@ async function responseForCachedRequest(request, cached) {
   return new Response(bytes.slice(start, end + 1), { status: 206, headers });
 }
 
+async function matchPublishedFixture(request) {
+  const pointerCache = await caches.open(FIXTURE_POINTER_CACHE);
+  const pointerUrl = new URL(FIXTURE_POINTER_RESOURCE, self.location.origin).href;
+  const pointerResponse = await pointerCache.match(pointerUrl);
+  if (!pointerResponse) return undefined;
+  const record = await pointerResponse.json();
+  if (!record || typeof record.cacheName !== 'string' || !record.cacheName ||
+      !Array.isArray(record.resources)) {
+    throw new Error('invalid offline fixture pointer');
+  }
+  const path = new URL(request.url).pathname;
+  const isFixtureResource = record.resources.some((resource) => (
+    typeof resource === 'string' && new URL(resource, self.location.origin).pathname === path
+  ));
+  if (!isFixtureResource) return undefined;
+  const fixtureCache = await caches.open(record.cacheName);
+  const cached = await fixtureCache.match(request);
+  if (!cached) throw new Error(`published fixture resource is missing: ${path}`);
+  return cached;
+}
+
 self.addEventListener('install', (event) => {
   event.waitUntil(caches.open(SHELL_CACHE).then((cache) => cache.addAll(SHELL_RESOURCES)).then(() => self.skipWaiting()));
 });
@@ -76,11 +100,20 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
-  event.respondWith(caches.match(event.request).then((cached) => {
-    if (cached) return responseForCachedRequest(event.request, cached);
+  if (event.request.headers.get(FIXTURE_DOWNLOAD_HEADER) === '1') {
+    event.respondWith(fetch(event.request));
+    return;
+  }
+  event.respondWith((async () => {
+    const shellCache = await caches.open(SHELL_CACHE);
+    const shell = await shellCache.match(event.request);
+    if (shell) return responseForCachedRequest(event.request, shell);
+    const fixture = await matchPublishedFixture(event.request);
+    if (fixture) return responseForCachedRequest(event.request, fixture);
     if (event.request.mode === 'navigate') {
-      return caches.match(new URL('/index.html', self.location.origin)).then((shell) => shell || fetch(event.request));
+      const fallback = await shellCache.match(new URL('/index.html', self.location.origin).href);
+      if (fallback) return fallback;
     }
     return fetch(event.request);
-  }));
+  })());
 });

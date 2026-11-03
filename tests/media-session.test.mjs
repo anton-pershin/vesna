@@ -32,6 +32,10 @@ test('registerMediaSession publishes metadata and delegates supported actions', 
   ]);
 });
 
+test('registerMediaSession allows an unavailable Media Session API', () => {
+  assert.doesNotThrow(() => registerMediaSession(null, {}, {}));
+});
+
 test('updateMediaSession publishes a valid track position', () => {
   const session = { setPositionState(state) { this.positionState = state; } };
   updateMediaSession(session, { duration: 100, position: 12, rate: 1.5 });

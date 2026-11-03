@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { readFile } from 'node:fs/promises';
+import { once } from 'node:events';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -14,7 +15,11 @@ async function startServer(t) {
     '--bind', '127.0.0.1',
     '--port', '0',
   ], { cwd: root, stdio: ['ignore', 'pipe', 'pipe'] });
-  t.after(() => { child.kill(); });
+  t.after(async () => {
+    if (child.exitCode !== null || child.signalCode !== null) return;
+    child.kill();
+    await once(child, 'exit');
+  });
 
   const port = await new Promise((resolve, reject) => {
     let output = '';
@@ -29,7 +34,10 @@ async function startServer(t) {
       }
     });
     child.stderr.on('data', (chunk) => { errors += chunk; });
-    child.once('error', reject);
+    child.once('error', (error) => {
+      clearTimeout(timeout);
+      reject(error);
+    });
     child.once('exit', (code) => {
       clearTimeout(timeout);
       reject(new Error(`static server exited with ${code}: ${errors}`));

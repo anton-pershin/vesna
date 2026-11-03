@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import { createHash } from 'node:crypto';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { SHELL_CACHE, SHELL_RESOURCES } from '../public/modules/offline.js';
@@ -69,6 +70,10 @@ test('PWA shell declares installable offline resources', () => {
   assert.match(app, /actual audio position \$\{Math\.floor\(restoredPosition\)\}/);
   assert.match(app, /restoreGuard\.blocked \|\| !player/);
   assert.match(app, /await restoreGuard\.replace\(operation\)/);
+  assert.match(app, /seekBy: \(offset\) => replacePlaybackPosition/);
+  assert.match(app, /fetchImpl: fetchFixtureFromNetwork/);
+  assert.match(app, /await restoreOfflineFixturePointer/);
+  assert.match(app, /downloadVersion !== version/);
   assert.match(app, /\$\('build'\)/);
   assert.match(html, /id="build"/);
   assert.match(app, /seekbarController/);
@@ -84,7 +89,9 @@ test('fixture metadata, text, and timings share one version and twelve paragraph
   assert.ok(text.paragraphs.length >= 12);
   assert.equal(text.paragraphs.length, timings.paragraphs.length);
   assert.ok(manifest.duration_seconds >= 1800);
-  assert.ok(fs.statSync(path.join(root, 'public/fixtures/audio/fixture.mp3')).size > 100000);
+  const audio = fs.readFileSync(path.join(root, 'public/fixtures/audio/fixture.mp3'));
+  assert.equal(audio.byteLength, manifest.audio_bytes);
+  assert.equal(createHash('sha256').update(audio).digest('hex'), manifest.audio_sha256);
 });
 
 test('offline evidence procedure exists', () => {

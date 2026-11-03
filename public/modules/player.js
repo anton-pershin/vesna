@@ -138,7 +138,7 @@ export class PlaybackController {
   }
 
   async seekBy(offset) {
-    await this.seek(this.audio.currentTime + offset);
+    return this.seek(Math.max(0, this.audio.currentTime + offset));
   }
 
   async seekToParagraph(id) {

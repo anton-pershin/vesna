@@ -1,10 +1,10 @@
 # Android playback feasibility result
 
-Status: **pass — AC1–AC7 pass on the target device**
+Status: **in progress — AC1–AC6 pass; AC7 correction and the AC8 decision are in progress**
 
 ## Test identity
 
-- Tested commit: `0a65263`
+- Device-tested commit: `0a65263`
 - HTTPS origin: `https://45.129.142.83/`
 - Phone model: `Huawei Pura 80 Pro`
 - Android version: `Android 12; LMR-LX9 Build/HUAWEILMR-L29; 31; REL` (from `chrome://version`)
@@ -31,9 +31,10 @@ Status: **pass — AC1–AC7 pass on the target device**
 | AC2 Offline launch and readiness | pass | On the repaired deployment, the user reports that the offline launch and readiness checks work as expected. |
 | AC3 Foreground playback and read-along | pass | On the repaired deployment, the user reports that the foreground playback and read-along checks work as expected. |
 | AC4 State restoration | pass | On the repaired deployment, the user reports that the specified 530-second, 2×, offline close-and-reopen procedure works as expected. This supersedes the earlier failure recorded below. |
-| AC5 Locked-screen playback | pass | The user reports that the complete locked-screen procedure works as expected with the network disabled. |
-| AC6 Other-application playback | pass | The user reports that playback with another application in the foreground works as expected. |
-| AC7 Version and resource integrity | pass | Automated fixture metadata uses `fixture-en-v1` across text, timings, and audio manifest; incomplete replacement is rejected by storage tests. |
+| AC5 Locked-screen playback | pass | The user reports that the complete locked-screen procedure works as expected with the network disabled. Chrome and the device exposed no lock-screen media controls; this is recorded as unavailable, not as an implementation failure. |
+| AC6 Other-application playback | pass | Playback continued with another application in the foreground. Headset play/pause worked. Return to Vesna showed the correct position and highlight. No interruptions occurred. |
+| AC7 Version and resource integrity | fail in code review; correction in progress | Code review found that worker cache selection, cached replacement downloads, and content validation did not prove version integrity. The repair uses explicit publication, network downloads, and staged metadata/audio validation. Worker integration verification is in progress. |
+| AC8 Evidence and decision | blocked | AC1–AC6 device observations and the original automated output are recorded. The final decision waits for the AC7 correction and its automated verification. |
 
 ## Raw observations
 
@@ -42,10 +43,10 @@ Status: **pass — AC1–AC7 pass on the target device**
 - Offline launch and foreground playback: On `2026-11-03`, the user reported that the quick offline checks work as expected on the repaired deployment.
 - State restoration on `2026-11-03`: The user reported that AC4 works as expected on the repaired deployment. The test used a 530-second position and 2× speed during an offline close and reopen.
 - Earlier state-restoration failure: On the older deployment, the status reported a restored 530-second position at 2×, but both position controls showed zero. The repair added a new shell cache, byte-range responses, actual-position verification, failure diagnostics, and saved-state protection.
-- Locked-screen playback on `2026-11-03`: The user reported that AC5 works as expected. The procedure used the complete 30:05 fixture at 1× with the screen locked and the network disabled.
-- Other-application playback on `2026-11-03`: The user reported that AC6 works as expected. The procedure crossed a paragraph boundary while another application was in the foreground.
+- Locked-screen playback on `2026-11-03`: The user reported that AC5 works as expected. The procedure used the complete 30:05 fixture at 1× with the screen locked and the network disabled. Chrome and the device exposed no lock-screen media controls.
+- Other-application playback on `2026-11-03`: The user reported that AC6 works as expected. The procedure crossed a paragraph boundary while another application was in the foreground. Headset play/pause worked. Returning to Vesna showed the correct position and highlight. No interruptions occurred.
 - Fixture limitation: The audio is synthetic and does not contain spoken paragraphs. These results verify playback and timing behavior, not speech quality or speech/text alignment.
 
 ## Overall decision
 
-`pass`. AC1–AC7 pass on the Huawei Pura 80 Pro, and the required test identity fields are recorded. This result authorizes a follow-up Vesna implementation spec to use one complete audio file with paragraph timing data and Media Session controls. It does not verify speech quality, speech/text alignment, comourat integration, or TTS integration.
+`blocked` by the AC7 code-review finding. AC1–AC6 pass on the Huawei Pura 80 Pro. AC8 remains blocked until the AC7 correction passes worker integration tests and this record is updated. The device results do not verify speech quality, speech/text alignment, comourat integration, or TTS integration.
