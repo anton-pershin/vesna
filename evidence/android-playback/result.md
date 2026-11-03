@@ -1,6 +1,6 @@
 # Android playback feasibility result
 
-Status: **in progress — AC1–AC6 pass; AC7 correction and the AC8 decision are in progress**
+Status: **in progress — AC1–AC7 pass their recorded checks; the AC8 decision waits for a phone regression on the quality build**
 
 ## Test identity
 
@@ -16,7 +16,8 @@ Status: **in progress — AC1–AC6 pass; AC7 correction and the AC8 decision ar
 ## Automated checks
 
 - Command: `npm test`
-- Result: 54 passed, 0 failed during AC4 repair verification. Raw output: `evidence/android-playback/automated-tests.txt`.
+- M1 result: 54 passed, 0 failed during AC4 repair verification. Raw output: `evidence/android-playback/automated-tests.txt`.
+- Quality-review result: 69 passed, 0 failed, including real-worker replacement and cross-tab race integration tests. Raw output: `evidence/android-playback/quality-review-tests.txt`.
 - Fixture duration: `1805.061224` seconds, measured with `ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 public/fixtures/audio/fixture.mp3`
 - Fixture SHA-256: `124cbb44009162acd05b8fff413910c0cd0f8e05df4400d29f6b8c3b65f1da76`. The committed MP3 is the canonical fixture binary.
 - Fixture version: `fixture-en-v1`
@@ -33,8 +34,8 @@ Status: **in progress — AC1–AC6 pass; AC7 correction and the AC8 decision ar
 | AC4 State restoration | pass | On the repaired deployment, the user reports that the specified 530-second, 2×, offline close-and-reopen procedure works as expected. This supersedes the earlier failure recorded below. |
 | AC5 Locked-screen playback | pass | The user reports that the complete locked-screen procedure works as expected with the network disabled. Chrome and the device exposed no lock-screen media controls; this is recorded as unavailable, not as an implementation failure. |
 | AC6 Other-application playback | pass | Playback continued with another application in the foreground. Headset play/pause worked. Return to Vesna showed the correct position and highlight. No interruptions occurred. |
-| AC7 Version and resource integrity | fail in code review; correction in progress | Code review found that worker cache selection, cached replacement downloads, and content validation did not prove version integrity. The repair uses explicit publication, network downloads, and staged metadata/audio validation. Worker integration verification is in progress. |
-| AC8 Evidence and decision | blocked | AC1–AC6 device observations and the original automated output are recorded. The final decision waits for the AC7 correction and its automated verification. |
+| AC7 Version and resource integrity | pass | The corrected implementation uses explicit publication, network downloads, staged metadata/audio validation, origin-wide locking, and worker generation retries. Real-worker tests cover orphan caches, deletion failure, rollback, concurrent replacement, migration, and cache deletion during a read. Independent re-review passed all findings. |
+| AC8 Evidence and decision | blocked | AC1–AC6 device observations and the 69-test quality-review output are recorded. The final decision waits for a phone regression on the quality build. |
 
 ## Raw observations
 
@@ -49,4 +50,4 @@ Status: **in progress — AC1–AC6 pass; AC7 correction and the AC8 decision ar
 
 ## Overall decision
 
-`blocked` by the AC7 code-review finding. AC1–AC6 pass on the Huawei Pura 80 Pro. AC8 remains blocked until the AC7 correction passes worker integration tests and this record is updated. The device results do not verify speech quality, speech/text alignment, comourat integration, or TTS integration.
+`blocked` pending a phone regression on the quality build. AC1–AC6 pass on the Huawei Pura 80 Pro at device-tested commit `0a65263`. AC7 passes code review and 69 automated tests on the quality-review branch. AC8 remains blocked until the affected device paths are checked on the quality build and this record is updated. The device results do not verify speech quality, speech/text alignment, comourat integration, or TTS integration.

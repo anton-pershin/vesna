@@ -1,0 +1,85 @@
+
+> test
+> node --test tests/*.test.mjs
+
+✔ version-changing download pauses before publication and reloads without a readiness wait (2.458476ms)
+✔ same-version download verifies readiness without pausing or reloading (0.418299ms)
+✔ failed version-changing replacement stays paused and does not reload or verify (0.789451ms)
+✔ registerMediaSession publishes metadata and delegates supported actions (3.269154ms)
+✔ registerMediaSession allows an unavailable Media Session API (0.423323ms)
+✔ updateMediaSession publishes a valid track position (0.52166ms)
+✔ worker-dispatched replacement downloads all resources and never serves orphan content (87.638031ms)
+✔ old-cache deletion failure does not prevent publication or worker reads (14.554902ms)
+▶ staged validation failures preserve the previous pointer, store, and worker fixture
+  ✔ metadata version mismatch (9.537236ms)
+  ✔ audio digest mismatch (13.824932ms)
+✔ staged validation failures preserve the previous pointer, store, and worker fixture (24.862519ms)
+✔ concurrent replacements on one store are serialized and a later failure cannot roll back the first (15.286188ms)
+✔ publication rollback uses the authoritative pointer when localStorage diverges (8.33186ms)
+✔ Web Lock serializes legacy migration and replacement across store instances (11.582043ms)
+✔ worker retries with the new generation when the old cache disappears mid-read (6.262851ms)
+✔ offline readiness matches absolute cache keys for same-origin paths (4.198384ms)
+✔ offline readiness waits for the installing worker before checking its shell cache (7.048122ms)
+✔ offline readiness waits for an active registration and verifies every required cache resource (1.917302ms)
+✔ offline readiness rejects when the shell is incomplete (1.282758ms)
+✔ fixture replacement verifies the new cache before publishing and removes the old cache afterward (69.504285ms)
+✔ failed fixture replacement preserves the ready fixture and metadata (0.881265ms)
+✔ seekbar seeks as the user moves the slider, without waiting for a release event (3.957875ms)
+✔ seekbar keeps the user-selected value while dragging and commits seek when released (18.097125ms)
+✔ seekbar supports touch dragging and keyboard change events (0.94976ms)
+✔ PlaybackController uses one audio element and exposes core controls (2.397572ms)
+✔ PlaybackController updates the active paragraph after time updates and rejects invalid speed (0.879186ms)
+✔ selecting a paragraph waits for audio metadata before seeking and playing (1.114061ms)
+✔ restore playback state keeps saving suspended until the saved seek completes (0.666816ms)
+✔ restore waits for the browser seeked event before completing and publishing the saved position (7.342208ms)
+✔ restore rejects a no-op seek instead of publishing the saved position (1.94925ms)
+✔ restore rejects seeked when the actual media position does not match the target (3.244891ms)
+✔ seek does not clamp a valid position to a transient zero duration (0.548811ms)
+✔ seek reports a timeout when the browser never completes the seek (5.400145ms)
+✔ seekbar synchronizes the slider when a seek completes (2.95129ms)
+✔ seekBy clamps backward media actions at the start of the audio (0.382253ms)
+✔ a verified media-session seek can replace a failed restore (0.349976ms)
+✔ metadata timeout rejects restore and releases the restoring state (5.793943ms)
+✔ failed restore followed by a failed user seek preserves the saved state on pagehide (0.562341ms)
+✔ restore guard clears only after a verified replacement position (0.235949ms)
+✔ selecting a paragraph while paused seeks there and starts playback (0.147351ms)
+✔ serves an explicit single range from a complete cached response (70.691245ms)
+▶ serves open-ended and suffix ranges and clamps the end
+  ✔ bytes=12- (3.676838ms)
+  ✔ bytes=-5 (3.896912ms)
+  ✔ bytes=14-99 (5.005445ms)
+✔ serves open-ended and suffix ranges and clamps the end (15.991183ms)
+▶ returns 416 only for valid ranges with no satisfiable part
+  ✔ bytes=16- (3.799742ms)
+  ✔ bytes=-0 (3.540265ms)
+  ✔ bytes=16-,17- (2.897567ms)
+✔ returns 416 only for valid ranges with no satisfiable part (11.898099ms)
+▶ ignores malformed, unsupported, and unhandled multiple ranges
+  ✔ bytes=0-1,4-5 (2.962153ms)
+  ✔ items=0-1 (3.233247ms)
+  ✔ bytes=invalid (2.663561ms)
+  ✔ bytes=7-6 (1.790359ms)
+  ✔ bytes=99-1 (2.080272ms)
+  ✔ bytes=0-1, (3.161102ms)
+✔ ignores malformed, unsupported, and unhandled multiple ranges (17.309299ms)
+✔ returns an ordinary cached response unchanged (1.770958ms)
+✔ static server returns exact audio ranges over HTTP (206.632122ms)
+✔ service worker cache contract matches offline readiness resources (4.270132ms)
+✔ PWA shell declares installable offline resources (1.188649ms)
+✔ fixture metadata, text, and timings share one version and twelve paragraphs (10.047775ms)
+✔ offline evidence procedure exists (0.30877ms)
+✔ PlaybackStateStore restores position, speed, and fixture version (3.702746ms)
+✔ PlaybackStateStore rejects unknown or invalid fixture versions (0.974171ms)
+✔ OfflineFixtureStore publishes complete replacements atomically (0.644506ms)
+✔ resolveParagraph returns the interval containing the playback position (1.498387ms)
+✔ resolveParagraph chooses the next paragraph at an exact boundary (0.240525ms)
+✔ resolveParagraph returns no paragraph outside the fixture (0.233695ms)
+✔ resolveParagraph rejects malformed or overlapping timing data (0.780028ms)
+ℹ tests 69
+ℹ suites 0
+ℹ pass 69
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 323.195183
