@@ -5,7 +5,7 @@ Status: **in progress — AC2 and AC3 pass; AC4 failed on latest device check; A
 ## Test identity
 
 - Tested commit: `c8f6117`
-- Repair commit awaiting deployment and device retest: `22c5a55`
+- Repair commits awaiting deployment and device retest: `22c5a55`, `cca5ad3`
 - HTTPS origin: `https://45.129.142.83/`
 - Phone model: `Huawei Pura 80 Pro`
 - Android version: not recorded
