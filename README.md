@@ -4,7 +4,7 @@ A dependency-light static PWA for the M1 Android playback feasibility gate. It s
 
 ## Run locally
 
-No packages are required. From the repository root:
+No npm packages are required. CI uses Node.js 24 and Python 3.12; use these versions for matching local results. Python uses only the standard library. From the repository root:
 
 ```sh
 npm test
@@ -12,6 +12,12 @@ npm run serve
 ```
 
 Open `http://localhost:8080` for desktop checks. A real PWA installation requires an HTTPS origin. The local HTTP server is only for automated and desktop checks.
+
+## Browser module source
+
+`public/modules/` is the canonical source for shared browser modules. Tests import these exact served files. Do not maintain a second copy under `src/`. `public/app.js` composes the page, and `public/sw.js` owns service-worker behavior.
+
+CI runs syntax checks, deployed-module import checks, and the test suite for pull requests to `main` and pushes to `main`. The `test` check should be required by the repository's `main` branch protection settings.
 
 ## Deploy to HTTPS
 
@@ -36,6 +42,8 @@ curl -D - -o /dev/null -H 'Range: bytes=1000-1999' \
 ```
 
 The response must have status `206 Partial Content`, `Content-Range: bytes 1000-1999/1805288`, and `Content-Length: 1000`.
+
+The current HTTPS service is an ad-hoc M1 probe deployment. It is not the future production application architecture. Later implementation specs must define reproducible application and deployment configuration.
 
 ## Offline check
 

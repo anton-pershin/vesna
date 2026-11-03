@@ -34,7 +34,7 @@ jobs:
 
       - name: Check JavaScript syntax
         run: |
-          find src public tests -type f \( -name '*.js' -o -name '*.mjs' \) -print0 |
+          find public tests -type f \( -name '*.js' -o -name '*.mjs' \) -print0 |
             xargs -0 -r -n1 node --check
 
       - name: Check Python syntax

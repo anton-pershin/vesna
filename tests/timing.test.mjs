@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { resolveParagraph } from '../src/timing.js';
+import { resolveParagraph } from '../public/modules/timing.js';
 
 const timings = [
   { id: 'p1', start: 0, end: 10 },

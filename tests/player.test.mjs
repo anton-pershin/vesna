@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { SeekBarController } from '../src/seekbar.js';
-import { PlaybackController, PlaybackRestoreGuard, restorePlaybackState } from '../src/player.js';
+import { SeekBarController } from '../public/modules/seekbar.js';
+import { PlaybackController, PlaybackRestoreGuard, restorePlaybackState } from '../public/modules/player.js';
 
 class FakeSlider {
   constructor() {

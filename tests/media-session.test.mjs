@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { registerMediaSession, updateMediaSession } from '../src/media-session.js';
+import { registerMediaSession, updateMediaSession } from '../public/modules/media-session.js';
 
 test('registerMediaSession publishes metadata and delegates supported actions', () => {
   const handlers = new Map();

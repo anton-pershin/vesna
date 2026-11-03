@@ -296,7 +296,7 @@ The probe uses a local fixture in development and stores a verified copy for off
 |------|--------|
 | `.internal/specs/01-android-playback-feasibility-general-spec.md` | New: this implementation contract. |
 | `package.json` | New: only if a JavaScript test or build runner is selected. Keep dependencies minimal. |
-| `src/` or `app/` | New: PWA shell, reader, playback, timing, storage, service-worker, and Media Session components. The exact directory is selected during implementation and must remain consistent with the tests. |
+| `public/modules/` | New: canonical browser modules for playback, timing, storage, offline readiness, and Media Session. Tests import these served files directly. |
 | `public/manifest.webmanifest` | New: install metadata and icons. |
 | `public/fixtures/` | New: fixture manifest, text, paragraph timing data, and audio resource. |
 | `scripts/static_server.py` | New: dependency-free static server with single-range audio responses and optional TLS. |

@@ -17,7 +17,8 @@ Status: **pass — AC1–AC7 pass on the target device**
 
 - Command: `npm test`
 - Result: 54 passed, 0 failed during AC4 repair verification. Raw output: `evidence/android-playback/automated-tests.txt`.
-- Fixture duration: `1805.000` seconds (generated synthetic local MP3)
+- Fixture duration: `1805.061224` seconds, measured with `ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 public/fixtures/audio/fixture.mp3`
+- Fixture SHA-256: `124cbb44009162acd05b8fff413910c0cd0f8e05df4400d29f6b8c3b65f1da76`. The committed MP3 is the canonical fixture binary.
 - Fixture version: `fixture-en-v1`
 - Paragraph count: `12`
 - Deployment check on `2026-11-03`: commit `0a65263`, probe build `2026-11-03-ac1-ac4-r4`, and shell cache `vesna-probe-shell-v11` are served from the HTTPS origin. A request for bytes `1000-1999` returned `206 Partial Content`, the required headers, and the exact 1000-byte body.
