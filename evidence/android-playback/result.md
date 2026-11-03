@@ -26,7 +26,7 @@ Status: **in progress — AC2 passed on target device; other device checks remai
 |---|---|---|
 | AC1 Probe structure and installation | blocked | User added a home-screen icon using Chrome's “Add to home screen” option. Chrome did not offer “Install app”. Confirm standalone PWA installation behavior on the target phone. |
 | AC2 Offline launch and readiness | pass | User saw “Offline readiness: complete”, disabled Wi-Fi and mobile data, closed Vesna, reopened it from the home-screen icon, and confirmed the reader and audio were available. |
-| AC3 Foreground playback and read-along | pass | User confirmed paragraph selection, Previous/Next, Position slider, and Auto-scroll work on the updated deployment. Auto-scroll follows the active paragraph as described. |
+| AC3 Foreground playback and read-along | pass; Position slider fix ready for retest | User confirmed paragraph selection, Previous/Next, and Auto-scroll work. User later reports the Position slider no longer seeks after the state-restoration update. Added a dedicated seekbar controller that keeps the thumb under user control while dragging and commits the seek on release. Retest slider on updated deployment. |
 | AC4 State restoration | fail on initial deployment; fix ready for retest | User reports non-default speed restores, but non-zero position does not. Code path allowed metadata events to save position 0 before the asynchronous restore seek completed. Added a guarded, awaited restore path; retest on updated deployment. |
 | AC5 Locked-screen playback | blocked | Observe at least 30 minutes across 12 paragraph boundaries. |
 | AC6 Other-application playback | blocked | Test with another application foregrounded. |

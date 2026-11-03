@@ -1,4 +1,5 @@
 import { PlaybackController, restorePlaybackState } from '/modules/player.js';
+import { SeekBarController } from '/modules/seekbar.js';
 import { PlaybackStateStore, OfflineFixtureStore } from '/modules/storage.js';
 import { registerMediaSession, updateMediaSession } from '/modules/media-session.js';
 import {
@@ -19,6 +20,7 @@ const offline = $('offline');
 const version = 'fixture-en-v1';
 let fixture;
 let player;
+let seekbarController;
 let restoringPlaybackState = false;
 const serviceWorkerRegistration = 'serviceWorker' in navigator
   ? navigator.serviceWorker.register('/sw.js')
@@ -58,6 +60,10 @@ async function loadFixture() {
     }
     saveState();
   });
+  seekbarController = new SeekBarController($('seekbar'), audio, player, (position) => {
+    $('position').textContent = `${formatTime(position)} / ${formatTime(audio.duration || fixture.manifest.duration_seconds)}`;
+  });
+  $('seekbar').max = String(Math.floor(fixture.manifest.duration_seconds));
   const saved = stateStore.load(version);
   if (saved) {
     await restorePlaybackState(player, saved, (restoring) => {
@@ -82,7 +88,6 @@ function updatePosition() {
   if (!player || !Number.isFinite(audio.currentTime)) return;
   const duration = Number.isFinite(audio.duration) ? audio.duration : fixture.manifest.duration_seconds;
   $('seekbar').max = String(Math.floor(duration));
-  $('seekbar').value = String(Math.floor(audio.currentTime));
   $('position').textContent = `${formatTime(audio.currentTime)} / ${formatTime(duration)}`;
 }
 
@@ -100,13 +105,6 @@ $('play').addEventListener('click', () => player.play().catch((error) => { statu
 $('pause').addEventListener('click', () => player.pause());
 $('previous').addEventListener('click', () => player.previousParagraph().catch((error) => { status.textContent = `Seek error: ${error.message}`; }));
 $('next').addEventListener('click', () => player.nextParagraph().catch((error) => { status.textContent = `Seek error: ${error.message}`; }));
-$('seekbar').addEventListener('input', (event) => {
-  const position = Number(event.target.value);
-  $('position').textContent = `${formatTime(position)} / ${formatTime(audio.duration || fixture.manifest.duration_seconds)}`;
-});
-$('seekbar').addEventListener('change', (event) => {
-  player.seek(Number(event.target.value)).catch((error) => { status.textContent = `Seek error: ${error.message}`; });
-});
 $('speed').addEventListener('change', (event) => { player.setSpeed(Number(event.target.value)); saveState(); });
 audio.addEventListener('timeupdate', saveState);
 audio.addEventListener('timeupdate', updatePosition);

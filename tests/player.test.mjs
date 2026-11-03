@@ -1,6 +1,22 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { SeekBarController } from '../src/seekbar.js';
 import { PlaybackController, restorePlaybackState } from '../src/player.js';
+
+class FakeSlider {
+  constructor() {
+    this.value = '0';
+    this.listeners = new Map();
+  }
+
+  addEventListener(name, handler) {
+    this.listeners.set(name, handler);
+  }
+
+  emit(name) {
+    this.listeners.get(name)?.({ target: this });
+  }
+}
 
 class FakeAudio {
   constructor() {
@@ -15,17 +31,21 @@ class FakeAudio {
   }
 
   addEventListener(name, handler) {
-    this.listeners.set(name, handler);
+    const handlers = this.listeners.get(name) ?? [];
+    handlers.push(handler);
+    this.listeners.set(name, handlers);
   }
 
   removeEventListener(name, handler) {
-    if (this.listeners.get(name) === handler) this.listeners.delete(name);
+    const handlers = this.listeners.get(name) ?? [];
+    this.listeners.set(name, handlers.filter((candidate) => candidate !== handler));
   }
 
   get currentTime() { return this._currentTime; }
   set currentTime(value) {
     if (this.readyState < 1) throw new Error('metadata not loaded');
     this._currentTime = value;
+    this.emit('seeking');
   }
 
   async play() {
@@ -39,7 +59,7 @@ class FakeAudio {
   }
 
   emit(name) {
-    this.listeners.get(name)?.();
+    for (const handler of this.listeners.get(name) ?? []) handler();
   }
 }
 
@@ -48,6 +68,38 @@ const timings = [
   { id: 'p2', start: 10, end: 20 },
   { id: 'p3', start: 20, end: 30 },
 ];
+
+test('seekbar keeps the user-selected value while dragging and commits seek when released', async () => {
+  const audio = new FakeAudio();
+  const player = new PlaybackController(audio, timings);
+  const slider = new FakeSlider();
+  const seekbar = new SeekBarController(slider, audio, player);
+
+  await player.seek(15);
+  assert.equal(slider.value, '15');
+  slider.value = '25';
+  slider.emit('pointerdown');
+  slider.emit('input');
+  audio.currentTime = 17;
+  audio.emit('timeupdate');
+  assert.equal(slider.value, '25');
+  slider.emit('pointerup');
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(audio.currentTime, 25);
+  assert.equal(slider.value, '25');
+});
+
+test('seekbar supports touch dragging and keyboard change events', async () => {
+  const audio = new FakeAudio();
+  const player = new PlaybackController(audio, timings);
+  const slider = new FakeSlider();
+  const seekbar = new SeekBarController(slider, audio, player);
+
+  slider.value = '20';
+  slider.emit('change');
+  await Promise.resolve();
+  assert.equal(audio.currentTime, 20);
+});
 
 test('PlaybackController uses one audio element and exposes core controls', async () => {
   const audio = new FakeAudio();
