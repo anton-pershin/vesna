@@ -1,10 +1,10 @@
 # Android playback feasibility result
 
-Status: **in progress — AC1–AC7 pass their recorded checks; the AC8 decision waits for a phone regression on the quality build**
+Status: **pass — AC1–AC8 pass; M1 feasibility and the quality review are complete**
 
 ## Test identity
 
-- Device-tested commit: `0a65263`
+- Device-tested commits: `0a65263` (initial M1 checks); `277d068` with server correction `752415f` (quality-build regression)
 - HTTPS origin: `https://45.129.142.83/`
 - Phone model: `Huawei Pura 80 Pro`
 - Android version: `Android 12; LMR-LX9 Build/HUAWEILMR-L29; 31; REL` (from `chrome://version`)
@@ -37,7 +37,7 @@ Status: **in progress — AC1–AC7 pass their recorded checks; the AC8 decision
 | AC5 Locked-screen playback | pass | The user reports that the complete locked-screen procedure works as expected with the network disabled. Chrome and the device exposed no lock-screen media controls; this is recorded as unavailable, not as an implementation failure. |
 | AC6 Other-application playback | pass | Playback continued with another application in the foreground. Headset play/pause worked. Return to Vesna showed the correct position and highlight. No interruptions occurred. |
 | AC7 Version and resource integrity | pass | The corrected implementation uses explicit publication, network downloads, staged metadata/audio validation, origin-wide locking, and worker generation retries. Real-worker tests cover orphan caches, deletion failure, rollback, concurrent replacement, migration, and cache deletion during a read. Independent re-review passed all findings. |
-| AC8 Evidence and decision | blocked | AC1–AC6 device observations and the 70-test quality-review output are recorded. The final decision waits for a phone regression on the quality build. |
+| AC8 Evidence and decision | pass | AC1–AC7 have recorded passing results. The quality-build phone regression passed, 70 automated tests pass, and PR #3 CI is green. The feasibility decision is recorded below. |
 
 ## Raw observations
 
@@ -48,9 +48,10 @@ Status: **in progress — AC1–AC7 pass their recorded checks; the AC8 decision
 - Earlier state-restoration failure: On the older deployment, the status reported a restored 530-second position at 2×, but both position controls showed zero. The repair added a new shell cache, byte-range responses, actual-position verification, failure diagnostics, and saved-state protection.
 - Locked-screen playback on `2026-11-03`: The user reported that AC5 works as expected. The procedure used the complete 30:05 fixture at 1× with the screen locked and the network disabled. Chrome and the device exposed no lock-screen media controls.
 - Other-application playback on `2026-11-03`: The user reported that AC6 works as expected. The procedure crossed a paragraph boundary while another application was in the foreground. Headset play/pause worked. Returning to Vesna showed the correct position and highlight. No interruptions occurred.
+- Quality-build regression on `2026-11-03`: After the TLS availability correction, the user opened build `2026-11-03-quality-r5` and reported that offline restoration, playback checks, the complete locked-screen regression, and the other-application/headset regression all work as expected.
 - Availability on `2026-11-03`: The user reported that the app did not load. The HTTPS service was active but its TCP backlog was full. A stalled client blocked the TLS accept loop. The server fix and live second-client verification are recorded above.
 - Fixture limitation: The audio is synthetic and does not contain spoken paragraphs. These results verify playback and timing behavior, not speech quality or speech/text alignment.
 
 ## Overall decision
 
-`blocked` pending a phone regression on the quality build. AC1–AC6 pass on the Huawei Pura 80 Pro at device-tested commit `0a65263`. AC7 passes code review and 70 automated tests on the quality-review branch. AC8 remains blocked until the affected device paths are checked on the quality build and this record is updated. The device results do not verify speech quality, speech/text alignment, comourat integration, or TTS integration.
+`pass`. AC1–AC7 pass on the Huawei Pura 80 Pro, including the affected-path regression on the quality build. AC8 passes because the device observations, automated output, and this decision are recorded. This result authorizes the M2 specification after the quality-review PR is merged. The results do not verify speech quality, speech/text alignment, comourat integration, or TTS integration.
