@@ -1,4 +1,4 @@
-export const SHELL_CACHE = 'vesna-probe-shell-v6';
+export const SHELL_CACHE = 'vesna-probe-shell-v7';
 export const SHELL_RESOURCES = [
   '/index.html', '/app.js', '/styles.css', '/manifest.webmanifest', '/icon.svg', '/sw.js',
   '/modules/timing.js', '/modules/player.js', '/modules/seekbar.js', '/modules/storage.js', '/modules/media-session.js', '/modules/offline.js',
@@ -47,6 +47,28 @@ export async function verifyRequiredResources({ cachesApi, resources, cacheNames
   return true;
 }
 
+export async function waitForRegistrationActivation(registration, serviceWorker) {
+  const candidate = registration.installing ?? registration.waiting;
+  if (candidate && candidate.state !== 'activated') {
+    await new Promise((resolve, reject) => {
+      const onStateChange = () => {
+        if (candidate.state === 'activated') {
+          candidate.removeEventListener('statechange', onStateChange);
+          resolve();
+        } else if (candidate.state === 'redundant') {
+          candidate.removeEventListener('statechange', onStateChange);
+          reject(new Error('service worker update did not activate'));
+        }
+      };
+      candidate.addEventListener('statechange', onStateChange);
+      onStateChange();
+    });
+    return candidate;
+  }
+  const ready = await (registration.ready ?? serviceWorker.ready ?? Promise.resolve(registration));
+  return ready?.active ?? registration.active ?? serviceWorker.controller;
+}
+
 export async function waitForOfflineReadiness({
   serviceWorker,
   registration,
@@ -57,11 +79,10 @@ export async function waitForOfflineReadiness({
 }) {
   if (!serviceWorker) throw new Error('service worker is unavailable');
   const registered = await (registration ?? serviceWorker.register('/sw.js'));
-  const ready = await (registered.ready ?? serviceWorker.ready ?? registered);
-  const active = ready?.active ?? registered.active ?? serviceWorker.controller;
+  const active = await waitForRegistrationActivation(registered, serviceWorker);
   if (!active) throw new Error('service worker is not active');
   await verifyRequiredResources({ cachesApi, resources: requiredResources, cacheNames, origin });
-  return { registration: ready ?? registered, active };
+  return { registration: registered, active };
 }
 
 export async function replaceOfflineFixture({

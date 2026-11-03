@@ -12,6 +12,26 @@ class MemoryStorage {
   setItem(key, value) { this.values.set(key, value); }
 }
 
+class FakeWorker {
+  constructor() {
+    this.state = 'installing';
+    this.listeners = new Map();
+  }
+  addEventListener(name, handler) {
+    const listeners = this.listeners.get(name) ?? [];
+    listeners.push(handler);
+    this.listeners.set(name, listeners);
+  }
+  removeEventListener(name, handler) {
+    this.listeners.set(name, (this.listeners.get(name) ?? []).filter((item) => item !== handler));
+  }
+  listenerCount(name) { return (this.listeners.get(name) ?? []).length; }
+  activate() {
+    this.state = 'activated';
+    for (const handler of this.listeners.get('statechange') ?? []) handler();
+  }
+}
+
 class FakeResponse {
   constructor(ok = true) { this.ok = ok; }
   clone() { return new FakeResponse(this.ok); }
@@ -53,6 +73,33 @@ test('offline readiness matches absolute cache keys for same-origin paths', asyn
     origin: 'https://vesna.test',
   });
   assert.ok(result.active);
+});
+
+test('offline readiness waits for the installing worker before checking its shell cache', async () => {
+  const cachesApi = new FakeCaches();
+  const shell = await cachesApi.open('new-shell');
+  await shell.put('https://vesna.test/index.html', new FakeResponse());
+  const oldActive = { scriptURL: 'old.js' };
+  const newWorker = new FakeWorker();
+  const registration = { active: oldActive, installing: newWorker };
+  const serviceWorker = {
+    register: async () => registration,
+    ready: Promise.resolve(registration),
+  };
+
+  const resultPromise = waitForOfflineReadiness({
+    serviceWorker,
+    registration: Promise.resolve(registration),
+    cachesApi,
+    requiredResources: ['/index.html'],
+    cacheNames: ['new-shell'],
+    origin: 'https://vesna.test',
+  });
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(newWorker.listenerCount('statechange'), 1);
+  newWorker.activate();
+  const result = await resultPromise;
+  assert.equal(result.active, newWorker);
 });
 
 test('offline readiness waits for an active registration and verifies every required cache resource', async () => {

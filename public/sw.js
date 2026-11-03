@@ -1,4 +1,4 @@
-const SHELL_CACHE = 'vesna-probe-shell-v6';
+const SHELL_CACHE = 'vesna-probe-shell-v7';
 const SHELL_RESOURCES = [
   '/index.html', '/app.js', '/styles.css', '/manifest.webmanifest', '/icon.svg', '/sw.js',
   '/modules/timing.js', '/modules/player.js', '/modules/seekbar.js', '/modules/storage.js', '/modules/media-session.js', '/modules/offline.js',
