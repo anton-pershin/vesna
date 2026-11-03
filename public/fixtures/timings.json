@@ -1,0 +1,18 @@
+{
+  "version": "fixture-en-v1",
+  "duration_seconds": 1805,
+  "paragraphs": [
+    {"id":"p01","start":0,"end":150},
+    {"id":"p02","start":150,"end":300},
+    {"id":"p03","start":300,"end":450},
+    {"id":"p04","start":450,"end":600},
+    {"id":"p05","start":600,"end":750},
+    {"id":"p06","start":750,"end":900},
+    {"id":"p07","start":900,"end":1050},
+    {"id":"p08","start":1050,"end":1200},
+    {"id":"p09","start":1200,"end":1350},
+    {"id":"p10","start":1350,"end":1500},
+    {"id":"p11","start":1500,"end":1650},
+    {"id":"p12","start":1650,"end":1805}
+  ]
+}

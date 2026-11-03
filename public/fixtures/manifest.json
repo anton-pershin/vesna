@@ -1,0 +1,10 @@
+{
+  "version": "fixture-en-v1",
+  "title": "The Quiet Signal: an offline listening fixture",
+  "language": "en",
+  "duration_seconds": 1805,
+  "audio": "audio/fixture.mp3",
+  "text": "text.json",
+  "timings": "timings.json",
+  "paragraph_count": 12
+}

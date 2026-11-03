@@ -1,0 +1,17 @@
+{
+  "version": "fixture-en-v1",
+  "paragraphs": [
+    {"id":"p01","text":"At the edge of a quiet town, a small signal lamp marked the beginning of every evening walk."},
+    {"id":"p02","text":"The lamp was simple, but its steady glow gave travelers a useful point of reference in the dark."},
+    {"id":"p03","text":"One autumn afternoon, Mira noticed that the light continued to shine while the town was without power."},
+    {"id":"p04","text":"She followed the narrow path beneath the trees and found a careful set of batteries beneath the old bench."},
+    {"id":"p05","text":"A handwritten note explained that the lamp was maintained by neighbors who valued dependable small things."},
+    {"id":"p06","text":"Mira added a fresh label to the box and wrote down the date so the next person could help."},
+    {"id":"p07","text":"The following morning, rain covered the path, yet the signal remained visible through the gray air."},
+    {"id":"p08","text":"People began using it to meet safely, share news, and check that the walking route was clear."},
+    {"id":"p09","text":"No single person owned the lamp, and that was exactly why its care lasted from one season to the next."},
+    {"id":"p10","text":"When winter came, the town placed a small shelter over the bench and stored extra batteries nearby."},
+    {"id":"p11","text":"The signal did not solve every problem, but it made the next useful action easier to see."},
+    {"id":"p12","text":"Years later, visitors still described the quiet lamp as proof that reliable systems can begin with attention."}
+  ]
+}

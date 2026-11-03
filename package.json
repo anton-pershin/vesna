@@ -1,0 +1,9 @@
+{
+  "name": "vesna-android-playback-probe",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/*.test.mjs",
+    "serve": "python3 scripts/static_server.py --directory public --port 8080"
+  }
+}

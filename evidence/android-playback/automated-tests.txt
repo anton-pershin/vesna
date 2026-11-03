@@ -1,0 +1,69 @@
+
+> test
+> node --test tests/*.test.mjs
+
+✔ registerMediaSession publishes metadata and delegates supported actions (3.208464ms)
+✔ updateMediaSession publishes a valid track position (0.474853ms)
+✔ offline readiness matches absolute cache keys for same-origin paths (2.756382ms)
+✔ offline readiness waits for the installing worker before checking its shell cache (7.844033ms)
+✔ offline readiness waits for an active registration and verifies every required cache resource (0.746382ms)
+✔ offline readiness rejects when the shell is incomplete (1.737498ms)
+✔ fixture replacement verifies the new cache before publishing and removes the old cache afterward (8.998934ms)
+✔ failed fixture replacement preserves the ready fixture and metadata (3.150102ms)
+✔ seekbar seeks as the user moves the slider, without waiting for a release event (10.581078ms)
+✔ seekbar keeps the user-selected value while dragging and commits seek when released (22.463709ms)
+✔ seekbar supports touch dragging and keyboard change events (0.687007ms)
+✔ PlaybackController uses one audio element and exposes core controls (2.120393ms)
+✔ PlaybackController updates the active paragraph after time updates and rejects invalid speed (0.566416ms)
+✔ selecting a paragraph waits for audio metadata before seeking and playing (0.656042ms)
+✔ restore playback state keeps saving suspended until the saved seek completes (0.31674ms)
+✔ restore waits for the browser seeked event before completing and publishing the saved position (3.376005ms)
+✔ restore rejects a no-op seek instead of publishing the saved position (0.678354ms)
+✔ restore rejects seeked when the actual media position does not match the target (1.648516ms)
+✔ seek does not clamp a valid position to a transient zero duration (0.331268ms)
+✔ seek reports a timeout when the browser never completes the seek (6.269351ms)
+✔ seekbar synchronizes the slider when a seek completes (1.029694ms)
+✔ metadata timeout rejects restore and releases the restoring state (5.375856ms)
+✔ failed restore followed by a failed user seek preserves the saved state on pagehide (0.804382ms)
+✔ restore guard clears only after a verified replacement position (0.374838ms)
+✔ selecting a paragraph while paused seeks there and starts playback (0.232332ms)
+✔ serves an explicit single range from a complete cached response (57.754681ms)
+▶ serves open-ended and suffix ranges and clamps the end
+  ✔ bytes=12- (2.912064ms)
+  ✔ bytes=-5 (2.772975ms)
+  ✔ bytes=14-99 (3.351291ms)
+✔ serves open-ended and suffix ranges and clamps the end (10.425098ms)
+▶ returns 416 only for valid ranges with no satisfiable part
+  ✔ bytes=16- (4.020884ms)
+  ✔ bytes=-0 (2.199121ms)
+  ✔ bytes=16-,17- (2.280418ms)
+✔ returns 416 only for valid ranges with no satisfiable part (9.704266ms)
+▶ ignores malformed, unsupported, and unhandled multiple ranges
+  ✔ bytes=0-1,4-5 (2.540751ms)
+  ✔ items=0-1 (2.17901ms)
+  ✔ bytes=invalid (2.230093ms)
+  ✔ bytes=7-6 (1.793622ms)
+  ✔ bytes=99-1 (1.854274ms)
+  ✔ bytes=0-1, (2.168092ms)
+✔ ignores malformed, unsupported, and unhandled multiple ranges (14.459775ms)
+✔ returns an ordinary cached response unchanged (1.617873ms)
+✔ static server returns exact audio ranges over HTTP (207.908103ms)
+✔ service worker cache contract matches offline readiness resources (6.012808ms)
+✔ PWA shell declares installable offline resources (1.422363ms)
+✔ fixture metadata, text, and timings share one version and twelve paragraphs (0.761197ms)
+✔ offline evidence procedure exists (0.396663ms)
+✔ PlaybackStateStore restores position, speed, and fixture version (2.972001ms)
+✔ PlaybackStateStore rejects unknown or invalid fixture versions (1.000958ms)
+✔ OfflineFixtureStore publishes complete replacements atomically (0.774692ms)
+✔ resolveParagraph returns the interval containing the playback position (1.714136ms)
+✔ resolveParagraph chooses the next paragraph at an exact boundary (0.296179ms)
+✔ resolveParagraph returns no paragraph outside the fixture (0.26194ms)
+✔ resolveParagraph rejects malformed or overlapping timing data (0.940837ms)
+ℹ tests 54
+ℹ suites 0
+ℹ pass 54
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 330.615671
