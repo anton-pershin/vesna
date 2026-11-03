@@ -109,8 +109,10 @@ $('speed').addEventListener('change', (event) => { player.setSpeed(Number(event.
 audio.addEventListener('timeupdate', saveState);
 audio.addEventListener('timeupdate', updatePosition);
 audio.addEventListener('seeking', updatePosition);
+audio.addEventListener('seeked', saveState);
 audio.addEventListener('durationchange', updatePosition);
 audio.addEventListener('pause', saveState);
+audio.addEventListener('pagehide', saveState);
 audio.addEventListener('loadedmetadata', () => { saveState(); updatePosition(); });
 $('download').addEventListener('click', async () => {
   try {
