@@ -1,47 +1,55 @@
 # Comourat integration result
 
-Status: **blocked — required comourat capabilities are missing**
+Status: **blocked — two arXiv contract issues remain; live checks are not performed**
 
 ## Test identity
 
 - Vesna spec commit: `d8a4ac2`
-- Comourat commit: `3c2b092e7766ce4f4c6ad771399aaf91bf44bd39`
+- Comourat commit under review: `d82a29f87b858024615f8f56c4059c11b043bdd9`
 - Comourat distribution metadata version: `0.0.0`
 - Python: `3.12.3`
-- Check date: `2026-11-03`
-- Upstream baseline: 79 passed, 0 failed; see `upstream-tests.txt`
+- Check date: `2026-11-06`
+- Upstream CI: pass for commit `d82a29f`
+- Independent temporary-clone baseline: 553 passed, 0 failed; see `upstream-tests-d82a29f.txt`
+- Previous baseline at `3c2b092`: 79 passed, 0 failed; see `upstream-tests.txt`
 
 ## Acceptance record
 
-| Criterion | Result | Blocker and raw observation |
+| Criterion | Result | Current observation |
 |---|---|---|
-| AC1 Article extraction | blocked | `PageFetcher.fetch` returns text or `None`, without a title or distinguishable errors. [#6](https://github.com/anton-pershin/comourat/issues/6) requests the complete result/error contract and bounded operation time. |
-| AC2 Reddit preparation | blocked | The collector reads subreddit feeds, not a specified post URL/ID. Enrichment tool failures can look like successful no-context results. The configured summarizer factory is private. See [#3](https://github.com/anton-pershin/comourat/issues/3), [#7](https://github.com/anton-pershin/comourat/issues/7), and [#4](https://github.com/anton-pershin/comourat/issues/4). |
-| AC3 arXiv preparation | blocked | `ArxivClient.get_title_by_id` returns only a title. No unified ID/abstract/PDF URL operation returns title and abstract. See [#5](https://github.com/anton-pershin/comourat/issues/5). |
-| AC4 Adapter and error contracts | blocked | A small Vesna adapter is possible, but truthful real-provider result and error contracts cannot be completed over the missing public interfaces. No private comourat APIs or substitute implementations were used. |
-| AC5 URL-access security | blocked | No shared target, redirect, address-resolution, or prohibited-address policy exists for collection and enrichment fetches. [#2](https://github.com/anton-pershin/comourat/issues/2) requests the required controls and zero-request verification. |
-| AC6 Evidence and milestone decision | blocked | Six upstream issues are recorded below. Live source and security checks were not performed because the required capabilities are absent. |
+| AC1 Article extraction | blocked pending adapter and live check | Issue #6 is closed. The public article API returns title, source URL, and text with categorized errors and bounded operation time. No Vesna adapter or live result is claimed yet. |
+| AC2 Reddit preparation | blocked pending adapter and live check | Issues #3, #4, and #7 are closed. Public specified-post collection, enrichment outcomes, and summarization outcomes exist. No live Reddit preparation result is claimed yet. |
+| AC3 arXiv preparation | blocked | Issue #5 is closed, but provider Atom error entries can still become successful paper results. Issue #14 is open. The nominal overall deadline does not strictly bound DNS, redirects, or trickled responses. Issue #15 is open. |
+| AC4 Adapter and error contracts | blocked | Article and Reddit public contracts are sufficient for a Vesna adapter. arXiv false-success and overall-deadline behavior prevent a complete truthful adapter contract. |
+| AC5 URL-access security | blocked pending live security checks | Issue #2 is closed. Protected direct, redirect, resolution, and actual-socket controls exist for collection and enrichment. Required live controlled-listener checks have not run. |
+| AC6 Evidence and milestone decision | blocked | Latest source and 553-test evidence are recorded. Two upstream blockers and all required live checks remain open. |
 
-## Upstream issues
+## Implemented upstream capabilities
 
-- [#2 Enforce safe collection and enrichment fetch policies](https://github.com/anton-pershin/comourat/issues/2)
-- [#3 Support collecting one specified Reddit post](https://github.com/anton-pershin/comourat/issues/3)
-- [#4 Provide a supported public summarization interface](https://github.com/anton-pershin/comourat/issues/4)
-- [#5 Return arXiv title and abstract from ID or URL](https://github.com/anton-pershin/comourat/issues/5)
-- [#6 Provide a complete article extraction result and error contract](https://github.com/anton-pershin/comourat/issues/6)
-- [#7 Expose reliable enrichment success and failure outcomes](https://github.com/anton-pershin/comourat/issues/7)
+The following issues are closed and their public capabilities are present in commit `d82a29f`:
+
+- [#2 Safe collection and enrichment fetch policies](https://github.com/anton-pershin/comourat/issues/2)
+- [#3 Single Reddit post retrieval](https://github.com/anton-pershin/comourat/issues/3)
+- [#4 Public summarization interface](https://github.com/anton-pershin/comourat/issues/4)
+- [#5 arXiv title and abstract](https://github.com/anton-pershin/comourat/issues/5)
+- [#6 Article result and error contract](https://github.com/anton-pershin/comourat/issues/6)
+- [#7 Reliable enrichment outcomes](https://github.com/anton-pershin/comourat/issues/7)
+
+## Remaining upstream blockers
+
+- [#14 Handle arXiv Atom error entries explicitly](https://github.com/anton-pershin/comourat/issues/14): an HTTP 200 Atom error entry can become a paper titled `Error`. The client must distinguish documented provider errors from valid papers, including a valid paper whose title is `Error`.
+- [#15 Enforce a hard overall deadline for arXiv metadata requests](https://github.com/anton-pershin/comourat/issues/15): scalar Requests timeouts and elapsed-time checks do not strictly bound blocking DNS, redirects, retries, or a steadily trickled response.
 
 ## Raw observations
 
-- The pinned comourat checkout is clean and its 79 upstream tests pass.
-- Article extraction can return non-empty text, but not the required title or reason-specific failures.
-- Reddit collection cannot retrieve one specified post reliably. No comments were requested during the audit.
-- Enrichment can represent empty and non-empty results, but tool exceptions can become model text and produce a misleading empty result.
-- Summary execution has bounded retries, but its configured agent factory and output model are private.
-- arXiv title lookup exists, but abstract retrieval does not.
-- No supported collection/enrichment policy can reject direct, redirect, or changed-resolution prohibited targets before connection.
-- No live source or security check was marked as passed, skipped, or attempted against a private service.
+- Latest `main` is `d82a29f87b858024615f8f56c4059c11b043bdd9`; its GitHub quality check passes.
+- A clean temporary clone passes 553 tests on Python 3.12.3. This is a larger baseline than the previous 79-test checkout.
+- Article extraction now exposes the required result and categorized error contracts.
+- Reddit collection accepts specified post URLs/IDs without comments. Enrichment and summarization expose separate success, empty, and failure outcomes.
+- Protected fetch validates complete DNS answers and binds connections to validated addresses for article and enrichment paths.
+- arXiv accepts ID, abstract URL, and PDF URL inputs, but the two remaining contract defects prevent acceptance.
+- No article, Reddit, arXiv, or direct/redirect security live check was performed or marked as passed during this review.
 
 ## Overall decision
 
-`blocked`. M2 cannot pass against comourat commit `3c2b092e7766ce4f4c6ad771399aaf91bf44bd39`. Resume implementation after the required upstream capabilities are available. Vesna must not implement substitutes for them.
+`blocked`. Article, Reddit, and safe-fetch adapter work can resume. Full M2 acceptance still requires issues #14 and #15 to be implemented, a new comourat commit to be pinned, and every required live source and security check to pass.

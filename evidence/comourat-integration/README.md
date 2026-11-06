@@ -1,29 +1,34 @@
 # Comourat integration evidence
 
-This directory records the M2 integration-contract check. The current result is **blocked** by missing comourat capabilities. The approved spec is `.internal/specs/02-comourat-integration-general-spec.md`.
+This directory records M2 integration-contract checks. The current result is **blocked** by arXiv issues #14 and #15 and by live checks that have not run. The approved spec is `.internal/specs/02-comourat-integration-general-spec.md`.
 
-## Dependency identity
+## Current dependency identity
 
 - Repository: `anton-pershin/comourat`
-- Commit: `3c2b092e7766ce4f4c6ad771399aaf91bf44bd39`
+- Commit: `d82a29f87b858024615f8f56c4059c11b043bdd9`
 - Distribution metadata version: `0.0.0`
 - Python: `3.12.3`
 - The full commit is the source identity. The metadata version alone is not unique.
 
-## Upstream baseline verification
+## Latest upstream verification
 
-The following local, editable installation was used only to verify the upstream baseline:
+A temporary clean clone was used so the original comourat checkout remained unchanged:
 
 ```sh
-uv venv /tmp/vesna-m2-venv --python 3.12
-uv pip install --python /tmp/vesna-m2-venv/bin/python -e /home/tony/reps/github/anton-pershin/comourat
-uv pip install --python /tmp/vesna-m2-venv/bin/python pytest pytest-asyncio
-cd /home/tony/reps/github/anton-pershin/comourat
-/tmp/vesna-m2-venv/bin/python -m pytest
+git clone https://github.com/anton-pershin/comourat.git /tmp/comourat-review
+uv venv /tmp/comourat-review-venv --python 3.12
+uv pip install --python /tmp/comourat-review-venv/bin/python \
+  -e /tmp/comourat-review pytest pytest-asyncio
+cd /tmp/comourat-review
+/tmp/comourat-review-venv/bin/python -m pytest
 ```
 
-Result on 2026-11-03: **79 passed, 0 failed**. Raw output is in `upstream-tests.txt`. These tests establish the upstream baseline, not M2 acceptance.
+Result on 2026-11-06: **553 passed, 0 failed**. Raw output is in `upstream-tests-d82a29f.txt`. GitHub's quality check also passes for this commit.
+
+## Previous upstream verification
+
+The earlier baseline used commit `3c2b092e7766ce4f4c6ad771399aaf91bf44bd39` and passed **79 tests**. Its raw output is in `upstream-tests.txt`. This history is retained because it records the original six blockers.
 
 ## Live checks
 
-Live article, Reddit, arXiv, and direct/redirect security checks were not performed. The required public result contracts and safe-fetch controls are absent. Each blocker has an upstream issue listed in `result.md`. Resume the Vesna adapter and live checks after the required capabilities are implemented and a new comourat commit is pinned.
+Live article, Reddit, arXiv, and direct/redirect security checks have not run. Article, Reddit, and safe-fetch public contracts are now sufficient to resume those parts of the adapter and live-check work. Full M2 acceptance still requires the arXiv fixes in #14 and #15 and all required live checks.
