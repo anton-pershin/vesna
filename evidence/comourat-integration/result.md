@@ -5,7 +5,7 @@ Status: **blocked — only the live Reddit preparation check fails**
 ## Test identity
 
 - Vesna spec commit: `d8a4ac2`
-- Vesna implementation commit: to be recorded after the implementation checkpoint
+- Vesna implementation commit: `a779d12`
 - Comourat commit: `f15a0375889464d44f8ca93991fc32dd9b43a2a5`
 - Comourat distribution metadata version: `0.0.0`
 - Python: `3.12.3`
