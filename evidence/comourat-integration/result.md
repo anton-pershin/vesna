@@ -1,55 +1,52 @@
 # Comourat integration result
 
-Status: **blocked — two arXiv contract issues remain; live checks are not performed**
+Status: **blocked — only the live Reddit preparation check fails**
 
 ## Test identity
 
 - Vesna spec commit: `d8a4ac2`
-- Comourat commit under review: `d82a29f87b858024615f8f56c4059c11b043bdd9`
+- Vesna implementation commit: to be recorded after the implementation checkpoint
+- Comourat commit: `f15a0375889464d44f8ca93991fc32dd9b43a2a5`
 - Comourat distribution metadata version: `0.0.0`
 - Python: `3.12.3`
-- Check date: `2026-11-06`
-- Upstream CI: pass for commit `d82a29f`
-- Independent temporary-clone baseline: 553 passed, 0 failed; see `upstream-tests-d82a29f.txt`
-- Previous baseline at `3c2b092`: 79 passed, 0 failed; see `upstream-tests.txt`
+- Live-check date: `2026-11-08`
+- Upstream CI: pass for commit `f15a037`
+- Independent upstream baseline: 578 passed, 0 failed; see `upstream-tests-f15a037.txt`
+- Vesna adapter/config/probe tests: 34 passed, 0 failed; see `adapter-tests.txt`
 
 ## Acceptance record
 
-| Criterion | Result | Current observation |
+| Criterion | Result | Raw observation |
 |---|---|---|
-| AC1 Article extraction | blocked pending adapter and live check | Issue #6 is closed. The public article API returns title, source URL, and text with categorized errors and bounded operation time. No Vesna adapter or live result is claimed yet. |
-| AC2 Reddit preparation | blocked pending adapter and live check | Issues #3, #4, and #7 are closed. Public specified-post collection, enrichment outcomes, and summarization outcomes exist. No live Reddit preparation result is claimed yet. |
-| AC3 arXiv preparation | blocked | Issue #5 is closed, but provider Atom error entries can still become successful paper results. Issue #14 is open. The nominal overall deadline does not strictly bound DNS, redirects, or trickled responses. Issue #15 is open. |
-| AC4 Adapter and error contracts | blocked | Article and Reddit public contracts are sufficient for a Vesna adapter. arXiv false-success and overall-deadline behavior prevent a complete truthful adapter contract. |
-| AC5 URL-access security | blocked pending live security checks | Issue #2 is closed. Protected direct, redirect, resolution, and actual-socket controls exist for collection and enrichment. Required live controlled-listener checks have not run. |
-| AC6 Evidence and milestone decision | blocked | Latest source and 553-test evidence are recorded. Two upstream blockers and all required live checks remain open. |
+| AC1 Article extraction | pass | The live PEP 8 check returned the expected title and article text. The result preserves the source URL and 40,971 text characters without summarization. |
+| AC2 Reddit preparation | fail | Reddit returned HTTP 403 during specified-post collection. The adapter reported sanitized category `reddit_provider`. Enrichment and summarization were not called. |
+| AC3 arXiv preparation | pass | The live `1706.03762` check returned the expected title `Attention Is All You Need` and a 1,136-character abstract. No paper body was requested. |
+| AC4 Adapter and error contracts | pass | The adapter uses only public comourat interfaces and has no PWA, TTS, database, durable-job, or personal-library dependency. 34 deterministic tests pass. CI runs those tests and the 578 upstream contract/security tests at the pinned commit. |
+| AC5 URL-access security | pass | Direct and redirect IPv4/IPv6 checks rejected before connection and recorded `connections: 0`. The shared integration policy denied the configured TTS host before resolution. Redirect sources were preflighted for exact controlled targets. |
+| AC6 Evidence and milestone decision | blocked | Live evidence and reproduction commands are recorded, but the required live Reddit preparation is unsuccessful. M2 cannot pass while AC2 fails. |
 
-## Implemented upstream capabilities
+## Live source checks
 
-The following issues are closed and their public capabilities are present in commit `d82a29f`:
+- Article: `https://peps.python.org/pep-0008/`; expected `PEP 8` and `Style Guide for Python Code`; **pass**.
+- Reddit: `https://www.reddit.com/r/announcements/comments/8xy85p/`; collection failed with HTTP 403 and category `reddit_provider`; **fail**.
+- arXiv: `1706.03762`; expected `Attention Is All You Need` and `attention` in the abstract; **pass**.
+- Raw sanitized outcomes are in `live-source-results.json`. URLs have no credentials, query strings, or fragments. Provider error bodies, prompts, summaries, and API keys are not included.
+- The Reddit failure occurred before any LLM request. A dummy unused provider key was present only to exercise the command path; it was not used for a provider request and was not recorded.
 
-- [#2 Safe collection and enrichment fetch policies](https://github.com/anton-pershin/comourat/issues/2)
-- [#3 Single Reddit post retrieval](https://github.com/anton-pershin/comourat/issues/3)
-- [#4 Public summarization interface](https://github.com/anton-pershin/comourat/issues/4)
-- [#5 arXiv title and abstract](https://github.com/anton-pershin/comourat/issues/5)
-- [#6 Article result and error contract](https://github.com/anton-pershin/comourat/issues/6)
-- [#7 Reliable enrichment outcomes](https://github.com/anton-pershin/comourat/issues/7)
+## Live security checks
 
-## Remaining upstream blockers
+- Direct IPv4: **pass**, zero connections.
+- Redirect IPv4: **pass**, zero connections.
+- Direct IPv6: **pass**, zero connections.
+- Redirect IPv6: **pass**, zero connections.
+- Explicit TTS deny rule through the shared integration policy: **pass**.
+- Raw outcomes are in `live-security-results.json`.
+- The public httpbin checks were first blocked by HTTP 403. A temporary loopback-only redirect endpoint based on `server/redirect_fixture.py` was then used on the Vesna host and removed after verification.
 
-- [#14 Handle arXiv Atom error entries explicitly](https://github.com/anton-pershin/comourat/issues/14): an HTTP 200 Atom error entry can become a paper titled `Error`. The client must distinguish documented provider errors from valid papers, including a valid paper whose title is `Error`.
-- [#15 Enforce a hard overall deadline for arXiv metadata requests](https://github.com/anton-pershin/comourat/issues/15): scalar Requests timeouts and elapsed-time checks do not strictly bound blocking DNS, redirects, retries, or a steadily trickled response.
+## Upstream capability verification
 
-## Raw observations
-
-- Latest `main` is `d82a29f87b858024615f8f56c4059c11b043bdd9`; its GitHub quality check passes.
-- A clean temporary clone passes 553 tests on Python 3.12.3. This is a larger baseline than the previous 79-test checkout.
-- Article extraction now exposes the required result and categorized error contracts.
-- Reddit collection accepts specified post URLs/IDs without comments. Enrichment and summarization expose separate success, empty, and failure outcomes.
-- Protected fetch validates complete DNS answers and binds connections to validated addresses for article and enrichment paths.
-- arXiv accepts ID, abstract URL, and PDF URL inputs, but the two remaining contract defects prevent acceptance.
-- No article, Reddit, arXiv, or direct/redirect security live check was performed or marked as passed during this review.
+All requested upstream issues are closed at `f15a037`: #2–#7, #14, and #15. The complete upstream suite passes 578 tests locally and in upstream CI. Vesna CI checks out the same full commit for its contract/security suite.
 
 ## Overall decision
 
-`blocked`. Article, Reddit, and safe-fetch adapter work can resume. Full M2 acceptance still requires issues #14 and #15 to be implemented, a new comourat commit to be pinned, and every required live source and security check to pass.
+`blocked` only by the live Reddit provider failure. Article extraction, arXiv preparation, adapter contracts, and URL-access security pass their required checks. M2 can pass after a live Reddit post is collected, enriched, and summarized successfully and the evidence is updated. No substitute collection path was used.

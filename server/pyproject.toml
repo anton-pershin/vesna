@@ -1,0 +1,28 @@
+[project]
+name = "vesna"
+description = "Vesna application integration contracts"
+version = "0.0.0"
+requires-python = ">=3.12"
+dependencies = [
+  "comourat @ git+https://github.com/anton-pershin/comourat.git@f15a0375889464d44f8ca93991fc32dd9b43a2a5",
+]
+
+[project.optional-dependencies]
+test = [
+  "pytest>=8",
+  "pytest-asyncio>=0.24",
+]
+
+[build-system]
+requires = ["hatchling>=1.26"]
+build-backend = "hatchling.build"
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/vesna"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "strict"

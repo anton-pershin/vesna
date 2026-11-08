@@ -1,0 +1,46 @@
+/tmp/opencode/comourat-review-20261108-venv/lib/python3.12/site-packages/pytest_asyncio/plugin.py:300: PytestDeprecationWarning: The configuration option "asyncio_default_fixture_loop_scope" is unset.
+The event loop scope for asynchronous fixtures will default to the "fixture" caching scope. Future versions of pytest-asyncio will default the loop scope for asynchronous fixtures to "function" scope. Set the default fixture loop scope explicitly in order to avoid unexpected behavior in the future. Valid fixture loop scopes are: "function", "class", "module", "package", "session"
+
+  warnings.warn(PytestDeprecationWarning(_DEFAULT_FIXTURE_LOOP_SCOPE_UNSET))
+============================= test session starts ==============================
+platform linux -- Python 3.12.3, pytest-9.2.0, pluggy-1.7.0
+rootdir: /tmp/opencode/comourat-review-20261108
+configfile: pyproject.toml
+plugins: logfire-sdk-5.5.0, anyio-4.16.0, asyncio-1.4.1.post1, platformdirs-4.14.5
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 578 items
+
+tests/test_comourat_article.py ......................................... [  7%]
+......................................                                   [ 13%]
+tests/test_comourat_clients.py ......................................... [ 20%]
+.................................                                        [ 26%]
+tests/test_comourat_clock.py ..                                          [ 26%]
+tests/test_comourat_collectors.py ......                                 [ 27%]
+tests/test_comourat_enrichment.py .....                                  [ 28%]
+tests/test_comourat_enrichment_fetch_security.py .................       [ 31%]
+tests/test_comourat_enrichment_outcomes.py ............................. [ 36%]
+                                                                         [ 36%]
+tests/test_comourat_fetch.py ........................................... [ 44%]
+..................                                                       [ 47%]
+tests/test_comourat_fetch_deadline.py .................................. [ 53%]
+...........                                                              [ 55%]
+tests/test_comourat_fetch_proxy.py ..........................            [ 59%]
+tests/test_comourat_fetch_socks.py .................................     [ 65%]
+tests/test_comourat_influence.py ................                        [ 67%]
+tests/test_comourat_isolation.py ...                                     [ 68%]
+tests/test_comourat_models.py ...........                                [ 70%]
+tests/test_comourat_proxy.py ..............                              [ 72%]
+tests/test_comourat_reddit_submission.py ............................... [ 78%]
+........................................................................ [ 90%]
+............                                                             [ 92%]
+tests/test_comourat_resolution.py ........                               [ 94%]
+tests/test_comourat_summarization.py ............................        [ 98%]
+tests/test_comourat_verification.py ......                               [100%]
+
+=============================== warnings summary ===============================
+tests/test_comourat_enrichment_outcomes.py::test_real_structured_agent_returns_context_without_live_tools
+  /tmp/opencode/comourat-review-20261108-venv/lib/python3.12/site-packages/pydantic_graph/_utils.py:67: DeprecationWarning: There is no current event loop
+    event_loop = asyncio.get_event_loop()
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+================== 578 passed, 1 warning in 100.20s (0:01:40) ==================
