@@ -13,6 +13,7 @@ Status: **blocked — only the live Reddit preparation check fails**
 - Upstream CI: pass for commit `f15a037`
 - Independent upstream baseline: 578 passed, 0 failed; see `upstream-tests-f15a037.txt`
 - Vesna adapter/config/probe tests: 34 passed, 0 failed; see `adapter-tests.txt`
+- Vesna CI: pass (run `42447004448`), including 34 adapter/config/probe tests, 578 upstream tests, and 70 JavaScript tests
 
 ## Acceptance record
 
@@ -21,7 +22,7 @@ Status: **blocked — only the live Reddit preparation check fails**
 | AC1 Article extraction | pass | The live PEP 8 check returned the expected title and article text. The result preserves the source URL and 40,971 text characters without summarization. |
 | AC2 Reddit preparation | fail | Reddit returned HTTP 403 during specified-post collection. The adapter reported sanitized category `reddit_provider`. Enrichment and summarization were not called. |
 | AC3 arXiv preparation | pass | The live `1706.03762` check returned the expected title `Attention Is All You Need` and a 1,136-character abstract. No paper body was requested. |
-| AC4 Adapter and error contracts | pass | The adapter uses only public comourat interfaces and has no PWA, TTS, database, durable-job, or personal-library dependency. 34 deterministic tests pass. CI runs those tests and the 578 upstream contract/security tests at the pinned commit. |
+| AC4 Adapter and error contracts | pass | The adapter uses only public comourat interfaces and has no PWA, TTS, database, durable-job, or personal-library dependency. 34 deterministic tests pass. CI passes those tests, the 578 upstream contract/security tests at the pinned commit, and all 70 JavaScript tests. |
 | AC5 URL-access security | pass | Direct and redirect IPv4/IPv6 checks rejected before connection and recorded `connections: 0`. The shared integration policy denied the configured TTS host before resolution. Redirect sources were preflighted for exact controlled targets. |
 | AC6 Evidence and milestone decision | blocked | Live evidence and reproduction commands are recorded, but the required live Reddit preparation is unsuccessful. M2 cannot pass while AC2 fails. |
 
