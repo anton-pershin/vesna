@@ -20,7 +20,7 @@ Status: **blocked — only the live Reddit preparation check fails**
 | Criterion | Result | Raw observation |
 |---|---|---|
 | AC1 Article extraction | pass | The live PEP 8 check returned the expected title and article text. The result preserves the source URL and 40,971 text characters without summarization. |
-| AC2 Reddit preparation | fail | Reddit returned HTTP 403 during specified-post collection. The adapter reported sanitized category `reddit_provider`. Enrichment and summarization were not called. |
+| AC2 Reddit preparation | fail | Reddit returned HTTP 403 during unauthenticated specified-post collection. The adapter reported sanitized category `reddit_provider`. Authenticated PRAW retrieval with the caller's Reddit app succeeded, but comourat has no authenticated single-post injection point yet. [#18](https://github.com/anton-pershin/comourat/issues/18) is open. |
 | AC3 arXiv preparation | pass | The live `1706.03762` check returned the expected title `Attention Is All You Need` and a 1,136-character abstract. No paper body was requested. |
 | AC4 Adapter and error contracts | pass | The adapter uses only public comourat interfaces and has no PWA, TTS, database, durable-job, or personal-library dependency. 34 deterministic tests pass. CI passes those tests, the 578 upstream contract/security tests at the pinned commit, and all 70 JavaScript tests. |
 | AC5 URL-access security | pass | Direct and redirect IPv4/IPv6 checks rejected before connection and recorded `connections: 0`. The shared integration policy denied the configured TTS host before resolution. Redirect sources were preflighted for exact controlled targets. |
@@ -29,7 +29,7 @@ Status: **blocked — only the live Reddit preparation check fails**
 ## Live source checks
 
 - Article: `https://peps.python.org/pep-0008/`; expected `PEP 8` and `Style Guide for Python Code`; **pass**.
-- Reddit: `https://www.reddit.com/r/announcements/comments/8xy85p/`; collection failed with HTTP 403 and category `reddit_provider`; **fail**.
+- Reddit: `https://www.reddit.com/r/announcements/comments/8xy85p/`; unauthenticated collection failed with HTTP 403 and category `reddit_provider`; **fail**. A separate authenticated PRAW diagnostic with caller-provided credentials returned the same post successfully. No credential was printed or committed.
 - arXiv: `1706.03762`; expected `Attention Is All You Need` and `attention` in the abstract; **pass**.
 - Raw sanitized outcomes are in `live-source-results.json`. URLs have no credentials, query strings, or fragments. Provider error bodies, prompts, summaries, and API keys are not included.
 - The Reddit failure occurred before any LLM request. A dummy unused provider key was present only to exercise the command path; it was not used for a provider request and was not recorded.
@@ -46,8 +46,8 @@ Status: **blocked — only the live Reddit preparation check fails**
 
 ## Upstream capability verification
 
-All requested upstream issues are closed at `f15a037`: #2–#7, #14, and #15. The complete upstream suite passes 578 tests locally and in upstream CI. Vesna CI checks out the same full commit for its contract/security suite.
+The original upstream issues are closed at `f15a037`: #2–#7, #14, and #15. The complete upstream suite passes 578 tests locally and in upstream CI. Vesna CI checks out the same full commit for its contract/security suite. New issue [#18](https://github.com/anton-pershin/comourat/issues/18) requests the authenticated single-post path required by the live provider response.
 
 ## Overall decision
 
-`blocked` only by the live Reddit provider failure. Article extraction, arXiv preparation, adapter contracts, and URL-access security pass their required checks. M2 can pass after a live Reddit post is collected, enriched, and summarized successfully and the evidence is updated. No substitute collection path was used.
+`blocked` only by the live Reddit provider failure and the missing authenticated comourat path in #18. Article extraction, arXiv preparation, adapter contracts, and URL-access security pass their required checks. M2 can pass after a live Reddit post is collected, enriched, and summarized successfully through the public authenticated comourat interface and the evidence is updated. No substitute collection path was used.

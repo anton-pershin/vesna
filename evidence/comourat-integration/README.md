@@ -1,6 +1,6 @@
 # Comourat integration evidence
 
-This directory records M2 integration-contract checks. Article, arXiv, adapter, and protected-fetch checks pass. The live Reddit preparation check fails because Reddit returns HTTP 403, so M2 remains blocked.
+This directory records M2 integration-contract checks. Article, arXiv, adapter, and protected-fetch checks pass. Unauthenticated Reddit collection returns HTTP 403, while authenticated PRAW succeeds. Comourat issue #18 requests the required authenticated public interface, so M2 remains blocked.
 
 ## Dependency identity
 
