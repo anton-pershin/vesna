@@ -13,7 +13,7 @@ Status: **pass — M2 comourat integration contract is complete**
 - Upstream CI: pass for commit `c9bfb160`
 - Independent upstream baseline: 619 passed, 0 failed; see `upstream-tests-c9bfb160.txt`
 - Vesna adapter/config/probe tests: 36 passed, 0 failed; see `adapter-tests.txt`
-- Vesna CI: pass (run `42447004448`), including 34 adapter/config/probe tests, 578 upstream tests, and 70 JavaScript tests
+- Vesna CI: pass (run `42562181219`), including 36 adapter/config/probe tests, 619 upstream tests, and 70 JavaScript tests
 
 ## Acceptance record
 
