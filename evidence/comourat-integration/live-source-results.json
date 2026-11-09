@@ -1,0 +1,23 @@
+[
+  {
+    "check": "article",
+    "status": "pass",
+    "title": "PEP 8 \u2013 Style Guide for Python Code | peps.python.org",
+    "source_url": "https://peps.python.org/pep-0008/",
+    "text_length": 40971
+  },
+  {
+    "check": "reddit",
+    "status": "pass",
+    "title": "\u798f\u5c14\u6469\u65af\u7eaa\u5ff5\u9986\u524d by vcg-lengxiang439226520",
+    "source_url": "https://www.reddit.com/r/MyWallpaperClub/comments/8xy85p/\u798f\u5c14\u6469\u65af\u7eaa\u5ff5\u9986\u524d_by_vcglengxiang439226520/",
+    "enrichment_outcome": "no_context",
+    "summary_length": 196
+  },
+  {
+    "check": "arxiv",
+    "status": "pass",
+    "title": "Attention Is All You Need",
+    "abstract_length": 1136
+  }
+]

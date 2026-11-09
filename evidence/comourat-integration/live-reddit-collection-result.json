@@ -1,0 +1,9 @@
+{
+  "check": "reddit_collection",
+  "status": "pass",
+  "interface": "PrawRedditSubmissionClient",
+  "title": "福尔摩斯纪念馆前 by vcg-lengxiang439226520",
+  "source_url": "https://www.reddit.com/r/MyWallpaperClub/comments/8xy85p/%E7%A6%8F%E5%B0%94%E6%91%A9%E6%96%AF%E7%BA%AA%E5%BF%B5%E9%A6%86%E5%89%8D_by_vcglengxiang439226520/",
+  "comments_collected": false,
+  "credentials_recorded": false
+}

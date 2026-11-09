@@ -32,6 +32,20 @@ jobs:
         with:
           python-version: '3.12'
 
+      - name: Install Python integration dependencies
+        run: python -m pip install './server[test]'
+
+      - name: Run Python integration tests
+        run: python -m pytest server/tests
+
+      - name: Check out pinned comourat contract tests
+        run: |
+          git clone https://github.com/anton-pershin/comourat.git /tmp/comourat
+          git -C /tmp/comourat checkout c9bfb1604a5286d073aaceef1513e0d7496d0e33
+
+      - name: Run comourat contract and security tests
+        run: python -m pytest /tmp/comourat
+
       - name: Check JavaScript syntax
         run: |
           find public tests -type f \( -name '*.js' -o -name '*.mjs' \) -print0 |

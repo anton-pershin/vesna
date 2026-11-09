@@ -19,6 +19,10 @@ Open `http://localhost:8080` for desktop checks. A real PWA installation require
 
 CI runs syntax checks, deployed-module import checks, and the test suite for pull requests to `main` and pushes to `main`. The `test` check should be required by the repository's `main` branch protection settings.
 
+## Comourat integration
+
+The M2 Python adapter and its deterministic tests are in `server/`. See [`server/README.md`](server/README.md) for installation, CI, and explicit live-check commands. Live outputs and current acceptance results are in [`evidence/comourat-integration/`](evidence/comourat-integration/).
+
 ## Deploy to HTTPS
 
 Deploy the contents of `public/` to an HTTPS static host. The host must support single HTTP byte ranges. Audio seeks can fail if a range request receives the complete file with status `200` instead of the requested bytes with status `206`.
