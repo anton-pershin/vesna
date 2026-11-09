@@ -5,7 +5,7 @@ Status: **pass — M2 comourat integration contract is complete**
 ## Test identity
 
 - Vesna spec commit: `d8a4ac2`
-- Vesna implementation commit: `a779d12`
+- Vesna implementation commit: `88577d5`
 - Comourat commit: `c9bfb1604a5286d073aaceef1513e0d7496d0e33`
 - Comourat distribution metadata version: `0.0.0`
 - Python: `3.12.3`
