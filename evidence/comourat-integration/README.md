@@ -1,6 +1,6 @@
 # Comourat integration evidence
 
-This directory records M2 integration-contract checks. Article, arXiv, adapter, protected-fetch, and authenticated Reddit collection checks pass. Live enrichment and summarization still require an OpenAI-compatible provider configuration, so M2 remains blocked.
+This directory records M2 integration-contract checks. Article, arXiv, adapter, protected-fetch, and complete authenticated Reddit preparation checks pass. M2 is complete.
 
 ## Dependency identity
 
@@ -35,13 +35,13 @@ python -m pip install './server[test]'
 python -m pytest server/tests
 ```
 
-Result: **34 passed, 0 failed**. Raw output is in `adapter-tests.txt`. CI additionally checks out the full comourat commit above and runs all 619 upstream contract/security tests.
+Result: **36 passed, 0 failed**. Raw output is in `adapter-tests.txt`. CI additionally checks out the full comourat commit above and runs all 619 upstream contract/security tests.
 
 ## Live checks
 
 Commands and configuration are documented in `server/README.md`. Outputs are sanitized:
 
-- `live-source-results.json`: article and arXiv pass; the earlier unauthenticated Reddit attempt fails with `reddit_provider`.
+- `live-source-results.json`: article, arXiv, and complete Reddit preparation pass. Reddit enrichment returns successful `no_context`, and the summary is non-empty.
 - `live-reddit-collection-result.json`: authenticated collection passes through the public comourat client.
 - `live-security-results.json`: direct and redirect IPv4/IPv6 pass with zero drained connections, and the shared TTS deny rule passes.
 

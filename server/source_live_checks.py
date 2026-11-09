@@ -12,13 +12,23 @@ from comourat.collectors.reddit import RedditSubmissionCollector
 from comourat.enrichment.enricher import EnrichmentAgent
 from comourat.enrichment.page_fetch import PageFetcher
 from comourat.enrichment.summarizer import summarize
-from pydantic_ai.models.openai import OpenAIResponsesModel
+from pydantic_ai.models.openai import OpenAIChatModel
 from pydantic_ai.providers.openai import OpenAIProvider
 
 from vesna.comourat_integration import ComouratAdapter, ComouratAdapterError
 from vesna.live_config import make_live_fetch_policy, sanitized_source_url
 
 USER_AGENT = "VesnaM2/1.0 (+https://github.com/anton-pershin/vesna)"
+
+
+def normalize_openai_base_url(url: str | None) -> str | None:
+    if url is None:
+        return None
+    normalized = url.rstrip("/")
+    suffix = "/chat/completions"
+    if normalized.endswith(suffix):
+        return normalized[: -len(suffix)]
+    return normalized
 
 
 def make_adapter(
@@ -29,8 +39,8 @@ def make_adapter(
     reddit_client_id: str,
     reddit_client_secret: str,
 ) -> ComouratAdapter:
-    provider = OpenAIProvider(api_key=api_key, base_url=base_url)
-    model = OpenAIResponsesModel(model_name, provider=provider)
+    provider = OpenAIProvider(api_key=api_key, base_url=normalize_openai_base_url(base_url))
+    model = OpenAIChatModel(model_name, provider=provider)
     policy = make_live_fetch_policy(tts_host)
     return ComouratAdapter(
         page_fetcher=PageFetcher(fetch_policy=policy),
