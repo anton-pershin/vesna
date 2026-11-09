@@ -7,7 +7,7 @@ import os
 from pathlib import Path
 
 from comourat.clients.arxiv import ArxivClient
-from comourat.clients.reddit import RedditSubmissionClient
+from comourat.clients.reddit import PrawRedditSubmissionClient
 from comourat.collectors.reddit import RedditSubmissionCollector
 from comourat.enrichment.enricher import EnrichmentAgent
 from comourat.enrichment.page_fetch import PageFetcher
@@ -21,16 +21,24 @@ from vesna.live_config import make_live_fetch_policy, sanitized_source_url
 USER_AGENT = "VesnaM2/1.0 (+https://github.com/anton-pershin/vesna)"
 
 
-def make_adapter(model_name: str, api_key: str, base_url: str | None, tts_host: str) -> ComouratAdapter:
+def make_adapter(
+    model_name: str,
+    api_key: str,
+    base_url: str | None,
+    tts_host: str,
+    reddit_client_id: str,
+    reddit_client_secret: str,
+) -> ComouratAdapter:
     provider = OpenAIProvider(api_key=api_key, base_url=base_url)
     model = OpenAIResponsesModel(model_name, provider=provider)
     policy = make_live_fetch_policy(tts_host)
     return ComouratAdapter(
         page_fetcher=PageFetcher(fetch_policy=policy),
         reddit_collector=RedditSubmissionCollector(
-            RedditSubmissionClient(
-                USER_AGENT,
-                connection_timeout=10,
+            PrawRedditSubmissionClient(
+                client_id=reddit_client_id,
+                client_secret=reddit_client_secret,
+                user_agent=USER_AGENT,
                 operation_timeout=60,
             )
         ),
@@ -142,7 +150,18 @@ def main() -> int:
     api_key = os.environ.get(args.api_key_env)
     if not api_key:
         parser.error(f"API key is required in environment variable {args.api_key_env}")
-    adapter = make_adapter(args.openai_model, api_key, args.openai_base_url, args.tts_host)
+    reddit_client_id = os.environ.get("MOURAT_REDDIT_CLIENT_ID")
+    reddit_client_secret = os.environ.get("MOURAT_REDDIT_CLIENT_SECRET")
+    if not reddit_client_id or not reddit_client_secret:
+        parser.error("MOURAT_REDDIT_CLIENT_ID and MOURAT_REDDIT_CLIENT_SECRET are required")
+    adapter = make_adapter(
+        args.openai_model,
+        api_key,
+        args.openai_base_url,
+        args.tts_host,
+        reddit_client_id,
+        reddit_client_secret,
+    )
     expected = {
         "article_title": args.article_title_contains,
         "article_text": args.article_text_contains,

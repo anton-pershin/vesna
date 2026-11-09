@@ -1,11 +1,11 @@
 # Comourat integration evidence
 
-This directory records M2 integration-contract checks. Article, arXiv, adapter, and protected-fetch checks pass. Unauthenticated Reddit collection returns HTTP 403, while authenticated PRAW succeeds. Comourat issue #18 requests the required authenticated public interface, so M2 remains blocked.
+This directory records M2 integration-contract checks. Article, arXiv, adapter, protected-fetch, and authenticated Reddit collection checks pass. Live enrichment and summarization still require an OpenAI-compatible provider configuration, so M2 remains blocked.
 
 ## Dependency identity
 
 - Repository: `anton-pershin/comourat`
-- Commit: `f15a0375889464d44f8ca93991fc32dd9b43a2a5`
+- Commit: `c9bfb1604a5286d073aaceef1513e0d7496d0e33`
 - Distribution metadata version: `0.0.0`
 - Python: `3.12.3`
 - The full commit is the source identity. The metadata version alone is not unique.
@@ -16,7 +16,7 @@ A temporary clean clone was used so the original comourat checkout remained unch
 
 ```sh
 git clone https://github.com/anton-pershin/comourat.git /tmp/comourat-review
-git -C /tmp/comourat-review checkout f15a0375889464d44f8ca93991fc32dd9b43a2a5
+git -C /tmp/comourat-review checkout c9bfb1604a5286d073aaceef1513e0d7496d0e33
 uv venv /tmp/comourat-review-venv --python 3.12
 uv pip install --python /tmp/comourat-review-venv/bin/python \
   -e /tmp/comourat-review pytest pytest-asyncio
@@ -24,7 +24,7 @@ cd /tmp/comourat-review
 /tmp/comourat-review-venv/bin/python -m pytest
 ```
 
-Result on 2026-11-08: **578 passed, 0 failed**. Raw output is in `upstream-tests-f15a037.txt`. GitHub's quality check also passes for this commit.
+Result on 2026-11-09: **619 passed, 0 failed**. Raw output is in `upstream-tests-c9bfb160.txt`. GitHub's quality check also passes for this commit.
 
 ## Vesna verification
 
@@ -35,13 +35,14 @@ python -m pip install './server[test]'
 python -m pytest server/tests
 ```
 
-Result: **34 passed, 0 failed**. Raw output is in `adapter-tests.txt`. CI additionally checks out the full comourat commit above and runs all 578 upstream contract/security tests.
+Result: **34 passed, 0 failed**. Raw output is in `adapter-tests.txt`. CI additionally checks out the full comourat commit above and runs all 619 upstream contract/security tests.
 
 ## Live checks
 
 Commands and configuration are documented in `server/README.md`. Outputs are sanitized:
 
-- `live-source-results.json`: article and arXiv pass; Reddit fails with `reddit_provider`.
+- `live-source-results.json`: article and arXiv pass; the earlier unauthenticated Reddit attempt fails with `reddit_provider`.
+- `live-reddit-collection-result.json`: authenticated collection passes through the public comourat client.
 - `live-security-results.json`: direct and redirect IPv4/IPv6 pass with zero drained connections, and the shared TTS deny rule passes.
 
 The live article source is PEP 8. The arXiv reference is `1706.03762`. The Reddit source is the public announcements post `8xy85p`. Expected-content assertions are part of the commands. No API key, provider error body, prompt, summary, or signed query parameter is recorded.

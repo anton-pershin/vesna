@@ -4,7 +4,7 @@ description = "Vesna application integration contracts"
 version = "0.0.0"
 requires-python = ">=3.12"
 dependencies = [
-  "comourat @ git+https://github.com/anton-pershin/comourat.git@f15a0375889464d44f8ca93991fc32dd9b43a2a5",
+  "comourat @ git+https://github.com/anton-pershin/comourat.git@c9bfb1604a5286d073aaceef1513e0d7496d0e33",
 ]
 
 [project.optional-dependencies]

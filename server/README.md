@@ -11,7 +11,7 @@ python -m pip install './server[test]'
 python -m pytest server/tests
 ```
 
-`server/pyproject.toml` pins comourat commit `f15a0375889464d44f8ca93991fc32dd9b43a2a5`. CI also runs the complete upstream contract and security suite at that commit.
+`server/pyproject.toml` pins comourat commit `c9bfb1604a5286d073aaceef1513e0d7496d0e33`. CI also runs the complete upstream contract and security suite at that commit.
 
 ## Live protected-fetch security checks
 
@@ -34,7 +34,7 @@ Then pass `--redirect-base http://HOST/redirect` to the security command. The fi
 
 ## Live source checks
 
-Set the provider key in the named environment variable. Do not put it in command arguments or evidence.
+Set the provider key in the named environment variable. Also set `MOURAT_REDDIT_CLIENT_ID` and `MOURAT_REDDIT_CLIENT_SECRET` for the authenticated comourat Reddit client. Do not put any credential in command arguments or evidence.
 
 ```sh
 PYTHONPATH=server/src python server/source_live_checks.py \
@@ -51,4 +51,4 @@ PYTHONPATH=server/src python server/source_live_checks.py \
   --output evidence/comourat-integration/live-source-results.json
 ```
 
-`--api-key-env` selects the environment variable; its default is `OPENAI_API_KEY`. `--openai-base-url` supports an OpenAI-compatible provider. The output contains outcomes and metadata lengths, not provider errors, prompts, summaries, credentials, or signed query parameters. The current Reddit check fails with `reddit_provider` because Reddit returns HTTP 403 before enrichment. No LLM request was made for that failure.
+`--api-key-env` selects the environment variable; its default is `OPENAI_API_KEY`. `--openai-base-url` supports an OpenAI-compatible provider. The output contains outcomes and metadata lengths, not provider errors, prompts, summaries, credentials, or signed query parameters. The authenticated Reddit collection now passes through `PrawRedditSubmissionClient`. A complete preparation still requires a successful enrichment and summarization call using the configured OpenAI-compatible provider.
