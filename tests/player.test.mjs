@@ -134,6 +134,20 @@ test('PlaybackController uses one audio element and exposes core controls', asyn
   assert.deepEqual(active, ['p1', 'p2', 'p3', 'p2']);
 });
 
+test('paragraph navigation corrects codec rounding at an exact boundary', async () => {
+  class QuantizedAudio extends FakeAudio {
+    get currentTime() { return super.currentTime; }
+    set currentTime(value) { super.currentTime = Math.max(0, value - 0.000001); }
+  }
+  const audio = new QuantizedAudio();
+  const player = new PlaybackController(audio, timings);
+
+  await player.seekToParagraph('p2');
+
+  assert.equal(player.activeParagraph, 'p2');
+  assert.ok(audio.currentTime >= 10 && audio.currentTime < 10.02);
+});
+
 test('PlaybackController updates the active paragraph after time updates and rejects invalid speed', () => {
   const audio = new FakeAudio();
   const active = [];

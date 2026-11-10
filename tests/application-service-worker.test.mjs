@@ -67,7 +67,7 @@ test('installation caches only the declared public application shell', async () 
   const worker = createWorker();
   await worker.install();
   assert.equal(worker.skipWaiting, true);
-  assert.deepEqual(worker.opened, ['vesna-app-shell-v1']);
+  assert.deepEqual(worker.opened, ['vesna-app-shell-v3']);
   assert.ok(worker.added.includes('/index.html'));
   assert.ok(worker.added.includes('/app.js'));
   assert.equal(worker.added.some((resource) => resource.startsWith('/api/')), false);
@@ -129,5 +129,5 @@ test('activation removes only old application shell caches and claims clients', 
   });
   await worker.activate();
   assert.equal(worker.claimed, true);
-  assert.deepEqual(worker.deleted, ['vesna-app-shell-v0']);
+  assert.deepEqual(worker.deleted, ['vesna-app-shell-v0', 'vesna-app-shell-v1']);
 });

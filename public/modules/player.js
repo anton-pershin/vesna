@@ -145,6 +145,13 @@ export class PlaybackController {
     const timing = this.timings.find((candidate) => candidate.id === id);
     if (!timing) throw new Error(`unknown paragraph: ${id}`);
     await this.seek(timing.start);
+    if (this.audio.currentTime < timing.start) {
+      // Some codecs round an exact boundary down. Move a bounded, negligible
+      // distance into the requested interval instead of leaving the previous
+      // paragraph active.
+      const offset = Math.min(0.01, (timing.end - timing.start) / 2);
+      await this.seek(timing.start + offset);
+    }
   }
 
   async nextParagraph() {

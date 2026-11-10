@@ -38,7 +38,7 @@ export class VesnaApi {
 
   async request(path, options = {}) {
     const headers = new Headers({ Accept: 'application/json', ...options.headers });
-    const response = await this.fetchImpl(path, {
+    const response = await this.fetchImpl.call(globalThis, path, {
       cache: 'no-store',
       credentials: 'same-origin',
       ...options,
@@ -123,7 +123,7 @@ export class VesnaApi {
   }
 
   async getSourceText(itemId) {
-    const response = await this.fetchImpl(this.sourceUrl(itemId), {
+    const response = await this.fetchImpl.call(globalThis, this.sourceUrl(itemId), {
       cache: 'no-store',
       credentials: 'same-origin',
       headers: { Accept: 'text/plain' },

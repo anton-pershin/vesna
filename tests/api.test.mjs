@@ -108,6 +108,18 @@ test('library, detail, retry, source, and prepared artifact routes use returned 
   assert.equal(calls.at(-1).options.cache, 'no-store');
 });
 
+test('API calls preserve the global receiver required by native fetch', async () => {
+  const receivers = [];
+  const api = new VesnaApi({
+    fetchImpl: async function () {
+      receivers.push(this);
+      return jsonResponse({ authenticated: true });
+    },
+  });
+  await api.session();
+  assert.deepEqual(receivers, [globalThis]);
+});
+
 test('API errors expose safe server detail and status', async () => {
   const api = new VesnaApi({
     fetchImpl: async () => jsonResponse({ detail: 'Preparation failed safely' }, 409),
