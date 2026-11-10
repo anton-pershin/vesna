@@ -241,8 +241,6 @@ def create_app(
                 data.extend(chunk)
                 if len(data) > settings.upload_max_bytes:
                     raise InputValidationError("Markdown file exceeds the upload size limit.")
-                if len(data) > settings.upload_max_bytes:
-                    break
             text = decode_markdown(bytes(data))
         except InputValidationError as error:
             raise HTTPException(status_code=422, detail=str(error)) from None

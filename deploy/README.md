@@ -36,7 +36,7 @@ Use a clean checkout at `/opt/vesna`:
 ```sh
 sudo git clone https://github.com/anton-pershin/vesna.git /opt/vesna
 cd /opt/vesna
-git checkout 20261110_first_usable_listening_application_general_spec
+git checkout b7937cf
 UV_PROJECT_ENVIRONMENT=/opt/vesna/venv uv sync --project server --extra tts --locked
 bash deploy/install_joe_model.sh
 ```

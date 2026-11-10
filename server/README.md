@@ -35,7 +35,7 @@ vesna-worker
 vesna-tts --host 127.0.0.1 --port 8765
 ```
 
-`vesna-worker --once` claims at most one durable job, which is useful for controlled checks. Run exactly one worker in M3. `vesna-tts` rejects every non-loopback bind address. The TTS engine command uses `{input}` and `{output}` placeholders for a UTF-8 text-file path and WAV-output path. It is split into argv and executed directly without a shell; source text is never placed in process arguments. Configure only the worker with the private TTS URL and expose only the API port through the Quick Tunnel.
+`vesna-worker --once` claims at most one durable job, which is useful for controlled checks. Run exactly one worker in M3. Worker concurrency is fixed at one process, one claimed job at a time, and one paragraph synthesis request at a time; do not start additional workers to increase throughput. `vesna-tts` rejects every non-loopback bind address. The TTS engine command uses `{input}` and `{output}` placeholders for a UTF-8 text-file path and WAV-output path. It is split into argv and executed directly without a shell; source text is never placed in process arguments. Configure only the worker with the private TTS URL and expose only the API port through the Quick Tunnel.
 
 The API uses the configured `VESNA_PUBLIC_ORIGIN` for strict mutation `Origin` checks. It ignores Host and forwarded headers for security decisions and never constructs artifact URLs from them. A changed Quick Tunnel URL is a new origin and requires a corresponding configuration change and a new sign-in.
 

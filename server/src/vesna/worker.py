@@ -267,15 +267,7 @@ class Worker:
                     return relative
         except (ArtifactError, TtsError, KeyError, TypeError, ValueError, json.JSONDecodeError):
             pass
-        client = self.tts_client
-        if client is None:
-            client = TtsClient(
-                self.settings.tts_url,
-                connect_timeout=self.settings.tts_connect_timeout,
-                overall_timeout=self.settings.tts_overall_timeout,
-                max_response_bytes=self.settings.tts_response_max_bytes,
-            )
-        audio = client.synthesize(paragraph["text"])
+        audio = self.tts_client.synthesize(paragraph["text"])
         if len(audio) > self.settings.tts_response_max_bytes:
             raise TtsError("Speech response exceeded the size limit.")
         validate_wav(audio)
