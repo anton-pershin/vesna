@@ -1,63 +1,58 @@
-# Vesna Android playback probe
+# Vesna
 
-A dependency-light static PWA for the M1 Android playback feasibility gate. It ships one complete, synthetic 30-minute MP3 fixture, 12 timed paragraphs, offline caching, state restoration, read-along highlighting, and Media Session controls.
+Vesna is a mobile-first PWA for preparing and listening to public articles and UTF-8 Markdown documents. The M3 application provides authenticated article and Markdown input, a saved library, durable server-side preparation, real local English TTS, complete MP3 audio, paragraph timings, and online read-along playback.
 
-## Run locally
+M1 playback feasibility and the M2 comourat integration contract are complete. M3 implementation and acceptance evidence are in progress.
 
-No npm packages are required. CI uses Node.js 24 and Python 3.12; use these versions for matching local results. Python uses only the standard library. From the repository root:
+## Application architecture
+
+One development machine runs three processes:
+
+- `vesna-api`: FastAPI static shell, authentication, library, jobs, source data, and authenticated audio byte ranges.
+- `vesna-worker`: one durable preparation worker using SQLite, private filesystem artifacts, comourat article extraction, Markdown text extraction, and FFmpeg assembly.
+- `vesna-tts`: a loopback-only adapter for the selected local Piper voice.
+
+The phone reaches only the API through a temporary Cloudflare Quick Tunnel HTTPS origin. TTS listens only on loopback and is never exposed through the tunnel. See [`deploy/README.md`](deploy/README.md) for installation and operation.
+
+## Automated checks
+
+Use Node.js 24, Python 3.12, `uv`, FFmpeg, and FFprobe. From the repository root:
 
 ```sh
 npm test
-npm run serve
+npm run check:syntax
+
+UV_PROJECT_ENVIRONMENT=/tmp/vesna-venv uv sync --project server --extra test --extra tts --locked
+/tmp/vesna-venv/bin/python -m pytest server/tests
 ```
 
-Open `http://localhost:8080` for desktop checks. A real PWA installation requires an HTTPS origin. The local HTTP server is only for automated and desktop checks.
+Deterministic tests use controlled fixtures and do not require credentials, external services, or a phone. CI also runs the pinned comourat contract and security suite. Real source, TTS, tunnel, browser, and device checks are separate explicit procedures.
 
 ## Browser module source
 
-`public/modules/` is the canonical source for shared browser modules. Tests import these exact served files. Do not maintain a second copy under `src/`. `public/app.js` composes the page, and `public/sw.js` owns service-worker behavior.
+`public/modules/` is the canonical source for shared browser modules. Tests import these exact served files. Do not maintain a second module source. `public/app.js` composes the M3 page, and `public/sw.js` owns its public-shell-only service-worker behavior.
 
-CI runs syntax checks, deployed-module import checks, and the test suite for pull requests to `main` and pushes to `main`. The `test` check should be required by the repository's `main` branch protection settings.
+Private API responses, authentication responses, source content, and prepared artifacts must not enter the public shell cache. Playback state is keyed by item and prepared version.
 
-## Comourat integration
+## Isolated M1 regression probe
 
-The M2 Python adapter and its deterministic tests are in `server/`. See [`server/README.md`](server/README.md) for installation, CI, and explicit live-check commands. Live outputs and current acceptance results are in [`evidence/comourat-integration/`](evidence/comourat-integration/).
-
-## Deploy to HTTPS
-
-Deploy the contents of `public/` to an HTTPS static host. The host must support single HTTP byte ranges. Audio seeks can fail if a range request receives the complete file with status `200` instead of the requested bytes with status `206`.
-
-The included static server supports byte ranges and optional TLS:
+The synthetic M1 probe is in `probe/`, outside the M3 application. It uses the canonical shared modules through its runtime server. Serve it on a separate origin:
 
 ```sh
-python3 scripts/static_server.py \
-  --bind 0.0.0.0 \
-  --port 443 \
-  --directory public \
-  --certificate /path/to/fullchain.pem \
-  --key /path/to/privkey.pem
+npm run serve:probe
+cloudflared tunnel --url http://127.0.0.1:8081
 ```
 
-Keep certificate files outside the repository. To check an audio deployment, run:
+Use the printed HTTPS URL only for the probe. Select **Prepare offline fixture** before offline tests. See [`probe/README.md`](probe/README.md) and the M3 evidence procedure. Probe results do not establish real-item offline readiness.
 
-```sh
-curl -D - -o /dev/null -H 'Range: bytes=1000-1999' \
-  https://example.test/fixtures/audio/fixture.mp3
-```
+## Server and integration documentation
 
-The response must have status `206 Partial Content`, `Content-Range: bytes 1000-1999/1805288`, and `Content-Length: 1000`.
+See [`server/README.md`](server/README.md) for process commands, environment variables, password setup, durability, and publication contracts. Comourat remains pinned to `c9bfb1604a5286d073aaceef1513e0d7496d0e33`; M3 uses only its public article-extraction path through the M2 adapter.
 
-The current HTTPS service is an ad-hoc M1 probe deployment. It is not the future production application architecture. Later implementation specs must define reproducible application and deployment configuration.
+## Evidence
 
-## Offline check
+- M1: [`evidence/android-playback/`](evidence/android-playback/)
+- M2: [`evidence/comourat-integration/`](evidence/comourat-integration/)
+- M3: [`evidence/first-usable-listening-application/`](evidence/first-usable-listening-application/)
 
-1. Open the HTTPS deployment in Chrome.
-2. Record the **Probe build** value shown on the page.
-3. Select **Prepare offline fixture** and wait for **Offline readiness: complete**.
-4. Confirm the service worker is active, then disable Wi-Fi and mobile data.
-5. Close and reopen the installed PWA.
-6. Verify the fixture reader, audio, seeking, speed, paragraph highlighting, and restored position are available.
-
-For the state-restoration check, seek to a non-zero position, select 2×, and pause before closing the PWA. After reopening, compare the saved position in the status with the native audio position and the separate **Position** control. If restoration fails, record the complete status message and the **Probe build** value. Do not clear the saved state before you record this information.
-
-The phone-specific evidence procedure is in [`evidence/android-playback/README.md`](evidence/android-playback/README.md). The current result is [`evidence/android-playback/result.md`](evidence/android-playback/result.md).
+Do not commit passwords, password hashes, session cookies, private TTS addresses, models, runtime data, or unintended private content.

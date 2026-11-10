@@ -6,14 +6,14 @@ The article path composes `ComouratAdapter` with only comourat's public `PageFet
 
 ## Requirements, installation, and tests
 
-Use Python 3.12 and install FFmpeg and FFprobe as system dependencies. No real TTS engine is selected or downloaded by this repository.
+Use Python 3.12 and install FFmpeg and FFprobe as system dependencies. The selected live engine is Piper `en_US-joe-medium`; install its optional locked dependencies and pinned public model as described in `deploy/README.md`.
 
 ```sh
-python -m pip install './server[test]'
-python -m pytest server/tests
+UV_PROJECT_ENVIRONMENT=/tmp/vesna-venv uv sync --project server --extra test --extra tts --locked
+/tmp/vesna-venv/bin/python -m pytest server/tests
 ```
 
-Comourat remains pinned to `c9bfb1604a5286d073aaceef1513e0d7496d0e33`. FastAPI, Uvicorn, multipart parsing, and the HTTP test client have pinned application/test versions in `pyproject.toml`. Deterministic tests use fake source/TTS fixtures and controlled loopback listeners only. The real assembly tests require `ffmpeg` and `ffprobe` on `PATH`.
+Comourat remains pinned to `c9bfb1604a5286d073aaceef1513e0d7496d0e33`. `uv.lock` resolves the complete application, test, and TTS dependency sets. Deterministic tests use fake source/TTS fixtures and controlled loopback listeners only. The real assembly tests require `ffmpeg` and `ffprobe` on `PATH`; they do not use the real TTS model.
 
 ## Password setup
 
@@ -81,6 +81,8 @@ Each paragraph WAV is encoded and probed. FFmpeg concatenates the encoded MP3 se
 The original Markdown, listening text, timings, and audio require the same opaque SQLite-backed session. Cookies are `Secure`, `HttpOnly`, `SameSite=Strict`, host-only, and invalidated on sign-out. Audio supports full `200`, single-range `206`, unsatisfiable-range `416`, and HEAD responses. Private API/artifact responses use no-store cache headers.
 
 ## Explicit live checks
+
+Use `deploy/README.md` for the single-machine Piper/Quick Tunnel deployment, the `application_live_checks.py` source and artifact runner, the `deploy/browser_live_check.cjs` real-Chromium runner, controlled redirect setup, and target-phone procedures. These checks require explicit external configuration and are never part of deterministic CI.
 
 The M2 protected-fetch and source checks remain separate explicit procedures; they are not run by deterministic tests:
 

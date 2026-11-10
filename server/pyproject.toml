@@ -16,6 +16,10 @@ test = [
   "pytest>=8",
   "pytest-asyncio>=0.24",
 ]
+tts = [
+  "onnxruntime==1.31.1",
+  "piper-tts==1.8.0",
+]
 
 [project.scripts]
 vesna-api = "vesna.api_main:main"

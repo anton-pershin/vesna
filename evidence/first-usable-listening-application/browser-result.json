@@ -1,0 +1,18 @@
+{
+  "check": "chromium_live_ui",
+  "status": "pass",
+  "browser": "141.0.7390.37",
+  "paragraphs": 3,
+  "audio_decode_and_playback": true,
+  "paragraph_navigation": true,
+  "selected_paragraph_playback": true,
+  "article_audio_decode_and_playback": true,
+  "speed_control": true,
+  "saved_position_and_speed_restored": true,
+  "cached_private_responses": 0,
+  "horizontal_overflow": false,
+  "audio_response_statuses": [
+    206
+  ],
+  "credentials_recorded": false
+}

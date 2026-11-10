@@ -1,0 +1,38 @@
+{
+  "public_origin": "https://track-ruling-wifi-absence.trycloudflare.com",
+  "tts_voice_id": "piper-en-us-joe-medium-cf910fb5",
+  "results": [
+    {
+      "check": "article_live",
+      "status": "pass",
+      "title": "Example Domain",
+      "source_url": "https://example.com/",
+      "paragraphs": 1,
+      "text_characters": 156,
+      "audio_bytes": 73773,
+      "audio_sha256": "994e5f0209151900e07d660d2e605988d50fa19bd89dcf415e0896e2519fe1df",
+      "range_206": true,
+      "range_416": true,
+      "unauthenticated_artifact_status": 401,
+      "expected_text_present": true,
+      "credentials_recorded": false
+    },
+    {
+      "check": "markdown_live",
+      "status": "pass",
+      "title": "sample",
+      "filename": "sample.markdown",
+      "paragraphs": 3,
+      "source_sha256": "d586c2a5ed7dc42c00a0a0536b094337cd868a1d0797151bf590f53f51e44fb4",
+      "audio_bytes": 178797,
+      "audio_sha256": "b45ace7b145d44bb088d3f70b2b9427151a751a1262f76decb3e3d7db46a8ce1",
+      "range_206": true,
+      "range_416": true,
+      "unauthenticated_artifact_status": 401,
+      "timing_version_matches_text": true,
+      "preparation_continued_after_disconnect": true,
+      "sign_out_invalidated_session": true,
+      "credentials_recorded": false
+    }
+  ]
+}
