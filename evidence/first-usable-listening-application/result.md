@@ -5,7 +5,7 @@ Status: **in progress — live application checks pass; external-device and fina
 ## Test identity
 
 - Vesna spec commit: `5d892dc`
-- Vesna implementation commit: pending final integration commit
+- Vesna implementation commit: `b7937cf` (clean-checkout verification); final evidence commit pending
 - Comourat commit: `c9bfb1604a5286d073aaceef1513e0d7496d0e33`
 - Python: `3.12.3`
 - Cloudflared: `2026.10.7`
@@ -29,7 +29,7 @@ Status: **in progress — live application checks pass; external-device and fina
 | AC5 Audio assembly and ready publication | pass | Deterministic FFmpeg consistency and corruption tests pass. Both live source items produced version-matched text, timings, and MP3 audio and played in real Chromium. |
 | AC6 Playback, read-along behavior, and mobile accessibility | pending user-assisted device checks | Headless Chromium playback, navigation, selected paragraphs, speed, restore, accessibility, and mobile-overflow checks pass. Real-phone controls and the isolated 30-minute offline probe remain. |
 | AC7 Secure remote access and deployment isolation | pending external-network device check | Public Quick Tunnel API checks, loopback listeners, unauthenticated denial, cache exclusion, and direct/redirect zero-connection security checks pass. A user-assisted external-network phone check remains. |
-| AC8 Reproducible deployment and deterministic CI | in progress | A fresh locked environment installs application and TTS dependencies and passes 161 Python tests. JavaScript passes 119 tests. Clean-checkout and hosted-CI verification remain. |
+| AC8 Reproducible deployment and deterministic CI | pending hosted CI | Clean checkout `b7937cf` reproduces locked dependencies, verified model, 161 Python tests, 119 JavaScript tests, real three-process deployment, both live sources, and Chromium playback. Systemd units pass isolated syntax/executable validation. Hosted CI remains. |
 | AC9 Evidence and milestone decision | in progress | Sanitized voice, source, security, browser, and reproduction records exist. Device evidence, final implementation identity, and hosted CI remain. |
 
 ## Automated results
@@ -59,10 +59,14 @@ Status: **in progress — live application checks pass; external-device and fina
 
 The API listens on `127.0.0.1:8000`, and TTS listens on `127.0.0.1:8765`. The public application tunnel returns `404` for `/synthesize`; only the FastAPI application port is exposed. The first `httpbin.org` redirect attempt was blocked because the service did not return controlled targets. It was not counted as a pass; the controlled Quick Tunnel fixture replaced it.
 
+## Clean-checkout reproduction
+
+`clean-checkout-result.json`, `clean-checkout-live-results.json`, and `clean-checkout-browser-result.json` record a separate clean-clone deployment at `b7937cf`. The clone installed locked application and TTS dependencies, downloaded and verified the pinned Joe model, passed both deterministic suites, and passed the complete public source and browser checks through its own Quick Tunnel. Systemd units passed syntax and executable validation in an isolated root with stub entry points and target units. The operator host did not provide passwordless sudo, so the live reproduction used the same three console entry points in the foreground.
+
 ## Reproduction
 
 See `deploy/README.md` for the locked installation, model download and verification, process configuration, Quick Tunnel setup, source runner, browser runner, controlled redirect fixture, and phone procedures. The main live runner is `server/application_live_checks.py`. No credential or private generation endpoint appears in the evidence.
 
 ## Milestone decision
 
-`in progress`. M3 remains incomplete until the external-network phone checks, required real-device playback and isolated-probe regressions, clean-checkout verification, and hosted CI pass. A blocked or unperformed check does not count as a pass.
+`in progress`. M3 remains incomplete until the external-network phone checks, required real-device playback and isolated-probe regressions, and hosted CI pass. A blocked or unperformed check does not count as a pass.
