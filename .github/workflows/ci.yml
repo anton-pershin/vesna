@@ -68,9 +68,12 @@ jobs:
       - name: Smoke-test deployed module imports
         run: >-
           node --input-type=module -e
-          "await Promise.all(
-          ['api', 'application', 'input', 'media-session', 'offline', 'player', 'prepared', 'seekbar', 'storage', 'timing', 'fixture-download', 'views']
-          .map((name) => import('./public/modules/' + name + '.js')))"
+          "await Promise.all([
+          ...['api', 'application', 'input', 'media-session', 'player', 'prepared', 'seekbar', 'storage', 'timing', 'views']
+          .map((name) => import('./public/modules/' + name + '.js')),
+          ...['offline', 'offline-store', 'fixture-download']
+          .map((name) => import('./probe/modules/' + name + '.js'))
+          ])"
 
       - name: Run tests
         run: npm test
