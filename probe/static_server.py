@@ -71,6 +71,9 @@ class RangeRequestHandler(SimpleHTTPRequestHandler):
 
     def end_headers(self):
         self.send_header("Accept-Ranges", "bytes")
+        # Service-worker updates and shell module requests must revalidate.
+        # CacheStorage still provides the explicit offline fixture behavior.
+        self.send_header("Cache-Control", "no-cache")
         super().end_headers()
 
     def send_head(self):

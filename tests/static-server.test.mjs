@@ -93,7 +93,11 @@ test('isolated probe serves its own assets and aliases canonical shared modules'
   assert.match(await index.text(), /Vesna playback probe/);
 
   const app = await fetch(`${origin}/app.js`);
+  assert.equal(app.headers.get('Cache-Control'), 'no-cache');
   assert.match(await app.text(), /\/probe-modules\/offline\.js/);
+  const worker = await fetch(`${origin}/sw.js`);
+  assert.equal(worker.headers.get('Cache-Control'), 'no-cache');
+  assert.equal(worker.status, 200);
   const shared = await fetch(`${origin}/modules/player.js`);
   assert.equal(shared.status, 200);
   assert.match(await shared.text(), /export class PlaybackController/);
