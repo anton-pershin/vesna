@@ -3,8 +3,8 @@ import assert from 'node:assert/strict';
 import {
   replaceOfflineFixture,
   waitForOfflineReadiness,
-} from '../public/modules/offline.js';
-import { OfflineFixtureStore } from '../public/modules/storage.js';
+} from '../probe/modules/offline.js';
+import { OfflineFixtureStore } from '../probe/modules/offline-store.js';
 
 class MemoryStorage {
   values = new Map();

@@ -1,5 +1,5 @@
 const PLAYBACK_KEY = 'vesna.playback-state';
-const FIXTURE_KEY = 'vesna.offline-fixture';
+const ITEM_PLAYBACK_KEY = 'vesna.prepared-playback-state';
 
 export class PlaybackStateStore {
   constructor(storage, key = PLAYBACK_KEY) {
@@ -37,33 +37,47 @@ export class PlaybackStateStore {
   }
 }
 
-export class OfflineFixtureStore {
-  constructor(storage, key = FIXTURE_KEY) {
+export class ItemPlaybackStateStore {
+  constructor(storage, prefix = ITEM_PLAYBACK_KEY) {
     this.storage = storage;
-    this.key = key;
+    this.prefix = prefix;
   }
 
-  publish(record) {
-    if (
-      !record || record.complete === false ||
-      typeof record.version !== 'string' || !record.version ||
-      !Array.isArray(record.resources) || record.resources.length < 3
-    ) {
-      throw new Error('fixture is not complete');
+  key(itemId, version) {
+    if (typeof itemId !== 'string' || !itemId || typeof version !== 'string' || !version) {
+      throw new TypeError('item ID and prepared version are required');
     }
-    const published = {
-      version: record.version,
-      resources: [...record.resources],
-      ready: true,
-    };
-    if (typeof record.cacheName === 'string' && record.cacheName) published.cacheName = record.cacheName;
-    this.storage.setItem(this.key, JSON.stringify(published));
+    return `${this.prefix}:${encodeURIComponent(itemId)}:${encodeURIComponent(version)}`;
   }
 
-  read() {
-    const raw = this.storage.getItem(this.key);
+  save({ itemId, version, position, speed }) {
+    if (
+      !Number.isFinite(position) || position < 0 ||
+      !Number.isFinite(speed) || speed <= 0
+    ) {
+      throw new TypeError('invalid playback state');
+    }
+    this.storage.setItem(this.key(itemId, version), JSON.stringify({
+      itemId, version, position, speed,
+    }));
+  }
+
+  load(itemId, version) {
+    const raw = this.storage.getItem(this.key(itemId, version));
     if (!raw) return null;
-    const fixture = JSON.parse(raw);
-    return fixture.ready === true ? fixture : null;
+    let state;
+    try {
+      state = JSON.parse(raw);
+    } catch {
+      throw new Error('invalid playback state');
+    }
+    if (
+      !state || state.itemId !== itemId || state.version !== version ||
+      !Number.isFinite(state.position) || state.position < 0 ||
+      !Number.isFinite(state.speed) || state.speed <= 0
+    ) {
+      throw new Error('unknown item playback state version');
+    }
+    return state;
   }
 }

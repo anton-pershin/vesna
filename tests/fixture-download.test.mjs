@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { runFixtureDownload } from '../public/modules/fixture-download.js';
+import { runFixtureDownload } from '../probe/modules/fixture-download.js';
 
 test('version-changing download pauses before publication and reloads without a readiness wait', async () => {
   const events = [];

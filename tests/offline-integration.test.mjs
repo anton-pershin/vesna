@@ -12,11 +12,11 @@ import {
   readOfflineFixturePointer,
   replaceOfflineFixture,
   restoreOfflineFixturePointer,
-} from '../public/modules/offline.js';
-import { OfflineFixtureStore } from '../public/modules/storage.js';
+} from '../probe/modules/offline.js';
+import { OfflineFixtureStore } from '../probe/modules/offline-store.js';
 
 const ORIGIN = 'https://offline-integration.test';
-const workerSource = readFileSync(new URL('../public/sw.js', import.meta.url), 'utf8');
+const workerSource = readFileSync(new URL('../probe/sw.js', import.meta.url), 'utf8');
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();
 
@@ -84,7 +84,7 @@ function createWorker(caches, networkFetch) {
     Headers,
     URL,
   });
-  new vm.Script(workerSource, { filename: 'public/sw.js' }).runInContext(context);
+  new vm.Script(workerSource, { filename: 'probe/sw.js' }).runInContext(context);
 
   return {
     async get(input, init) {

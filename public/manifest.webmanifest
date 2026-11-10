@@ -1,12 +1,12 @@
 {
-  "name": "Vesna Android playback probe",
-  "short_name": "Vesna probe",
-  "description": "Offline audio playback feasibility probe",
+  "name": "Vesna listening application",
+  "short_name": "Vesna",
+  "description": "Prepare and listen to saved articles and Markdown documents",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "background_color": "#101827",
-  "theme_color": "#2dd4bf",
+  "background_color": "#0b1220",
+  "theme_color": "#0f766e",
   "icons": [
     {
       "src": "/icon-192.png",

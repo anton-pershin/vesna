@@ -2,7 +2,8 @@ export const SHELL_CACHE = 'vesna-probe-shell-v12';
 export const SHELL_RESOURCES = [
   '/index.html', '/app.js', '/styles.css', '/manifest.webmanifest', '/icon.svg',
   '/icon-192.png', '/icon-512.png', '/icon-maskable-512.png', '/sw.js',
-  '/modules/timing.js', '/modules/player.js', '/modules/seekbar.js', '/modules/storage.js', '/modules/media-session.js', '/modules/offline.js', '/modules/fixture-download.js',
+  '/modules/timing.js', '/modules/player.js', '/modules/seekbar.js', '/modules/storage.js', '/modules/media-session.js',
+  '/probe-modules/offline.js', '/probe-modules/offline-store.js', '/probe-modules/fixture-download.js',
 ];
 export const FIXTURE_RESOURCES = [
   '/fixtures/manifest.json', '/fixtures/text.json', '/fixtures/timings.json', '/fixtures/audio/fixture.mp3',
