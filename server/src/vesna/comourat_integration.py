@@ -113,22 +113,22 @@ class ComouratAdapter:
     """Delegate source operations to injected comourat collaborators.
 
     The constructor performs no configuration or environment lookup and creates
-    no clients. The caller supplies every collaborator and the summary model,
-    retry count, and overall timeout. Expected article and arXiv provider
-    exceptions are deliberately not wrapped.
+    no clients. Article-only composition supplies only ``page_fetcher``; legacy
+    Reddit and arXiv operations require their respective explicit collaborators.
+    Expected article and arXiv provider exceptions are deliberately not wrapped.
     """
 
     def __init__(
         self,
         *,
         page_fetcher: PageFetcher,
-        reddit_collector: RedditSubmissionCollector,
-        enrichment_agent: EnrichmentAgent,
-        arxiv_client: ArxivClient,
-        summarize_operation: SummarizeOperation,
-        summary_model: Any,
-        summary_retries: int,
-        summary_overall_timeout: float,
+        reddit_collector: RedditSubmissionCollector | None = None,
+        enrichment_agent: EnrichmentAgent | None = None,
+        arxiv_client: ArxivClient | None = None,
+        summarize_operation: SummarizeOperation | None = None,
+        summary_model: Any = None,
+        summary_retries: int = 0,
+        summary_overall_timeout: float = 60.0,
     ) -> None:
         self._page_fetcher = page_fetcher
         self._reddit_collector = reddit_collector
@@ -157,6 +157,12 @@ class ComouratAdapter:
         timeout failures, and empty (including whitespace-only) summaries raise
         categorized, sanitized :class:`ComouratAdapterError` instances.
         """
+        if (
+            self._reddit_collector is None
+            or self._enrichment_agent is None
+            or self._summarize_operation is None
+        ):
+            raise RuntimeError("Reddit preparation is not configured in article-only mode.")
         try:
             post = self._reddit_collector.collect(reference)
         except ValueError as error:
@@ -208,6 +214,8 @@ class ComouratAdapter:
         raises category ``empty_metadata``. ``ArxivMetadataError`` and other
         client exceptions propagate unchanged.
         """
+        if self._arxiv_client is None:
+            raise RuntimeError("arXiv metadata is not configured in article-only mode.")
         record = self._arxiv_client.get_metadata(reference)
         if record is None:
             raise ComouratAdapterError("not_found")

@@ -138,6 +138,21 @@ def test_article_error_propagates_unchanged():
     assert caught.value is error
 
 
+def test_article_only_composition_needs_no_unrelated_collaborators_or_models():
+    article = ArticleResult(
+        title="Article only", source_url="https://example.test", text="Complete text"
+    )
+    fetcher = FakePageFetcher(article)
+
+    adapter = ComouratAdapter(page_fetcher=fetcher)
+
+    assert adapter.fetch_article(article.source_url) is article
+    with pytest.raises(RuntimeError, match="article-only"):
+        adapter.get_arxiv_metadata("2601.01234")
+    with pytest.raises(RuntimeError, match="article-only"):
+        adapter.prepare_reddit("abc123")
+
+
 def test_reddit_context_is_preserved_and_prompt_and_summary_config_are_explicit():
     post = make_post()
     enrichment = EnrichmentSuccess(
