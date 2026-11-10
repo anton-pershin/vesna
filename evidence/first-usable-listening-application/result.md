@@ -14,7 +14,7 @@ Status: **in progress — live application checks pass; external-device and fina
 - Selected voice: `en_US-joe-medium`, revision `cf910fb59f1d79ab3b625a63993a108751c6c25d`
 - Voice identity: `piper-en-us-joe-medium-cf910fb5`
 - Live Chromium: `141.0.7390.37`
-- Hosted CI: pass, run `42820129994` at head `7581e83`
+- Hosted CI: pass, run `42821014121` at head `72bb434`
 - Temporary application origin: `https://track-ruling-wifi-absence.trycloudflare.com`
 - Temporary isolated-probe origin: `https://zip-shortly-str-robertson.trycloudflare.com`
 - Phone operating-system and Chrome versions: pending user-assisted checks
@@ -30,7 +30,7 @@ Status: **in progress — live application checks pass; external-device and fina
 | AC5 Audio assembly and ready publication | pass | Deterministic FFmpeg consistency and corruption tests pass. Both live source items produced version-matched text, timings, and MP3 audio and played in real Chromium. |
 | AC6 Playback, read-along behavior, and mobile accessibility | pending user-assisted device checks | Headless Chromium playback, navigation, selected paragraphs, speed, restore, accessibility, and mobile-overflow checks pass. Real-phone controls and the isolated 30-minute offline probe remain. |
 | AC7 Secure remote access and deployment isolation | pending external-network device check | Public Quick Tunnel API checks, loopback listeners, unauthenticated denial, cache exclusion, and direct/redirect zero-connection security checks pass. A user-assisted external-network phone check remains. |
-| AC8 Reproducible deployment and deterministic CI | pass | Clean checkout `b7937cf` reproduces locked dependencies, verified model, real three-process deployment, both live sources, and Chromium playback. Systemd units pass isolated syntax/executable validation. Hosted CI run `42820129994` passes 161 Python, 619 comourat, and 119 JavaScript tests. |
+| AC8 Reproducible deployment and deterministic CI | pass | Clean checkout `b7937cf` reproduces locked dependencies, verified model, real three-process deployment, both live sources, and Chromium playback. Systemd units pass isolated syntax/executable validation. Hosted CI run `42821014121` passes 161 Python, 619 comourat, and 119 JavaScript tests. |
 | AC9 Evidence and milestone decision | in progress | Sanitized voice, source, security, browser, clean-checkout, and hosted-CI records exist. Device evidence and final implementation identity remain. |
 
 ## Automated results
@@ -62,7 +62,7 @@ The API listens on `127.0.0.1:8000`, and TTS listens on `127.0.0.1:8765`. The pu
 
 ## Hosted CI
 
-`ci-results.json` records run `42820129994` at head `7581e83`: **pass**. The run completed 161 Python application tests, 619 pinned comourat tests, and 119 JavaScript tests without credentials or external live services. The first run timed out during recommended apt package installation, and the second run found a stale fixture-module import list. Those failures were fixed before this passing run; no failed run is counted as acceptance evidence.
+`ci-results.json` records run `42821014121` at head `72bb434`: **pass**. The run completed 161 Python application tests, 619 pinned comourat tests, and 119 JavaScript tests without credentials or external live services. The first run timed out during recommended apt package installation, and the second run found a stale fixture-module import list. Those failures were fixed before this passing run; no failed run is counted as acceptance evidence.
 
 ## Clean-checkout reproduction
 
