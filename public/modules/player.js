@@ -167,6 +167,7 @@ export class PlaybackController {
   }
 
   handleTimeUpdate() {
+    if (!Number.isFinite(this.audio.currentTime)) return;
     const id = resolveParagraph(this.audio.currentTime, this.timings);
     if (id !== this.activeParagraph) {
       this.activeParagraph = id;

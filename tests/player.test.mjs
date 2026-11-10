@@ -148,6 +148,23 @@ test('paragraph navigation corrects codec rounding at an exact boundary', async 
   assert.ok(audio.currentTime >= 10 && audio.currentTime < 10.02);
 });
 
+test('invalid transient media positions preserve the last active paragraph', () => {
+  const audio = new FakeAudio();
+  const active = [];
+  const player = new PlaybackController(audio, timings, (id) => active.push(id));
+
+  audio.currentTime = Number.NaN;
+  player.handleTimeUpdate();
+  audio.currentTime = Number.POSITIVE_INFINITY;
+  player.handleTimeUpdate();
+
+  assert.equal(player.activeParagraph, 'p1');
+  assert.deepEqual(active, ['p1']);
+  audio.currentTime = 20;
+  player.handleTimeUpdate();
+  assert.equal(player.activeParagraph, 'p3');
+});
+
 test('PlaybackController updates the active paragraph after time updates and rejects invalid speed', () => {
   const audio = new FakeAudio();
   const active = [];

@@ -1,4 +1,4 @@
-const SHELL_CACHE = 'vesna-app-shell-v3';
+const SHELL_CACHE = 'vesna-app-shell-v4';
 const SHELL_RESOURCES = [
   '/index.html', '/app.js', '/styles.css', '/manifest.webmanifest', '/icon.svg',
   '/icon-192.png', '/icon-512.png', '/icon-maskable-512.png', '/sw.js',
