@@ -18,7 +18,13 @@ External dependency: `anton-pershin/comourat`. Comourat owns URL-based source co
 
 #### 1.4. Architecture type
 
-Layered architecture. The application separates presentation and playback, application operations, and persistence. The application backend, comourat preparation worker, and persistent library storage run on a separate host that provides HTTPS access. The TTS service runs on the home server. The backend calls the TTS service through a protected private connection; HTTP is permitted inside an encrypted tunnel or private VPN. The phone accesses text and audio only through the HTTPS host. The initial implementation remains in one repository; a later approved spec may move the TTS service to a separate repository.
+Layered architecture. The application separates presentation and playback, application operations, and persistence.
+
+In the final deployment, the application backend, comourat preparation worker, and persistent library storage run on a separate HTTPS host. The TTS service runs on the home server. The backend calls TTS through a protected private connection. HTTP is permitted inside an encrypted tunnel or private VPN.
+
+The M3 development profile runs the backend, worker, storage, and TTS service on one machine. The worker calls TTS over loopback, and TTS listens only on loopback. A documented external tunnel provides public HTTPS. A later approved spec must define the separate-host deployment and its protected server-to-server connection.
+
+The phone accesses text and audio only through the public application HTTPS URL. The initial implementation remains in one repository. A later approved spec may move the TTS service to a separate repository.
 
 #### 1.5. Execution mode
 
@@ -49,7 +55,7 @@ Show each item's title, source URL or uploaded filename, and listening text. Cle
 
 **FR5. Home-server speech generation**
 
-Generate English speech through a TTS service hosted on the home server. Keep TTS credentials and model access on the home server. The preparation worker on the HTTPS host requests speech through a protected private connection and stores the returned audio on the HTTPS host. The TTS endpoint must not be publicly accessible or contacted directly by the phone. Generation must not depend on the phone remaining connected or keeping the app open. Show preparation, ready, and failure states, and allow failed operations to be retried.
+Generate English speech through a TTS service hosted on the home server in the final deployment. Keep TTS credentials and model access on the machine that runs TTS. The preparation worker requests speech through a protected private connection and stores the returned audio on the application host. The M3 development profile may run the worker and TTS on one machine and use loopback for this connection. The TTS endpoint must not be publicly accessible or contacted directly by the phone. Generation must not depend on the phone remaining connected or keeping the app open. Show preparation, ready, and failure states, and allow failed operations to be retried.
 
 **FR6. Playback controls**
 
@@ -73,7 +79,7 @@ List saved items with preparation and download status. Let the user remove a dev
 
 **FR11. Installation and remote access**
 
-Provide an installable PWA for Chrome on the Huawei Pura 80 Pro. Support access away from home through an authenticated HTTPS connection to the separate web/API host. This host serves the PWA, application API, prepared text, timing data, and audio; the home server does not need to provide HTTPS. New content preparation requires connectivity; downloaded playback does not.
+Provide an installable PWA for Chrome on the Huawei Pura 80 Pro. Support access away from home through an authenticated HTTPS connection to the application host. This host serves the PWA, application API, prepared text, timing data, and audio; the home server does not need to provide HTTPS in the final deployment. The M3 development profile may use a temporary external HTTPS tunnel and run the application host and TTS on one machine. New content preparation requires connectivity; downloaded playback does not.
 
 #### 2.2. Non-functional requirements
 
@@ -95,7 +101,7 @@ Request persistent browser storage where supported. Handle storage denial, insuf
 
 **NFR5. Security**
 
-Require authentication for remote access to private content, uploads, and generation operations. Protect credentials on their respective servers. Protect the web/API-to-TTS connection with an encrypted tunnel or private VPN and restrict the TTS endpoint to authorized server access. Treat submitted URLs, uploaded files, and retrieved content as untrusted input: prevent access to private server-network resources through collection requests, and prevent uploaded or retrieved content from executing scripts in the app.
+Require authentication for remote access to private content, uploads, and generation operations. Protect credentials on their respective servers. In the final split deployment, protect the web/API-to-TTS connection with an encrypted tunnel or private VPN and restrict the TTS endpoint to authorized server access. In the M3 single-machine profile, use a loopback-only TTS listener and configure only the local worker to call it. Loopback prevents remote access; it does not authenticate local processes. Treat submitted URLs, uploaded files, and retrieved content as untrusted input: prevent access to private server-network resources through collection requests, and prevent uploaded or retrieved content from executing scripts in the app.
 
 **NFR6. Recovery**
 
@@ -113,7 +119,7 @@ Use automated tests for application behavior and integration contracts, plus doc
 
 **P1.** Prefer a small, single-user deployment with explicit configuration and few operational dependencies.
 
-**P2.** Prefer a natural, clear English voice. Select the TTS engine after comparing real samples and measuring generation speed on the home server.
+**P2.** Prefer a natural, clear English voice. Select the TTS engine after comparing real samples and measuring generation speed on the machine that will run TTS in the selected deployment.
 
 **P3.** Prefer reuse of generated audio and prepared content to reduce repeated computation and API costs.
 
@@ -227,7 +233,7 @@ This approach moves content preparation and audio assembly to the HTTPS host and
 
 Use server-prepared audio with paragraph timing data.
 
-Initially, generate speech paragraph by paragraph on the home server, then assemble the returned results into one audio file on the HTTPS host. Derive paragraph timings from the generated audio and verify them against the final encoded file. This avoids requiring word-level alignment while supporting paragraph highlighting and navigation.
+In the final deployment, generate speech paragraph by paragraph on the home server, then assemble the returned results into one audio file on the HTTPS host. Derive paragraph timings from the generated audio and verify them against the final encoded file. This avoids requiring word-level alignment while supporting paragraph highlighting and navigation.
 
 Use the browser's media playback position as the timing reference. Do not use a separate JavaScript timer as the playback clock. Use the Media Session API for supported lock-screen and headset controls.
 
@@ -241,7 +247,9 @@ Verify the selected playback approach on the actual phone before building the co
 
 #### 5.1. High-level design
 
-Use a layered architecture deployed across the phone, a separate HTTPS host, and the home server. All initial Vesna components remain in `anton-pershin/vesna`. Comourat is an external library dependency installed on the HTTPS host.
+Use a layered architecture deployed across the phone, a separate HTTPS host, and the home server in the final deployment. All initial Vesna components remain in `anton-pershin/vesna`. Comourat is an external library dependency installed on the HTTPS host.
+
+The approved M3 development profile combines the HTTPS host and home-server roles on one machine. The application and TTS run as separate processes, communicate only over loopback, and use a temporary external HTTPS tunnel for phone access. This profile does not verify the final split-host connection. A later spec must define and verify that connection before the complete deployment can pass.
 
 The diagram shows layers and deployment locations. The comourat library runs on the HTTPS host; its external-dependency group identifies ownership, not a separate deployment.
 
@@ -348,10 +356,10 @@ Durations are planning estimates in weeks for one full-time person. They exclude
 |----|------|--------|-----------------|----------|---------------------------|
 | M1 | Verify Android playback feasibility | Done | An installed PWA plays a downloaded, multi-paragraph audio item for at least 30 minutes with the screen locked and the network disabled. Read-along, seeking, and resume work on the target phone. Record operating-system and Chrome versions. | 2–4 weeks | Low; the work depends on sequential device tests. |
 | M2 | Establish the comourat integration contract | Done | Verify public interfaces for article extraction, Reddit URL collection, enrichment and summarization, and arXiv abstract retrieval. Prioritize the article path required for the first usable application. Verify URL-access restrictions and redirect handling in live integration checks. Create issues for missing capabilities. Close this milestone only when the required capabilities and live security checks pass. | 2–4 weeks, excluding upstream waiting time | Moderate; source-specific checks can run independently. |
-| M3 | Deliver the first usable listening application | To do | A user can authenticate, submit a public article URL or upload a Markdown file, and save and play the prepared result. The HTTPS host requests real English speech from the private home-server TTS service, assembles complete audio and paragraph timing data, and continues preparation after the phone disconnects. Select the voice using real samples and measured generation speed. Provide a reproducible HTTPS deployment and verify the protected server-to-server connection. | 3–6 weeks | Moderate; TTS evaluation and HTTPS deployment can proceed independently. |
+| M3 | Deliver the first usable listening application | To do | A user can authenticate, submit a public article URL or upload a Markdown file, and save and play the prepared result. One development machine runs the application and a private loopback-only TTS service, requests real English speech, assembles complete audio and paragraph timing data, and continues preparation after the phone disconnects. Select the voice using real samples and measured generation speed on that machine. Provide a reproducible external-HTTPS development deployment through a temporary tunnel. Defer the split host/home-server deployment and its protected connection. | 3–6 weeks | Moderate; TTS evaluation and HTTPS deployment can proceed independently. |
 | M4 | Deliver the source-to-audio library | To do | Add Reddit and arXiv items, complete library and source-transparency features, and support safe retries, including "outcome unknown". Jobs retain completed stages, and users can inspect preparation status and source content for every supported input type. | 3–6 weeks | Moderate; interface and backend work can proceed against agreed contracts. |
 | M5 | Complete offline use and recovery | To do | Downloads, storage controls, version replacement, offline launch, playback-state recovery, and service-worker updates satisfy their acceptance criteria. Failure tests cover partial downloads, storage loss, and preparation failures. | 3–6 weeks | Low to moderate; browser storage and playback behavior require integrated tests. |
-| M6 | Verify the complete deployment | To do | All constitution acceptance criteria pass, with reproducible evidence from automated tests, live integrations, and the target phone. Remote access works outside the home network. Deployment, recovery, and operating instructions are documented. | 2–4 weeks | Low; final verification depends on the integrated system. |
+| M6 | Verify the complete deployment | To do | All constitution acceptance criteria pass, with reproducible evidence from automated tests, live integrations, and the target phone. The final split HTTPS-host/home-server deployment uses a verified protected server-to-server TTS connection, and remote access works outside the home network. Deployment, recovery, and operating instructions are documented. | 2–4 weeks | Low; final verification depends on the integrated system. |
 | M7 | Maintain compatibility and extend components as needed | To do | Preserve verified behavior as Chrome, the phone software, comourat, and TTS dependencies change. Extend component repositories as needed through approved specs. Review deployment and storage recovery over the project's operating life. | Ongoing; five-year maintenance horizon | Depends on the approved change. |
 
 ```mermaid
@@ -378,6 +386,6 @@ M1 may use a prepared audio, text, and paragraph-timing fixture. This verifies p
 
 M2 can run in parallel with M1. M3 starts when the article-path contract is ready; the remaining M2 source checks may run in parallel with M3. Upstream collection blockers do not prevent the playback feasibility test.
 
-M3 establishes basic authentication and reproducible deployment. M4 preserves the offline publication and version-integrity contracts established by M1. M6 verifies these security and deployment foundations rather than introducing them.
+M3 establishes basic authentication and reproducible development deployment. M4 preserves the offline publication and version-integrity contracts established by M1. A later deployment spec introduces the split-host connection. M6 verifies that connection together with these foundations.
 
 The initial delivery estimate is 15–30 person-weeks, not a calendar commitment. The first decision gate is M1: if the phone cannot meet the core PWA playback requirement, stop and review the approach before building the full application.
