@@ -1,4 +1,4 @@
-export const SHELL_CACHE = 'vesna-probe-shell-v13';
+export const SHELL_CACHE = 'vesna-probe-shell-v14';
 export const SHELL_RESOURCES = [
   '/index.html', '/app.js', '/styles.css', '/manifest.webmanifest', '/icon.svg',
   '/icon-192.png', '/icon-512.png', '/icon-maskable-512.png', '/sw.js',
