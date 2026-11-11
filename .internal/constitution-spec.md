@@ -356,11 +356,12 @@ Durations are planning estimates in weeks for one full-time person. They exclude
 |----|------|--------|-----------------|----------|---------------------------|
 | M1 | Verify Android playback feasibility | Done | An installed PWA plays a downloaded, multi-paragraph audio item for at least 30 minutes with the screen locked and the network disabled. Read-along, seeking, and resume work on the target phone. Record operating-system and Chrome versions. | 2–4 weeks | Low; the work depends on sequential device tests. |
 | M2 | Establish the comourat integration contract | Done | Verify public interfaces for article extraction, Reddit URL collection, enrichment and summarization, and arXiv abstract retrieval. Prioritize the article path required for the first usable application. Verify URL-access restrictions and redirect handling in live integration checks. Create issues for missing capabilities. Close this milestone only when the required capabilities and live security checks pass. | 2–4 weeks, excluding upstream waiting time | Moderate; source-specific checks can run independently. |
-| M3 | Deliver the first usable listening application | To do | A user can authenticate, submit a public article URL or upload a Markdown file, and save and play the prepared result. One development machine runs the application and a private loopback-only TTS service, requests real English speech, assembles complete audio and paragraph timing data, and continues preparation after the phone disconnects. Select the voice using real samples and measured generation speed on that machine. Provide a reproducible external-HTTPS development deployment through a temporary tunnel. Defer the split host/home-server deployment and its protected connection. | 3–6 weeks | Moderate; TTS evaluation and HTTPS deployment can proceed independently. |
-| M4 | Deliver the source-to-audio library | To do | Add Reddit and arXiv items, complete library and source-transparency features, and support safe retries, including "outcome unknown". Jobs retain completed stages, and users can inspect preparation status and source content for every supported input type. | 3–6 weeks | Moderate; interface and backend work can proceed against agreed contracts. |
-| M5 | Complete offline use and recovery | To do | Downloads, storage controls, version replacement, offline launch, playback-state recovery, and service-worker updates satisfy their acceptance criteria. Failure tests cover partial downloads, storage loss, and preparation failures. | 3–6 weeks | Low to moderate; browser storage and playback behavior require integrated tests. |
-| M6 | Verify the complete deployment | To do | All constitution acceptance criteria pass, with reproducible evidence from automated tests, live integrations, and the target phone. The final split HTTPS-host/home-server deployment uses a verified protected server-to-server TTS connection, and remote access works outside the home network. Deployment, recovery, and operating instructions are documented. | 2–4 weeks | Low; final verification depends on the integrated system. |
-| M7 | Maintain compatibility and extend components as needed | To do | Preserve verified behavior as Chrome, the phone software, comourat, and TTS dependencies change. Extend component repositories as needed through approved specs. Review deployment and storage recovery over the project's operating life. | Ongoing; five-year maintenance horizon | Depends on the approved change. |
+| M3 | Deliver the first usable listening application | Done | A user can authenticate, submit a public article URL or upload a Markdown file, and save and play the prepared result. One development machine runs the application and a private loopback-only TTS service, requests real English speech, assembles complete audio and paragraph timing data, and continues preparation after the phone disconnects. Select the voice using real samples and measured generation speed on that machine. Provide a reproducible external-HTTPS development deployment through a temporary tunnel. Defer the split host/home-server deployment and its protected connection. | 3–6 weeks | Moderate; TTS evaluation and HTTPS deployment can proceed independently. |
+| M4 | Deliver a practical mobile interface | To do | A user can move between a compact library, a separate content-input screen, and a focused reader without scrolling through unrelated sections. The reader has one consistent set of controls in a bottom playback bar that remains visible while the user scrolls. The bar provides play/pause, seeking, elapsed and total time, and previous/next paragraph controls. Playback speed and automatic scrolling remain available in a compact settings area. Source information and original Markdown are available on demand, and routine messages are concise and non-technical. The interface has a consistent visual design, readable responsive layouts, and accessible controls. Preserve the M3 API, preparation, playback, and state-restoration contracts. Verify the complete input-to-listening workflow on the target phone. | 2–4 weeks | Low to moderate; interface components can be developed independently, but phone verification requires integrated tests. |
+| M5 | Deliver the source-to-audio library | To do | Add Reddit and arXiv items, complete library and source-transparency features, and support safe retries, including "outcome unknown". Jobs retain completed stages, and users can inspect preparation status and source content for every supported input type. | 3–6 weeks | Moderate; interface and backend work can proceed against agreed contracts. |
+| M6 | Complete offline use and recovery | To do | Downloads, storage controls, version replacement, offline launch, playback-state recovery, and service-worker updates satisfy their acceptance criteria. Failure tests cover partial downloads, storage loss, and preparation failures. | 3–6 weeks | Low to moderate; browser storage and playback behavior require integrated tests. |
+| M7 | Verify the complete deployment | To do | All constitution acceptance criteria pass, with reproducible evidence from automated tests, live integrations, and the target phone. The final split HTTPS-host/home-server deployment uses a verified protected server-to-server TTS connection, and remote access works outside the home network. Deployment, recovery, and operating instructions are documented. | 2–4 weeks | Low; final verification depends on the integrated system. |
+| M8 | Maintain compatibility and extend components as needed | To do | Preserve verified behavior as Chrome, the phone software, comourat, and TTS dependencies change. Extend component repositories as needed through approved specs. Review deployment and storage recovery over the project's operating life. | Ongoing; five-year maintenance horizon | Depends on the approved change. |
 
 ```mermaid
 flowchart TD
@@ -368,24 +369,26 @@ flowchart TD
   M2["M2: Comourat integration contract"]
   M2A["M2 gate: Article-path contract ready"]
   M3["M3: First usable listening application"]
-  M4["M4: Source-to-audio library"]
-  M5["M5: Offline use and recovery"]
-  M6["M6: Complete deployment verification"]
-  M7["M7: Maintenance and extensions"]
+  M4["M4: Practical mobile interface"]
+  M5["M5: Source-to-audio library"]
+  M6["M6: Offline use and recovery"]
+  M7["M7: Complete deployment verification"]
+  M8["M8: Maintenance and extensions"]
   M1 --> M3
   M2A --> M2
   M2A --> M3
-  M2 --> M4
+  M2 --> M5
   M3 --> M4
   M4 --> M5
   M5 --> M6
   M6 --> M7
+  M7 --> M8
 ```
 
 M1 may use a prepared audio, text, and paragraph-timing fixture. This verifies playback only and does not satisfy the real TTS or comourat integration criteria.
 
-M2 can run in parallel with M1. M3 starts when the article-path contract is ready; the remaining M2 source checks may run in parallel with M3. Upstream collection blockers do not prevent the playback feasibility test.
+M2 can run in parallel with M1. M3 starts when the article-path contract is ready; the remaining M2 source checks may run in parallel with M3. Upstream collection blockers do not prevent the playback feasibility test. Milestone references in completed specs retain their original numbering.
 
-M3 establishes basic authentication and reproducible development deployment. M4 preserves the offline publication and version-integrity contracts established by M1. A later deployment spec introduces the split-host connection. M6 verifies that connection together with these foundations.
+M3 establishes basic authentication and reproducible development deployment. M4 changes presentation and interaction while preserving the M3 API, preparation, playback, and state-restoration contracts. It does not add source types or real-item offline storage, and it does not require a frontend framework migration. M5 adds the remaining source types and preserves the offline publication and version-integrity contracts established by M1. A later deployment spec introduces the split-host connection. M7 verifies that connection together with these foundations.
 
-The initial delivery estimate is 15–30 person-weeks, not a calendar commitment. The first decision gate is M1: if the phone cannot meet the core PWA playback requirement, stop and review the approach before building the full application.
+The total delivery estimate is 17–34 person-weeks, not a calendar commitment. The first decision gate is M1: if the phone cannot meet the core PWA playback requirement, stop and review the approach before building the full application.
