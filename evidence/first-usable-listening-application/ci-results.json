@@ -1,9 +1,9 @@
 {
   "status": "pass",
-  "run_id": "42954896274",
-  "job_id": "130307546418",
-  "head_commit": "8612655",
-  "url": "https://github.com/anton-pershin/vesna/actions/runs/42954896274",
+  "run_id": "42957277782",
+  "job_id": "130315242476",
+  "head_commit": "78051cb",
+  "url": "https://github.com/anton-pershin/vesna/actions/runs/42957277782",
   "python_application_tests": 161,
   "comourat_tests": 619,
   "javascript_tests": 120,

@@ -1,6 +1,6 @@
 # M3 verification evidence
 
-This directory records the acceptance evidence for the first usable listening application. The implementation is in progress. Do not treat a pending or blocked result as a pass.
+This directory records the complete acceptance evidence for the first usable listening application. M3 passes all AC1–AC9 criteria. Historical procedures also explain failures that were corrected before the final pass; never treat a pending or blocked result as a pass.
 
 ## Evidence rules
 
@@ -21,11 +21,11 @@ npm test
 python -m pytest server/tests
 ```
 
-The exact virtual environment and dependency-install procedure will be recorded with the final results. Live source, real-TTS, Quick Tunnel, and device checks are separate procedures and must not become CI dependencies.
+The exact virtual environment and dependency-install procedure is in `deploy/README.md`. Raw results are in `automated-python.txt` and `automated-javascript.txt`. Live source, real-TTS, Quick Tunnel, and device checks are separate procedures and must not become CI dependencies.
 
 ## Live application checks
 
-The final record will include:
+The final record includes:
 
 1. The single-machine application, worker, storage, and loopback TTS configuration.
 2. The pinned `cloudflared` version and Quick Tunnel command.
@@ -37,7 +37,7 @@ The final record will include:
 
 ## Target-phone checks
 
-Record the phone operating-system and Chrome versions with each run.
+Final observations are in `device-results.md`. Record the phone operating-system and Chrome versions with each run.
 
 ### Real M3 item
 
