@@ -1,17 +1,31 @@
 [project]
 name = "vesna"
-description = "Vesna application integration contracts"
-version = "0.0.0"
+description = "Vesna authenticated listening application and durable preparation worker"
+version = "0.3.0"
 requires-python = ">=3.12"
 dependencies = [
   "comourat @ git+https://github.com/anton-pershin/comourat.git@c9bfb1604a5286d073aaceef1513e0d7496d0e33",
+  "fastapi==0.162.2",
+  "python-multipart==0.0.33",
+  "uvicorn==0.54.0",
 ]
 
 [project.optional-dependencies]
 test = [
+  "httpx==0.28.1",
   "pytest>=8",
   "pytest-asyncio>=0.24",
 ]
+tts = [
+  "onnxruntime==1.31.1",
+  "piper-tts==1.8.0",
+]
+
+[project.scripts]
+vesna-api = "vesna.api_main:main"
+vesna-worker = "vesna.worker_main:main"
+vesna-tts = "vesna.tts_main:main"
+vesna-password-hash = "vesna.password_cli:main"
 
 [build-system]
 requires = ["hatchling>=1.26"]

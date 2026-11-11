@@ -1,0 +1,159 @@
+{
+  "engine": "piper-tts==1.8.0",
+  "onnxruntime": "1.31.1",
+  "sample_text_sha256": "d586c2a5ed7dc42c00a0a0536b094337cd868a1d0797151bf590f53f51e44fb4",
+  "candidates": [
+    {
+      "candidate": "joe",
+      "model": "en_US-joe-medium",
+      "model_revision": "cf910fb59f1d79ab3b625a63993a108751c6c25d",
+      "model_sha256": "abf4b998e34045cbd00eaf050de2de620f81ded6eb8b85a24b022a1c2b3f08d2",
+      "noise_scale": 0.5,
+      "noise_w_scale": 0.333,
+      "length_scale": 1.0,
+      "sentence_silence": 0.0,
+      "sample_path": "voice-joe.wav",
+      "runs": [
+        {
+          "run": 1,
+          "wall_seconds": 2.53,
+          "audio_seconds": 22.001,
+          "wall_per_audio": 0.115,
+          "peak_rss_kib": 249724,
+          "sample_sha256": "002445f9518f8f49c3fc0663b6472e1f8e020cff0be81ed344867db2dae39608",
+          "format": {
+            "programs": [],
+            "streams": [
+              {
+                "codec_name": "pcm_s16le",
+                "sample_rate": "22050",
+                "channels": 1
+              }
+            ],
+            "format": {
+              "duration": "22.000907"
+            }
+          }
+        },
+        {
+          "run": 2,
+          "wall_seconds": 2.561,
+          "audio_seconds": 22.221,
+          "wall_per_audio": 0.1152,
+          "peak_rss_kib": 251008,
+          "sample_sha256": "4ee90b5b62e825219e3a8788e5479943b51b11e23cc5d5d17bead7e4b3fc5c52",
+          "format": {
+            "programs": [],
+            "streams": [
+              {
+                "codec_name": "pcm_s16le",
+                "sample_rate": "22050",
+                "channels": 1
+              }
+            ],
+            "format": {
+              "duration": "22.221497"
+            }
+          }
+        },
+        {
+          "run": 3,
+          "wall_seconds": 2.611,
+          "audio_seconds": 21.92,
+          "wall_per_audio": 0.1191,
+          "peak_rss_kib": 249116,
+          "sample_sha256": "d1d0534b31760aaeea992a7e0a69d094a57422c51e936d1cdc5a2deac6295c2b",
+          "format": {
+            "programs": [],
+            "streams": [
+              {
+                "codec_name": "pcm_s16le",
+                "sample_rate": "22050",
+                "channels": 1
+              }
+            ],
+            "format": {
+              "duration": "21.919637"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "candidate": "ljspeech",
+      "model": "en_US-ljspeech-medium",
+      "model_revision": "bae641dcb5a608cff81ccaf7ff018baaca1a33e1",
+      "model_sha256": "6f52a751e2349abe7a76735eb09dc1875298c77ea2342ffd2fef79ff81b87f22",
+      "noise_scale": 0.667,
+      "noise_w_scale": 0.333,
+      "length_scale": 1.0,
+      "sentence_silence": 0.0,
+      "sample_path": "voice-ljspeech.wav",
+      "runs": [
+        {
+          "run": 1,
+          "wall_seconds": 3.097,
+          "audio_seconds": 20.921,
+          "wall_per_audio": 0.148,
+          "peak_rss_kib": 256780,
+          "sample_sha256": "c067807d525b9a9b15c2c62410ffdea261e5598b20e7cc1d6516afc8b6174973",
+          "format": {
+            "programs": [],
+            "streams": [
+              {
+                "codec_name": "pcm_s16le",
+                "sample_rate": "22050",
+                "channels": 1
+              }
+            ],
+            "format": {
+              "duration": "20.921179"
+            }
+          }
+        },
+        {
+          "run": 2,
+          "wall_seconds": 3.126,
+          "audio_seconds": 21.06,
+          "wall_per_audio": 0.1484,
+          "peak_rss_kib": 258532,
+          "sample_sha256": "09542948ff9998bbfdb9a358973f2113cd5e653ba1defce28e408e33f3172aff",
+          "format": {
+            "programs": [],
+            "streams": [
+              {
+                "codec_name": "pcm_s16le",
+                "sample_rate": "22050",
+                "channels": 1
+              }
+            ],
+            "format": {
+              "duration": "21.060499"
+            }
+          }
+        },
+        {
+          "run": 3,
+          "wall_seconds": 3.253,
+          "audio_seconds": 21.014,
+          "wall_per_audio": 0.1548,
+          "peak_rss_kib": 256220,
+          "sample_sha256": "c44a5f5680257d1239daac0f9052504dd27a609a9c01164ad9e3675682448ad3",
+          "format": {
+            "programs": [],
+            "streams": [
+              {
+                "codec_name": "pcm_s16le",
+                "sample_rate": "22050",
+                "channels": 1
+              }
+            ],
+            "format": {
+              "duration": "21.014059"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

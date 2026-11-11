@@ -17,7 +17,7 @@ concurrency:
 jobs:
   test:
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    timeout-minutes: 20
 
     steps:
       - uses: actions/checkout@v4
@@ -32,11 +32,19 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Install Python integration dependencies
-        run: python -m pip install './server[test]'
+      - name: Install uv and FFmpeg
+        run: |
+          python -m pip install uv
+          if ! command -v ffmpeg || ! command -v ffprobe; then
+            sudo apt-get update
+            sudo apt-get install -y --no-install-recommends ffmpeg
+          fi
 
-      - name: Run Python integration tests
-        run: python -m pytest server/tests
+      - name: Install locked application and TTS dependencies
+        run: UV_PROJECT_ENVIRONMENT=/tmp/vesna-venv uv sync --project server --extra test --extra tts --locked
+
+      - name: Run Python application and integration tests
+        run: /tmp/vesna-venv/bin/python -m pytest server/tests
 
       - name: Check out pinned comourat contract tests
         run: |
@@ -44,25 +52,28 @@ jobs:
           git -C /tmp/comourat checkout c9bfb1604a5286d073aaceef1513e0d7496d0e33
 
       - name: Run comourat contract and security tests
-        run: python -m pytest /tmp/comourat
+        run: /tmp/vesna-venv/bin/python -m pytest /tmp/comourat
 
       - name: Check JavaScript syntax
         run: |
-          find public tests -type f \( -name '*.js' -o -name '*.mjs' \) -print0 |
+          find public probe tests -type f \( -name '*.js' -o -name '*.mjs' \) -print0 |
             xargs -0 -r -n1 node --check
+          npm run check:syntax
 
-      - name: Check Python syntax
-        run: >-
-          python3 -c
-          "import ast, pathlib;
-          ast.parse(pathlib.Path('scripts/static_server.py').read_text(encoding='utf-8'))"
+      - name: Check Python and deployment syntax
+        run: |
+          python3 -c "import ast, pathlib; ast.parse(pathlib.Path('scripts/static_server.py').read_text(encoding='utf-8')); ast.parse(pathlib.Path('probe/static_server.py').read_text(encoding='utf-8'))"
+          bash -n deploy/install_joe_model.sh
 
       - name: Smoke-test deployed module imports
         run: >-
           node --input-type=module -e
-          "await Promise.all(
-          ['media-session', 'offline', 'player', 'seekbar', 'storage', 'timing', 'fixture-download']
-          .map((name) => import('./public/modules/' + name + '.js')))"
+          "await Promise.all([
+          ...['api', 'application', 'input', 'media-session', 'player', 'prepared', 'seekbar', 'storage', 'timing', 'views']
+          .map((name) => import('./public/modules/' + name + '.js')),
+          ...['offline', 'offline-store', 'fixture-download']
+          .map((name) => import('./probe/modules/' + name + '.js'))
+          ])"
 
       - name: Run tests
         run: npm test

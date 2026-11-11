@@ -3,43 +3,111 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#2dd4bf">
+  <meta name="theme-color" content="#0f766e">
+  <meta name="description" content="Prepare and listen to saved articles and Markdown documents.">
   <link rel="manifest" href="/manifest.webmanifest">
   <link rel="icon" href="/icon.svg">
   <link rel="stylesheet" href="/styles.css">
-  <title>Vesna playback probe</title>
+  <title>Vesna listening application</title>
 </head>
 <body>
-  <main>
-    <header>
-      <p class="eyebrow">M1 Android playback feasibility</p>
-      <h1>Vesna offline reader</h1>
-      <p id="status" role="status">Loading fixture…</p>
-      <p id="build" class="hint">Probe build: not loaded</p>
-    </header>
-    <section class="panel" aria-labelledby="fixture-heading">
-      <h2 id="fixture-heading">The Quiet Signal</h2>
-      <p>Complete local fixture · 30 minutes · 12 paragraphs</p>
-    <audio id="audio" preload="auto" controls></audio>
-      <label class="seek-control" for="seekbar">Position</label>
-      <input id="seekbar" type="range" min="0" max="1805" step="1" value="0" aria-label="Playback position">
-      <output id="position" for="seekbar">0:00 / 30:05</output>
-      <div class="controls" aria-label="Playback controls">
-        <button id="play" type="button">Play</button>
-        <button id="pause" type="button">Pause</button>
-        <button id="previous" type="button">Previous paragraph</button>
-        <button id="next" type="button">Next paragraph</button>
-        <label>Speed <select id="speed"><option>0.75</option><option selected>1</option><option>1.25</option><option>1.5</option><option>2</option></select></label>
-        <label class="check"><input id="autoscroll" type="checkbox" checked> Auto-scroll</label>
+  <a class="skip-link" href="#main">Skip to application</a>
+  <main id="main">
+    <header class="app-header">
+      <div>
+        <p class="eyebrow">Personal read-along library</p>
+        <h1>Vesna</h1>
       </div>
-      <button id="download" type="button">Prepare offline fixture</button>
-      <p id="offline" role="status">Offline readiness: not checked</p>
+      <button id="sign-out" class="secondary" type="button" hidden>Sign out</button>
+    </header>
+    <p id="app-status" role="status" aria-live="polite">Checking your session…</p>
+    <p id="app-error" class="error" role="alert" hidden></p>
+
+    <section id="auth-view" class="panel" aria-labelledby="sign-in-heading" hidden>
+      <h2 id="sign-in-heading">Sign in</h2>
+      <p>Sign in to prepare and open your private listening library.</p>
+      <form id="sign-in-form">
+        <label for="password">Password</label>
+        <input id="password" name="password" type="password" autocomplete="current-password" required>
+        <button id="sign-in" type="submit">Sign in</button>
+      </form>
     </section>
-    <section aria-labelledby="reader-heading">
-      <h2 id="reader-heading">Reader</h2>
-      <p class="hint">Select a paragraph to play from that point.</p>
-      <ol id="reader" class="reader"></ol>
-    </section>
+
+    <div id="application-view" hidden>
+      <section class="panel" aria-labelledby="add-heading">
+        <h2 id="add-heading">Add listening material</h2>
+        <form id="article-form" class="submission-form">
+          <h3>Public article URL</h3>
+          <label for="article-url">Article address</label>
+          <input id="article-url" name="url" type="url" inputmode="url" autocomplete="url" placeholder="https://example.com/article" required>
+          <p class="hint">Use a public HTTP or HTTPS blog or article address.</p>
+          <button id="submit-article" type="submit">Prepare article</button>
+        </form>
+        <form id="markdown-form" class="submission-form">
+          <h3>Markdown upload</h3>
+          <label for="markdown-file">UTF-8 Markdown file</label>
+          <input id="markdown-file" name="file" type="file" accept=".md,.markdown,text/markdown,text/plain" required>
+          <p class="hint">Only .md and .markdown files up to 1 MiB. Linked resources are not retrieved.</p>
+          <button id="upload-markdown" type="submit">Prepare Markdown</button>
+        </form>
+      </section>
+
+      <section class="panel" aria-labelledby="library-heading">
+        <div class="section-heading">
+          <h2 id="library-heading">Saved library</h2>
+          <button id="refresh" class="secondary" type="button">Refresh</button>
+        </div>
+        <p id="library-empty" class="hint">No saved items yet.</p>
+        <ul id="library" class="library"></ul>
+      </section>
+
+      <section id="item-view" class="panel" aria-labelledby="item-title" hidden>
+        <button id="close-item" class="secondary" type="button">Back to library</button>
+        <h2 id="item-title">Item</h2>
+        <p id="item-state" class="state-message"></p>
+        <p id="item-source" class="item-source"></p>
+        <a id="article-link" href="#" target="_blank" rel="noopener noreferrer" hidden>Open original article</a>
+        <p id="item-error" class="error" role="alert" hidden></p>
+        <button id="retry" type="button" hidden>Retry preparation</button>
+
+        <section id="markdown-source" aria-labelledby="source-heading" hidden>
+          <h3 id="source-heading">Original Markdown</h3>
+          <p><a id="source-download" download>Download original Markdown</a></p>
+          <pre id="source-text" tabindex="0"></pre>
+        </section>
+
+        <section id="player" class="player" aria-labelledby="player-heading" hidden>
+          <h3 id="player-heading">Listen</h3>
+          <audio id="audio" preload="metadata" controls></audio>
+          <label class="seek-control" for="seekbar">Playback position</label>
+          <input id="seekbar" type="range" min="0" max="0" step="1" value="0" aria-label="Playback position in seconds">
+          <output id="position" for="seekbar">0:00 / 0:00</output>
+          <div class="controls" role="group" aria-label="Read-along playback controls">
+            <button id="play" type="button">Play</button>
+            <button id="pause" type="button">Pause</button>
+            <button id="previous" type="button">Previous paragraph</button>
+            <button id="next" type="button">Next paragraph</button>
+            <label for="speed">Playback speed</label>
+            <select id="speed" aria-label="Playback speed">
+              <option value="0.75">0.75×</option>
+              <option value="1" selected>1×</option>
+              <option value="1.25">1.25×</option>
+              <option value="1.5">1.5×</option>
+              <option value="2">2×</option>
+            </select>
+            <label class="check" for="autoscroll"><input id="autoscroll" type="checkbox" checked> Auto-scroll to current paragraph</label>
+          </div>
+          <p id="playback-status" role="status" aria-live="polite">Loading prepared audio…</p>
+        </section>
+
+        <section aria-labelledby="reader-heading">
+          <h3 id="reader-heading">Listening text</h3>
+          <p id="reader-help" class="hint">Select a paragraph to play from that point when the item is ready.</p>
+          <ol id="reader" class="reader"></ol>
+        </section>
+      </section>
+    </div>
+    <noscript>Vesna requires JavaScript for authentication and audio playback.</noscript>
   </main>
   <script type="module" src="/app.js"></script>
 </body>

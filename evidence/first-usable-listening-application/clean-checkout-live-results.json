@@ -1,0 +1,38 @@
+{
+  "public_origin": "https://discussions-lanka-stand-respondent.trycloudflare.com",
+  "tts_voice_id": "piper-en-us-joe-medium-cf910fb5",
+  "results": [
+    {
+      "check": "article_live",
+      "status": "pass",
+      "title": "Example Domain",
+      "source_url": "https://example.com/",
+      "paragraphs": 1,
+      "text_characters": 156,
+      "audio_bytes": 73389,
+      "audio_sha256": "b6dfd672bbfbb3dbf258330c330b76b88a2d398aecec0ef53964130695d2c158",
+      "range_206": true,
+      "range_416": true,
+      "unauthenticated_artifact_status": 401,
+      "expected_text_present": true,
+      "credentials_recorded": false
+    },
+    {
+      "check": "markdown_live",
+      "status": "pass",
+      "title": "sample",
+      "filename": "sample.markdown",
+      "paragraphs": 3,
+      "source_sha256": "d586c2a5ed7dc42c00a0a0536b094337cd868a1d0797151bf590f53f51e44fb4",
+      "audio_bytes": 176877,
+      "audio_sha256": "920135a16f0649f692a5171ab7610fa9efe6c2829dfafd9dc87bd809f0c7222f",
+      "range_206": true,
+      "range_416": true,
+      "unauthenticated_artifact_status": 401,
+      "timing_version_matches_text": true,
+      "preparation_continued_after_disconnect": true,
+      "sign_out_invalidated_session": true,
+      "credentials_recorded": false
+    }
+  ]
+}

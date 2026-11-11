@@ -1,0 +1,31 @@
+[
+  {
+    "status": "pass",
+    "connections": 0,
+    "detail": "policy rejected before connection",
+    "check": "direct_127.0.0.1"
+  },
+  {
+    "status": "pass",
+    "connections": 0,
+    "detail": "policy rejected the redirect target before connection",
+    "check": "redirect_127.0.0.1"
+  },
+  {
+    "status": "pass",
+    "connections": 0,
+    "detail": "policy rejected before connection",
+    "check": "direct_::1"
+  },
+  {
+    "status": "pass",
+    "connections": 0,
+    "detail": "policy rejected the redirect target before connection",
+    "check": "redirect_::1"
+  },
+  {
+    "status": "pass",
+    "detail": "shared integration policy denied TTS before resolution",
+    "check": "explicit_tts_deny"
+  }
+]

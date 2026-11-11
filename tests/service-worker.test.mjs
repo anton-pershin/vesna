@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
 
-const serviceWorkerSource = readFileSync(new URL('../public/sw.js', import.meta.url), 'utf8');
+const serviceWorkerSource = readFileSync(new URL('../probe/sw.js', import.meta.url), 'utf8');
 const fixtureText = '0123456789abcdef';
 const fixtureBytes = new TextEncoder().encode(fixtureText);
 
@@ -30,7 +30,7 @@ function createFetchHandler(cached) {
     async open(name) {
       return {
         async match() {
-          return name === 'vesna-probe-shell-v12' ? cached : undefined;
+          return name === 'vesna-probe-shell-v14' ? cached : undefined;
         },
       };
     },
@@ -45,7 +45,7 @@ function createFetchHandler(cached) {
     Response,
     URL,
   });
-  new vm.Script(serviceWorkerSource, { filename: 'public/sw.js' }).runInContext(context);
+  new vm.Script(serviceWorkerSource, { filename: 'probe/sw.js' }).runInContext(context);
 
   return async (request) => {
     let pendingResponse;

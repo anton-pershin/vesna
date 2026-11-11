@@ -1,0 +1,33 @@
+[Unit]
+Description=Vesna durable preparation worker
+After=network-online.target vesna-tts.service
+Wants=network-online.target vesna-tts.service
+
+[Service]
+Type=simple
+User=vesna
+Group=vesna
+WorkingDirectory=/opt/vesna
+Environment=PYTHONUNBUFFERED=1
+Environment=XDG_CACHE_HOME=/var/lib/vesna/cache
+EnvironmentFile=/etc/vesna/worker.env
+ExecStart=/opt/vesna/venv/bin/vesna-worker
+Restart=on-failure
+RestartSec=3
+TimeoutStopSec=30
+UMask=0077
+StateDirectory=vesna
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+LockPersonality=true
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+ReadWritePaths=/var/lib/vesna
+
+[Install]
+WantedBy=multi-user.target

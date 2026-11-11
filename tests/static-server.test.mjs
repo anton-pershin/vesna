@@ -13,8 +13,9 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 async function startServer(t, extraArgs = []) {
   const child = spawn('python3', [
-    'scripts/static_server.py',
-    '--directory', 'public',
+    'probe/static_server.py',
+    '--directory', 'probe',
+    '--shared-modules', 'public/modules',
     '--bind', '127.0.0.1',
     '--port', '0',
     ...extraArgs,
@@ -54,7 +55,7 @@ async function startServer(t, extraArgs = []) {
 test('static server returns exact audio ranges over HTTP', async (t) => {
   const { origin } = await startServer(t);
   const audioUrl = `${origin}/fixtures/audio/fixture.mp3`;
-  const fixture = await readFile(path.join(root, 'public/fixtures/audio/fixture.mp3'));
+  const fixture = await readFile(path.join(root, 'probe/fixtures/audio/fixture.mp3'));
 
   const response = await fetch(audioUrl, { headers: { Range: 'bytes=1000-1999' } });
   assert.equal(response.status, 206);
@@ -83,6 +84,29 @@ test('static server returns exact audio ranges over HTTP', async (t) => {
     headers: { Range: `bytes=${fixture.byteLength}-,${fixture.byteLength + 1}-` },
   });
   assert.equal(multipleUnsatisfiable.status, 416);
+});
+
+test('isolated probe serves its own assets and aliases canonical shared modules', async (t) => {
+  const { origin } = await startServer(t);
+  const index = await fetch(`${origin}/`);
+  assert.equal(index.status, 200);
+  assert.match(await index.text(), /Vesna playback probe/);
+
+  const app = await fetch(`${origin}/app.js`);
+  assert.equal(app.headers.get('Cache-Control'), 'no-cache');
+  assert.match(await app.text(), /\/probe-modules\/offline\.js/);
+  const worker = await fetch(`${origin}/sw.js`);
+  assert.equal(worker.headers.get('Cache-Control'), 'no-cache');
+  assert.equal(worker.status, 200);
+  const shared = await fetch(`${origin}/modules/player.js`);
+  assert.equal(shared.status, 200);
+  assert.match(await shared.text(), /export class PlaybackController/);
+  const probeModule = await fetch(`${origin}/probe-modules/offline.js`);
+  assert.equal(probeModule.status, 200);
+  assert.match(await probeModule.text(), /replaceOfflineFixture/);
+  const productionOnly = await fetch(`${origin}/fixtures/manifest.json`);
+  assert.equal(productionOnly.status, 200, 'the fixture exists only in the isolated probe root');
+  assert.match(await productionOnly.text(), /fixture-en-v1/);
 });
 
 test('a stalled TLS handshake does not block other HTTPS clients', async (t) => {

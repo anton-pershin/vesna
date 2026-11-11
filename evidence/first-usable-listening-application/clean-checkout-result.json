@@ -1,0 +1,13 @@
+{
+  "commit": "b7937cf",
+  "status": "pass",
+  "clean_checkout": "/tmp/opencode/vesna-m3-clean-checkout-20261110",
+  "locked_install": "pass",
+  "python_tests": 161,
+  "javascript_tests": 119,
+  "model_sha256_verified": true,
+  "systemd_unit_syntax_and_executable_validation": "pass_in_isolated_root",
+  "live_source_results": "clean-checkout-live-results.json",
+  "browser_result": "clean-checkout-browser-result.json",
+  "credentials_recorded": false
+}
