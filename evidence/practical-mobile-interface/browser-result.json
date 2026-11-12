@@ -1,0 +1,95 @@
+{
+  "check": "chromium_live_m4_ui",
+  "status": "pass",
+  "browser": "141.0.7390.37",
+  "viewports": [
+    {
+      "label": "long-filename-source",
+      "horizontal_overflow": false,
+      "playback_bar_at_bottom": true
+    },
+    {
+      "label": "mobile-top",
+      "horizontal_overflow": false,
+      "playback_bar_at_bottom": true
+    },
+    {
+      "label": "mobile-middle",
+      "horizontal_overflow": false,
+      "playback_bar_at_bottom": true
+    },
+    {
+      "label": "mobile-bottom",
+      "horizontal_overflow": false,
+      "playback_bar_at_bottom": true
+    },
+    {
+      "label": "long-content-fixtures",
+      "horizontal_overflow": false,
+      "playback_bar_at_bottom": true
+    },
+    {
+      "label": "desktop",
+      "horizontal_overflow": false,
+      "playback_bar_at_bottom": true
+    },
+    {
+      "label": "small-phone",
+      "horizontal_overflow": false,
+      "playback_bar_at_bottom": true
+    },
+    {
+      "label": "text-scaling-200-percent",
+      "horizontal_overflow": false,
+      "playback_bar_at_bottom": true
+    }
+  ],
+  "screens": {
+    "focused_library": true,
+    "article_submission": true,
+    "refresh_preserved_source_and_scroll": true,
+    "markdown_submission": true,
+    "source_on_demand": true,
+    "sign_out_clearing": true
+  },
+  "playback": {
+    "new_article_audio": true,
+    "single_visible_control_set": true,
+    "play_pause": true,
+    "highlight_within_one_second": true,
+    "direct_seek": true,
+    "actual_auto_scroll": true,
+    "paragraph_navigation": true,
+    "selected_paragraph": true,
+    "speed_and_autoscroll": true,
+    "saved_position_and_speed": true,
+    "final_paragraph_not_covered": true,
+    "no_audio_requests_from_scrolling": true
+  },
+  "deletion": {
+    "cancel_preserved_item": true,
+    "cancel_preserved_playback_and_focus": true,
+    "escape_preserved_playback_and_focus": true,
+    "stale_source_and_prepared_responses_ignored": true,
+    "playback_stopped": true,
+    "confirm_removed_item": true,
+    "local_state_cleared": true,
+    "server_artifacts_denied": true
+  },
+  "accessibility": {
+    "primary_touch_targets": "at least 44 CSS px",
+    "polling_focus_preserved": true,
+    "non_live_time": true,
+    "long_filename_source": true,
+    "long_content_fixtures": true,
+    "sign_out_visible_at_200_percent": true,
+    "reduced_motion": true,
+    "horizontal_overflow": false,
+    "text_scaling_200_percent": true
+  },
+  "cached_private_responses": 0,
+  "audio_response_statuses": [
+    206
+  ],
+  "credentials_recorded": false
+}

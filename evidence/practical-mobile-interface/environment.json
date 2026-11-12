@@ -1,0 +1,20 @@
+{
+  "vesna_commit": "aee1aa71c65752a930c4083091b58ed2f2a9b36c",
+  "spec": ".internal/specs/04-practical-mobile-interface-general-spec.md",
+  "python": "3.12.3",
+  "node": "26.8.1",
+  "uv": "0.13.6",
+  "cloudflared": "2026.10.7",
+  "ffmpeg": "6.1.1-3ubuntu5",
+  "chromium": "141.0.7390.37",
+  "comourat_commit": "c9bfb1604a5286d073aaceef1513e0d7496d0e33",
+  "tts_engine": "piper-tts==1.8.0",
+  "onnxruntime": "1.31.1",
+  "voice": "en_US-joe-medium",
+  "voice_revision": "cf910fb59f1d79ab3b625a63993a108751c6c25d",
+  "voice_identity": "piper-en-us-joe-medium-cf910fb5",
+  "application_origin": "https://record-candidates-img-hwy.trycloudflare.com",
+  "isolated_probe_origin": "https://zip-shortly-str-robertson.trycloudflare.com",
+  "isolated_probe_build": "2026-11-12-m4-r8",
+  "credentials_recorded": false
+}
