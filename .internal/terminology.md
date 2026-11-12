@@ -23,6 +23,7 @@
 | Media Session | The browser interface used to connect supported lock-screen and headset controls to the audio player. |
 | Offline-ready download | A device copy whose required text, complete audio, timing data, and metadata have been stored and checked for offline use. This state does not guarantee permanent retention by the browser or operating system. |
 | Playback state | The saved playback position and speed used to resume an item. |
+| Bottom playback bar | The reader playback-control area outside the listening-text scroll container. It remains visible while a playable item is open and does not cover the final paragraph. |
 
 ### Application layer
 
@@ -46,3 +47,4 @@
 | Server records | Persistent session, library, job, content, and version information stored on the HTTPS host. |
 | Artifact store | Storage on the HTTPS host for original Markdown uploads, generated audio segments, complete audio files, timing data, and version manifests. |
 | Device storage | Browser-managed storage on the phone for offline application resources, downloaded items, and playback state. |
+| Deletion receipt | A minimal server record of item and artifact identifiers and deletion progress. It contains no user content and supports safe cleanup retries after a failure or lost response. |
