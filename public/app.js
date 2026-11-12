@@ -2,6 +2,7 @@ import { VesnaApi } from '/modules/api.js';
 import { ApplicationController } from '/modules/application.js';
 import { readMarkdownFile, validateArticleUrl } from '/modules/input.js';
 import { PlaybackController, PlaybackRestoreGuard, restorePlaybackState } from '/modules/player.js';
+import { PlaybackBarController } from '/modules/playback-bar.js';
 import { validatePreparedVersion } from '/modules/prepared.js';
 import { SeekBarController } from '/modules/seekbar.js';
 import { ItemPlaybackStateStore } from '/modules/storage.js';
@@ -22,20 +23,12 @@ function formatTime(seconds) {
   return `${minutes}:${String(Math.floor(seconds % 60)).padStart(2, '0')}`;
 }
 
-function formatRanges(ranges) {
-  if (!ranges) return 'none';
-  const result = [];
-  for (let index = 0; index < ranges.length; index += 1) {
-    result.push(`${ranges.start(index).toFixed(1)}-${ranges.end(index).toFixed(1)}`);
-  }
-  return result.join(', ') || 'none';
-}
-
 export function startApplication() {
   const $ = (id) => document.getElementById(id);
   const audio = $('audio');
   const api = new VesnaApi();
   const stateStore = new ItemPlaybackStateStore(localStorage);
+  const deletedItems = new Set();
   let current = null;
   let player = null;
   let seekbarController = null;
@@ -44,8 +37,10 @@ export function startApplication() {
   let playbackLoadSequence = 0;
   let sourceLoadSequence = 0;
   let loadedSourceItem = null;
+  let renderedItemId = null;
   let loadingPlaybackKey = null;
   let renderedLibrarySignature = null;
+  let observedGeneration = -1;
 
   function setPlaybackStatus(message) {
     $('playback-status').textContent = message;
@@ -64,13 +59,15 @@ export function startApplication() {
     audio.load();
     $('seekbar').value = '0';
     $('seekbar').max = '0';
+    $('seekbar').disabled = true;
+    $('previous').disabled = true;
+    $('next').disabled = true;
+    $('speed').disabled = true;
+    playbackBar.setEnabled(false);
     $('position').textContent = '0:00 / 0:00';
     $('speed').value = '1';
+    setPlaybackStatus('');
     setCurrentParagraph($('reader'), null);
-  }
-
-  function describeAudioState() {
-    return `Media state: readyState=${audio.readyState}, duration=${audio.duration}, seeking=${audio.seeking}, seekable=${formatRanges(audio.seekable)}, buffered=${formatRanges(audio.buffered)}, error=${audio.error?.code ?? 'none'}.`;
   }
 
   function updatePosition() {
@@ -85,7 +82,7 @@ export function startApplication() {
   function saveState() {
     if (
       restoringPlaybackState || current?.restoreGuard.blocked || !current || !player ||
-      !Number.isFinite(audio.currentTime)
+      deletedItems.has(current.item.id) || !Number.isFinite(audio.currentTime)
     ) return;
     try {
       stateStore.save({
@@ -95,7 +92,7 @@ export function startApplication() {
         speed: audio.playbackRate,
       });
     } catch (error) {
-      setPlaybackStatus(`Playback state could not be saved: ${error.message}`);
+      setPlaybackStatus(`Playback position could not be saved: ${error.message}`);
     }
     if (Number.isFinite(audio.duration)) {
       updateMediaSession(navigator.mediaSession, {
@@ -119,6 +116,17 @@ export function startApplication() {
     setPlaybackStatus(`${action}: ${error.message}`);
   }
 
+  const playbackBar = new PlaybackBarController({
+    audio,
+    button: $('play-pause'),
+    onToggle: async () => {
+      if (!player) return;
+      if (audio.paused || audio.ended) await player.play();
+      else player.pause();
+    },
+    onError: (error) => playbackError('Playback error', error),
+  });
+
   async function loadPrepared(item) {
     const key = JSON.stringify([item.id, item.version]);
     if (current?.key === key || loadingPlaybackKey === key) return;
@@ -126,7 +134,7 @@ export function startApplication() {
     const sequence = playbackLoadSequence;
     loadingPlaybackKey = key;
     $('player').hidden = false;
-    setPlaybackStatus('Loading prepared text, timings, and audio…');
+    setPlaybackStatus('Loading prepared audio…');
     renderParagraphs($('reader'), [], { ready: false, onSelect: selectParagraph });
 
     try {
@@ -156,6 +164,11 @@ export function startApplication() {
         setCurrentParagraph($('reader'), id, { autoScroll: $('autoscroll').checked });
         saveState();
       });
+      $('seekbar').disabled = false;
+      $('previous').disabled = false;
+      $('next').disabled = false;
+      $('speed').disabled = false;
+      playbackBar.setEnabled(true);
       const seekbarPlayer = {
         seek: (position) => replacePlaybackPosition(() => player.seek(position)),
       };
@@ -177,28 +190,28 @@ export function startApplication() {
       });
 
       let saved = null;
-      let statusMessage = `Prepared version ${item.version} is ready. No saved position; starting at 0 seconds at 1×.`;
+      let statusMessage = 'Ready to play.';
       try {
         saved = stateStore.load(item.id, item.version);
-      } catch (error) {
-        statusMessage = `Saved playback state is unavailable: ${error.message}. Starting at 0 seconds at 1×.`;
+      } catch {
+        statusMessage = 'Saved playback is unavailable. Starting from the beginning.';
       }
-      if (saved) {
+      if (saved && !deletedItems.has(item.id)) {
         $('speed').value = String(saved.speed);
         try {
-          const restoredPosition = await restorePlaybackState(player, saved, (restoring) => {
+          await restorePlaybackState(player, saved, (restoring) => {
             restoringPlaybackState = restoring;
           });
           if (sequence !== playbackLoadSequence) return;
           seekbarController.syncFromAudio();
           updatePosition();
-          statusMessage = `Restored actual audio position ${Math.floor(restoredPosition)} seconds at ${saved.speed}× for this prepared version.`;
-        } catch (error) {
+          statusMessage = 'Resumed where you left off.';
+        } catch {
           if (sequence !== playbackLoadSequence) return;
           restoreGuard.fail(saved);
           seekbarController.syncFromAudio();
           updatePosition();
-          statusMessage = `Restore failed: saved position ${Math.floor(saved.position)} seconds, actual audio position ${Math.floor(audio.currentTime)} seconds at ${saved.speed}×. ${error.message}. The last valid saved position is preserved. ${describeAudioState()}`;
+          statusMessage = 'The saved position could not be restored. Your last saved position is preserved.';
         }
       }
       if (sequence === playbackLoadSequence) setPlaybackStatus(statusMessage);
@@ -209,13 +222,14 @@ export function startApplication() {
         return;
       }
       teardownPlayback();
-      $('player').hidden = false;
-      setPlaybackStatus(`Prepared playback could not be loaded: ${error.message}`);
+      $('player').hidden = true;
       const detail = controller.selected;
       renderParagraphs($('reader'), detail?.paragraphs || [], {
         ready: false,
         onSelect: selectParagraph,
       });
+      $('app-error').hidden = false;
+      $('app-error').textContent = 'Prepared audio could not be loaded. Check your connection and try again.';
     }
   }
 
@@ -247,28 +261,39 @@ export function startApplication() {
   }
 
   function selectParagraph(id) {
+    if (!player) return;
     replacePlaybackPosition(() => player.playFromParagraph(id))
       .catch((error) => playbackError('Playback error', error));
   }
 
-  function renderSelected(detail) {
+  function renderSelected(detail, deletion = null) {
     if (!detail) {
       teardownPlayback();
+      renderedItemId = null;
       loadedSourceItem = null;
       sourceLoadSequence += 1;
-      $('item-view').hidden = true;
       $('reader').replaceChildren();
       $('source-text').textContent = '';
       $('article-link').removeAttribute('href');
       $('source-download').removeAttribute('href');
+      $('player').hidden = true;
       return;
     }
     const { item } = detail;
-    $('item-view').hidden = false;
+    const itemChanged = renderedItemId !== item.id;
+    if (itemChanged) {
+      renderedItemId = item.id;
+      loadedSourceItem = null;
+      $('source-panel').open = false;
+      $('item-menu').open = false;
+      $('playback-settings').open = false;
+    }
     $('item-title').textContent = itemTitle(item);
-    $('item-state').textContent = `Preparation status: ${stateLabel(item.state)}`;
+    $('item-kind').textContent = item.kind === 'markdown' ? 'Markdown' : 'Article';
+    $('item-state').textContent = stateLabel(item.state);
     $('item-state').dataset.state = item.state;
-    $('item-source').textContent = itemSource(item);
+    $('item-source').textContent = item.kind === 'markdown' ? 'Markdown document' : 'Public article';
+    $('source-detail').textContent = itemSource(item);
     $('item-error').hidden = item.state !== 'failed';
     $('item-error').textContent = item.state === 'failed'
       ? (item.error || 'Preparation failed. Retry when you are ready.')
@@ -285,85 +310,116 @@ export function startApplication() {
       $('source-download').removeAttribute('href');
     }
 
-    const ready = item.state === 'ready' && typeof item.version === 'string' && item.version;
-    $('reader-help').textContent = ready
-      ? 'Select a paragraph to play from that point. The current paragraph is labelled and highlighted.'
-      : 'Listening text is available for source inspection. Playback becomes available only when preparation is ready.';
-    $('player').hidden = !ready && !current;
-    if (!ready) {
+    const playable = typeof item.version === 'string' && Boolean(item.version);
+    $('reader-help').textContent = playable
+      ? 'Select a paragraph to play from that point.'
+      : 'Listening text is available while Vesna prepares this item.';
+    const key = playable ? JSON.stringify([item.id, item.version]) : null;
+    if (!playable) {
       teardownPlayback();
       $('player').hidden = true;
       renderParagraphs($('reader'), detail.paragraphs || [], {
         ready: false,
         onSelect: selectParagraph,
       });
+    } else if (!deletion && current?.key !== key) {
+      $('player').hidden = false;
+      loadPrepared(item).catch((error) => playbackError('Playback error', error));
+    } else {
+      $('player').hidden = !current;
     }
-    loadMarkdownSource(detail).catch((error) => {
-      $('source-text').textContent = `Original Markdown could not be loaded: ${error.message}`;
-    });
-    if (ready) {
-      const key = JSON.stringify([item.id, item.version]);
-      if (current?.key !== key) loadPrepared(item).catch((error) => playbackError('Playback error', error));
+    if (!deletion && $('source-panel').open) {
+      loadMarkdownSource(detail).catch((error) => {
+        $('source-text').textContent = `Original Markdown could not be loaded: ${error.message}`;
+      });
     }
   }
 
   function clearPrivateViews() {
     teardownPlayback();
     renderedLibrarySignature = null;
+    renderedItemId = null;
     loadedSourceItem = null;
     sourceLoadSequence += 1;
     $('library').replaceChildren();
     $('reader').replaceChildren();
-    $('item-view').hidden = true;
-    $('item-title').textContent = '';
-    $('item-source').textContent = '';
     $('source-text').textContent = '';
     $('article-link').removeAttribute('href');
     $('source-download').removeAttribute('href');
     $('password').value = '';
     $('article-form').reset();
     $('markdown-form').reset();
+    $('selected-file').hidden = true;
+    if ($('delete-dialog').open) $('delete-dialog').close();
+    $('player').hidden = true;
+  }
+
+  function focusHeading(reason) {
+    if (reason === 'input') $('add-heading').focus({ preventScroll: true });
+    if (['close-input', 'close-item', 'deleted'].includes(reason)) {
+      $('library-heading').focus({ preventScroll: true });
+    }
+    if (['signed-out', 'session-expired'].includes(reason)) {
+      $('password').focus({ preventScroll: true });
+    }
   }
 
   const controller = new ApplicationController({
     api,
+    onDeleteConfirmed(itemId) {
+      deletedItems.add(itemId);
+      stateStore.removeItem(itemId);
+    },
     onChange(state, reason) {
+      if (state.generation !== observedGeneration) {
+        observedGeneration = state.generation;
+        playbackLoadSequence += 1;
+        sourceLoadSequence += 1;
+        loadingPlaybackKey = null;
+        loadedSourceItem = null;
+      }
+      if (reason === 'signed-out' || reason === 'session-expired') clearPrivateViews();
+
       $('auth-view').hidden = state.authenticated;
       $('application-view').hidden = !state.authenticated;
       $('sign-out').hidden = !state.authenticated;
-      $('app-error').hidden = !state.error;
-      $('app-error').textContent = state.error || '';
-      if (reason === 'signed-out' || reason === 'session-expired') {
-        clearPrivateViews();
-        $('app-status').textContent = reason === 'session-expired'
-          ? 'Sign in again to continue.'
-          : 'Signed out. Private item data has been cleared from the page.';
-      } else if (reason === 'sign-in') {
-        $('app-status').textContent = 'Signed in. Loading your saved library…';
-      } else if (reason === 'library') {
-        $('app-status').textContent = state.polling
-          ? 'Library updated. Preparation status will refresh automatically.'
-          : 'Library updated.';
-      } else if (reason === 'submitted') {
-        $('app-status').textContent = 'Submission accepted. Preparation continues on the server.';
-      } else if (reason === 'retry') {
-        $('app-status').textContent = 'Retry accepted for the same library item.';
-      } else if (reason === 'item') {
-        $('app-status').textContent = 'Item details loaded.';
-      }
+      $('library-view').hidden = !state.authenticated || state.screen !== 'library';
+      $('input-view').hidden = !state.authenticated || state.screen !== 'input';
+      $('item-view').hidden = !state.authenticated || state.screen !== 'reader';
+      $('app-error').hidden = !state.error && !state.cleanupWarning;
+      $('app-error').textContent = state.error || state.cleanupWarning || '';
+      $('submit-article').disabled = state.submitting;
+      $('upload-markdown').disabled = state.submitting;
+      $('select-article').disabled = state.submitting;
+      $('select-markdown').disabled = state.submitting;
+
+      if (reason === 'signed-out') $('app-status').textContent = 'Signed out.';
+      else if (reason === 'session-expired') $('app-status').textContent = 'Sign in again to continue.';
+      else if (reason === 'sign-in') $('app-status').textContent = 'Loading your library…';
+      else if (reason === 'submitted') $('app-status').textContent = 'Submitted. Preparation continues while you do other things.';
+      else if (reason === 'retry') $('app-status').textContent = 'Retry started for the same item.';
+      else if (reason === 'deleted') $('app-status').textContent = 'Item deleted.';
+      else if (reason === 'delete-pending') $('app-status').textContent = 'Deleting item…';
+      else if (reason === 'delete-error') $('app-status').textContent = '';
+      else if (reason === 'playback-error') $('app-status').textContent = '';
+      else $('app-status').textContent = '';
 
       if (state.authenticated) {
         const librarySignature = JSON.stringify(state.items);
         if (librarySignature !== renderedLibrarySignature) {
-          renderLibrary($('library'), state.items, {
-            onOpen: openItem,
-            onRetry: retryItem,
-          });
+          renderLibrary($('library'), state.items, { onOpen: openItem, onRetry: retryItem });
           renderedLibrarySignature = librarySignature;
         }
+        $('library-count').textContent = `${state.items.length} ${state.items.length === 1 ? 'item' : 'items'}`;
         $('library-empty').hidden = state.items.length > 0;
-        renderSelected(state.selected);
+        renderSelected(state.selected, state.deletion);
+        if (state.deletion) {
+          $('delete-error').hidden = !state.error;
+          $('delete-error').textContent = state.error || '';
+          $('confirm-delete').disabled = state.deletion.status === 'pending';
+        }
       }
+      focusHeading(reason);
     },
   });
 
@@ -371,7 +427,6 @@ export function startApplication() {
     try {
       const detail = await controller.openItem(itemId);
       if (!detail) return;
-      $('item-title').tabIndex = -1;
       $('item-title').focus({ preventScroll: true });
       $('item-view').scrollIntoView({ block: 'start' });
     } catch {
@@ -394,7 +449,7 @@ export function startApplication() {
     $('password').value = '';
     try {
       await controller.signIn(password);
-      $('article-url').focus();
+      $('add-content').focus();
     } catch {
       $('password').focus();
     } finally {
@@ -409,11 +464,28 @@ export function startApplication() {
       await controller.signOut();
     } catch {
       $('app-error').hidden = false;
-      $('app-error').textContent = 'Server sign-out failed. Private item data was cleared from this page.';
+      $('app-error').textContent = 'Server sign-out failed. Private content was cleared from this screen.';
     } finally {
       $('sign-out').disabled = false;
     }
   });
+
+  function showInput() {
+    controller.showInput();
+  }
+  $('add-content').addEventListener('click', showInput);
+  $('empty-add').addEventListener('click', showInput);
+  $('close-input').addEventListener('click', () => controller.closeInput());
+
+  function selectInput(kind) {
+    const article = kind === 'article';
+    $('article-panel').hidden = !article;
+    $('markdown-panel').hidden = article;
+    $('select-article').setAttribute('aria-pressed', String(article));
+    $('select-markdown').setAttribute('aria-pressed', String(!article));
+  }
+  $('select-article').addEventListener('click', () => selectInput('article'));
+  $('select-markdown').addEventListener('click', () => selectInput('markdown'));
 
   $('article-form').addEventListener('submit', async (event) => {
     event.preventDefault();
@@ -421,6 +493,7 @@ export function startApplication() {
     try {
       const url = validateArticleUrl($('article-url').value);
       const item = await controller.submitArticle(url);
+      if (!item) return;
       $('article-form').reset();
       await openItem(item.id);
     } catch (error) {
@@ -431,6 +504,14 @@ export function startApplication() {
     }
   });
 
+  $('markdown-file').addEventListener('change', () => {
+    const file = $('markdown-file').files?.[0];
+    $('selected-file').hidden = !file;
+    $('selected-file').textContent = file
+      ? `${file.name} · ${Math.max(1, Math.ceil(file.size / 1024))} KB · ready to upload`
+      : '';
+  });
+
   $('markdown-form').addEventListener('submit', async (event) => {
     event.preventDefault();
     $('upload-markdown').disabled = true;
@@ -438,7 +519,9 @@ export function startApplication() {
       const file = $('markdown-file').files?.[0];
       await readMarkdownFile(file);
       const item = await controller.uploadMarkdown(file);
+      if (!item) return;
       $('markdown-form').reset();
+      $('selected-file').hidden = true;
       await openItem(item.id);
     } catch (error) {
       $('app-error').hidden = false;
@@ -450,14 +533,17 @@ export function startApplication() {
 
   $('refresh').addEventListener('click', () => controller.refreshLibrary());
   $('close-item').addEventListener('click', () => controller.closeItem());
+  $('source-panel').addEventListener('toggle', () => {
+    if ($('source-panel').open && controller.selected && !controller.deletion) {
+      loadMarkdownSource(controller.selected).catch((error) => {
+        $('source-text').textContent = `Original Markdown could not be loaded: ${error.message}`;
+      });
+    }
+  });
   $('retry').addEventListener('click', () => {
     if (controller.selected) retryItem(controller.selected.item.id);
   });
-  $('play').addEventListener('click', () => {
-    if (!player) return;
-    player.play().catch((error) => playbackError('Playback error', error));
-  });
-  $('pause').addEventListener('click', () => player?.pause());
+
   $('previous').addEventListener('click', () => {
     if (!player) return;
     replacePlaybackPosition(() => player.previousParagraph())
@@ -478,6 +564,30 @@ export function startApplication() {
     }
   });
 
+  $('delete-item').addEventListener('click', () => {
+    if (!controller.selected) return;
+    $('item-menu').open = false;
+    $('delete-item-name').textContent = itemTitle(controller.selected.item);
+    $('delete-error').hidden = true;
+    $('confirm-delete').disabled = false;
+    $('delete-dialog').showModal();
+    $('cancel-delete').focus();
+  });
+  $('cancel-delete').addEventListener('click', () => $('delete-dialog').close());
+  $('delete-dialog').addEventListener('close', () => {
+    if (controller.selected) $('item-menu').querySelector('summary').focus({ preventScroll: true });
+  });
+  $('confirm-delete').addEventListener('click', async () => {
+    if (!controller.selected) return;
+    audio.pause();
+    try {
+      await controller.deleteItem(controller.selected.item.id);
+      if ($('delete-dialog').open) $('delete-dialog').close();
+    } catch {
+      $('confirm-delete').disabled = false;
+    }
+  });
+
   audio.addEventListener('timeupdate', saveState);
   audio.addEventListener('timeupdate', updatePosition);
   audio.addEventListener('seeking', () => {
@@ -490,7 +600,7 @@ export function startApplication() {
       const target = nativeSeekTarget;
       nativeSeekTarget = null;
       if (!current.restoreGuard.completeNativeSeek(target, audio.currentTime)) {
-        setPlaybackStatus(`Seek error: native controls did not reach ${target} seconds (actual ${audio.currentTime}). The saved position is preserved.`);
+        setPlaybackStatus('Seeking did not reach the requested position. Your saved position is preserved.');
         return;
       }
     }
@@ -499,7 +609,7 @@ export function startApplication() {
   audio.addEventListener('error', () => {
     nativeSeekTarget = null;
     if (current && !restoringPlaybackState) {
-      setPlaybackStatus(`Audio playback failed. Check the connection and retry the item or reload the page. ${describeAudioState()}`);
+      setPlaybackStatus('Audio playback failed. Check your connection and try again.');
     }
   });
   audio.addEventListener('durationchange', updatePosition);
@@ -509,11 +619,11 @@ export function startApplication() {
 
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/sw.js').catch(() => {
-      $('app-status').textContent = 'The offline application shell is unavailable. Online features can still be used.';
+      $('app-status').textContent = 'Offline application launch is unavailable. Online features still work.';
     });
   }
   controller.restoreSession();
-  return controller;
+  return { controller, playbackBar };
 }
 
 if (typeof document !== 'undefined') startApplication();

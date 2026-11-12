@@ -220,6 +220,42 @@ def create_app(
     def items(authenticated_owner: str = Depends(owner)) -> dict[str, Any]:
         return {"items": database.list_items(authenticated_owner)}
 
+    @app.delete("/api/items/{item_id}", status_code=204)
+    def delete_item(item_id: str, authenticated_owner: str = Depends(owner)) -> Response:
+        try:
+            outcome, receipt = database.begin_item_deletion(item_id, authenticated_owner)
+        except Exception:
+            raise HTTPException(
+                status_code=500, detail="Item deletion could not be started; retry."
+            ) from None
+        if outcome == "missing":
+            raise HTTPException(status_code=404, detail="Item not found.")
+        assert receipt is not None
+        try:
+            if receipt["completed_at"] is None:
+                # The item is already inaccessible before waiting for an active worker.
+                with store.item_lock(item_id):
+                    receipt = database.get_item_deletion(item_id, authenticated_owner)
+                    if receipt is None:
+                        raise RuntimeError("deletion receipt disappeared")
+                    if receipt["completed_at"] is None:
+                        if receipt["original_path"]:
+                            store.remove_file_strict(receipt["original_path"])
+                        roots = (
+                            receipt["work_path"],
+                            receipt["staging_path"],
+                            receipt["candidate_path"],
+                            *receipt["published_paths"],
+                        )
+                        for root in dict.fromkeys(roots):
+                            store.remove_tree_strict(root)
+                        database.complete_item_deletion(item_id, authenticated_owner)
+            return Response(status_code=204)
+        except Exception:
+            raise HTTPException(
+                status_code=503, detail="Item deletion is incomplete; retry cleanup."
+            ) from None
+
     @app.post("/api/items/article", status_code=202)
     def submit_article(
         payload: ArticleRequest, authenticated_owner: str = Depends(owner)

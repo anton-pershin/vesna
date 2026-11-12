@@ -1,4 +1,4 @@
-# Vesna M3 server
+# Vesna server
 
 This directory contains the authenticated FastAPI application, durable SQLite preparation worker, private filesystem artifact store, FFmpeg/FFprobe audio assembly, loopback-only TTS adapter, and the M2 comourat integration contracts. The browser application is served from `public/`; prepared artifacts and SQLite records are never mounted as static files.
 
@@ -35,7 +35,7 @@ vesna-worker
 vesna-tts --host 127.0.0.1 --port 8765
 ```
 
-`vesna-worker --once` claims at most one durable job, which is useful for controlled checks. Run exactly one worker in M3. Worker concurrency is fixed at one process, one claimed job at a time, and one paragraph synthesis request at a time; do not start additional workers to increase throughput. `vesna-tts` rejects every non-loopback bind address. The TTS engine command uses `{input}` and `{output}` placeholders for a UTF-8 text-file path and WAV-output path. It is split into argv and executed directly without a shell; source text is never placed in process arguments. Configure only the worker with the private TTS URL and expose only the API port through the Quick Tunnel.
+`vesna-worker --once` claims at most one durable job, which is useful for controlled checks. Run exactly one worker in the single-machine deployment. Worker concurrency is fixed at one process, one claimed job at a time, and one paragraph synthesis request at a time; do not start additional workers to increase throughput. `vesna-tts` rejects every non-loopback bind address. The TTS engine command uses `{input}` and `{output}` placeholders for a UTF-8 text-file path and WAV-output path. It is split into argv and executed directly without a shell; source text is never placed in process arguments. Configure only the worker with the private TTS URL and expose only the API port through the Quick Tunnel.
 
 The API uses the configured `VESNA_PUBLIC_ORIGIN` for strict mutation `Origin` checks. It ignores Host and forwarded headers for security decisions and never constructs artifact URLs from them. A changed Quick Tunnel URL is a new origin and requires a corresponding configuration change and a new sign-in.
 
@@ -80,6 +80,12 @@ Each paragraph WAV is encoded and probed. FFmpeg concatenates the encoded MP3 se
 
 The original Markdown, listening text, timings, and audio require the same opaque SQLite-backed session. Cookies are `Secure`, `HttpOnly`, `SameSite=Strict`, host-only, and invalidated on sign-out. Audio supports full `200`, single-range `206`, unsatisfiable-range `416`, and HEAD responses. Private API/artifact responses use no-store cache headers.
 
+## Item deletion
+
+`DELETE /api/items/{item_id}` requires the same authenticated owner and same-origin mutation checks as other private operations. A SQLite transaction creates a minimal deletion receipt and deletes the item, which cascades to its jobs, stages, and version records. The receipt contains artifact identifiers and timestamps, not titles, URLs, filenames, source text, or audio.
+
+The API and worker share a persistent per-item Linux filesystem lock. The worker revalidates its claim after acquiring the lock, and deletion removes all recorded candidate and published artifacts under that lock before reporting `204`. Late source, TTS, or assembly output cannot republish a deleted item. Unknown items return `404`, a pre-commit failure returns a sanitized `500`, and incomplete post-commit cleanup returns `503` so a repeated request can resume from the pending receipt. Lock files contain no user content and remain in place to preserve lock identity.
+
 ## Explicit live checks
 
 Use `deploy/README.md` for the single-machine Piper/Quick Tunnel deployment, the `application_live_checks.py` source and artifact runner, the `deploy/browser_live_check.cjs` real-Chromium runner, controlled redirect setup, and target-phone procedures. These checks require explicit external configuration and are never part of deterministic CI.
@@ -93,4 +99,4 @@ PYTHONPATH=server/src python server/security_live_checks.py \
   --output evidence/comourat-integration/live-security-results.json
 ```
 
-The legacy `source_live_checks.py` still supports the M2 Reddit/arXiv/LLM checks when explicitly invoked with externally supplied credentials. Those collaborators and credentials are not part of M3 application composition. Do not interpret deterministic fake-engine tests as live English-speech, voice-evaluation, public-article, tunnel, or target-phone acceptance results.
+The legacy `source_live_checks.py` still supports the M2 Reddit/arXiv/LLM checks when explicitly invoked with externally supplied credentials. Those collaborators and credentials are not part of the current application composition. Do not interpret deterministic fake-engine tests as live English-speech, voice-evaluation, public-article, tunnel, or target-phone acceptance results.

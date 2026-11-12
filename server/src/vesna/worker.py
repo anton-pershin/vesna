@@ -85,11 +85,24 @@ class Worker:
         if job is None:
             return False
         try:
-            self._process(job, claim)
+            with self.store.item_lock(job["item_id"]):
+                # A deletion may have committed after the claim but before this lock.
+                if not self.database.renew_lease(
+                    job["id"], claim, self.settings.worker_lease_seconds
+                ):
+                    raise _StaleClaim()
+                try:
+                    self._process(job, claim)
+                except _StaleClaim:
+                    pass
+                except PreparationError as error:
+                    self.database.fail_job(job["id"], claim, str(error))
+                except Exception:
+                    self.database.fail_job(
+                        job["id"], claim, "Preparation failed; retry is available."
+                    )
         except _StaleClaim:
             pass
-        except PreparationError as error:
-            self.database.fail_job(job["id"], claim, str(error))
         except Exception:
             self.database.fail_job(job["id"], claim, "Preparation failed; retry is available.")
         return True

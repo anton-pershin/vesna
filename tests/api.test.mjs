@@ -108,6 +108,22 @@ test('library, detail, retry, source, and prepared artifact routes use returned 
   assert.equal(calls.at(-1).options.cache, 'no-store');
 });
 
+test('item deletion uses the authenticated same-origin DELETE operation and accepts 204', async () => {
+  const calls = [];
+  const api = new VesnaApi({
+    fetchImpl: async (url, options) => {
+      calls.push({ url, options });
+      return new Response(null, { status: 204 });
+    },
+  });
+  assert.equal(await api.deleteItem('item/one'), null);
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].url, '/api/items/item%2Fone');
+  assert.equal(calls[0].options.method, 'DELETE');
+  assert.equal(calls[0].options.credentials, 'same-origin');
+  assert.equal(calls[0].options.cache, 'no-store');
+});
+
 test('API calls preserve the global receiver required by native fetch', async () => {
   const receivers = [];
   const api = new VesnaApi({

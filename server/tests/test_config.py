@@ -30,7 +30,8 @@ def test_database_migrations_are_idempotent(settings):
     first = Database(settings.database_path)
     second = Database(settings.database_path)
     with second.connect() as connection:
-        assert connection.execute("SELECT version FROM schema_migrations").fetchall()[0][0] == 1
+        versions = connection.execute("SELECT version FROM schema_migrations ORDER BY version").fetchall()
+        assert [row[0] for row in versions] == [1, 2]
 
 
 def test_private_artifacts_cannot_be_mounted_as_static(settings, tmp_path):

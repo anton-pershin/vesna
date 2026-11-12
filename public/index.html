@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#0f766e">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#276f58">
   <meta name="description" content="Prepare and listen to saved articles and Markdown documents.">
   <link rel="manifest" href="/manifest.webmanifest">
   <link rel="icon" href="/icon.svg">
@@ -11,104 +11,181 @@
   <title>Vesna listening application</title>
 </head>
 <body>
+  <svg class="icon-definitions" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <symbol id="icon-leaf" viewBox="0 0 24 24"><path d="M19.8 3.4C12.4 3.2 6.1 5.4 4.1 10.2c-1.2 3 .1 5.6 2.1 7.1 2.4 1.8 6.1.7 8.3-1.8 2.8-3.2 3.6-7.8 5.3-12.1Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M3.5 21c2.8-5.6 6.7-9.1 12.4-12.2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+    <symbol id="icon-back" viewBox="0 0 24 24"><path d="m14.5 5-7 7 7 7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="icon-chevron" viewBox="0 0 24 24"><path d="m9 5 7 7-7 7" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="icon-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+    <symbol id="icon-refresh" viewBox="0 0 24 24"><path d="M20 7v5h-5M4 17v-5h5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M6.1 8a7 7 0 0 1 11.8-1L20 12M4 12l2.1 5a7 7 0 0 0 11.8-1" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="icon-doc" viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6V3Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M14 3v5h4M9 12h6M9 16h6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></symbol>
+    <symbol id="icon-check" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="icon-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 7v5l3 2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+    <symbol id="icon-alert" viewBox="0 0 24 24"><path d="M12 3 2.8 20h18.4L12 3Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M12 9v5M12 17v.1" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+    <symbol id="icon-settings" viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h3M11 17h9M14 4v6M7 14v6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+    <symbol id="icon-previous" viewBox="0 0 24 24"><path d="M6 5v14M19 6l-10 6 10 6V6Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></symbol>
+    <symbol id="icon-next" viewBox="0 0 24 24"><path d="M18 5v14M5 6l10 6-10 6V6Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></symbol>
+    <symbol id="icon-play" viewBox="0 0 24 24"><path d="m8 5 11 7-11 7V5Z" fill="currentColor"/></symbol>
+    <symbol id="icon-pause" viewBox="0 0 24 24"><path d="M7 5h3v14H7zM14 5h3v14h-3z" fill="currentColor"/></symbol>
+    <symbol id="icon-more" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.6" fill="currentColor"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/><circle cx="19" cy="12" r="1.6" fill="currentColor"/></symbol>
+    <symbol id="icon-upload" viewBox="0 0 24 24"><path d="M12 16V4M7 9l5-5 5 5M5 14v6h14v-6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  </svg>
+
   <a class="skip-link" href="#main">Skip to application</a>
-  <main id="main">
+  <div id="app-shell" class="app-shell">
     <header class="app-header">
-      <div>
-        <p class="eyebrow">Personal read-along library</p>
-        <h1>Vesna</h1>
-      </div>
-      <button id="sign-out" class="secondary" type="button" hidden>Sign out</button>
+      <div class="brand"><span class="brand-mark"><svg aria-hidden="true"><use href="#icon-leaf"/></svg></span><span>Vesna</span></div>
+      <button id="sign-out" class="text-button" type="button" hidden>Sign out</button>
     </header>
-    <p id="app-status" role="status" aria-live="polite">Checking your session…</p>
-    <p id="app-error" class="error" role="alert" hidden></p>
 
-    <section id="auth-view" class="panel" aria-labelledby="sign-in-heading" hidden>
-      <h2 id="sign-in-heading">Sign in</h2>
-      <p>Sign in to prepare and open your private listening library.</p>
-      <form id="sign-in-form">
-        <label for="password">Password</label>
-        <input id="password" name="password" type="password" autocomplete="current-password" required>
-        <button id="sign-in" type="submit">Sign in</button>
-      </form>
-    </section>
+    <main id="main" class="app-main">
+      <p id="app-status" class="status-message" role="status" aria-live="polite">Checking your session…</p>
+      <p id="app-error" class="error-message" role="alert" hidden></p>
 
-    <div id="application-view" hidden>
-      <section class="panel" aria-labelledby="add-heading">
-        <h2 id="add-heading">Add listening material</h2>
-        <form id="article-form" class="submission-form">
-          <h3>Public article URL</h3>
-          <label for="article-url">Article address</label>
-          <input id="article-url" name="url" type="url" inputmode="url" autocomplete="url" placeholder="https://example.com/article" required>
-          <p class="hint">Use a public HTTP or HTTPS blog or article address.</p>
-          <button id="submit-article" type="submit">Prepare article</button>
-        </form>
-        <form id="markdown-form" class="submission-form">
-          <h3>Markdown upload</h3>
-          <label for="markdown-file">UTF-8 Markdown file</label>
-          <input id="markdown-file" name="file" type="file" accept=".md,.markdown,text/markdown,text/plain" required>
-          <p class="hint">Only .md and .markdown files up to 1 MiB. Linked resources are not retrieved.</p>
-          <button id="upload-markdown" type="submit">Prepare Markdown</button>
-        </form>
-      </section>
-
-      <section class="panel" aria-labelledby="library-heading">
-        <div class="section-heading">
-          <h2 id="library-heading">Saved library</h2>
-          <button id="refresh" class="secondary" type="button">Refresh</button>
+      <section id="auth-view" class="screen auth-screen" aria-labelledby="sign-in-heading">
+        <div class="auth-card">
+          <span class="auth-mark"><svg aria-hidden="true"><use href="#icon-leaf"/></svg></span>
+          <h1 id="sign-in-heading">Welcome to Vesna</h1>
+          <p>Your personal read-along library.</p>
+          <form id="sign-in-form">
+            <label for="password">Password</label>
+            <input id="password" name="password" type="password" autocomplete="current-password" required>
+            <p class="hint">Use the password configured for this Vesna installation.</p>
+            <button id="sign-in" class="primary-button" type="submit">Sign in</button>
+          </form>
         </div>
-        <p id="library-empty" class="hint">No saved items yet.</p>
-        <ul id="library" class="library"></ul>
       </section>
 
-      <section id="item-view" class="panel" aria-labelledby="item-title" hidden>
-        <button id="close-item" class="secondary" type="button">Back to library</button>
-        <h2 id="item-title">Item</h2>
-        <p id="item-state" class="state-message"></p>
-        <p id="item-source" class="item-source"></p>
-        <a id="article-link" href="#" target="_blank" rel="noopener noreferrer" hidden>Open original article</a>
-        <p id="item-error" class="error" role="alert" hidden></p>
-        <button id="retry" type="button" hidden>Retry preparation</button>
-
-        <section id="markdown-source" aria-labelledby="source-heading" hidden>
-          <h3 id="source-heading">Original Markdown</h3>
-          <p><a id="source-download" download>Download original Markdown</a></p>
-          <pre id="source-text" tabindex="0"></pre>
-        </section>
-
-        <section id="player" class="player" aria-labelledby="player-heading" hidden>
-          <h3 id="player-heading">Listen</h3>
-          <audio id="audio" preload="metadata" controls></audio>
-          <label class="seek-control" for="seekbar">Playback position</label>
-          <input id="seekbar" type="range" min="0" max="0" step="1" value="0" aria-label="Playback position in seconds">
-          <output id="position" for="seekbar">0:00 / 0:00</output>
-          <div class="controls" role="group" aria-label="Read-along playback controls">
-            <button id="play" type="button">Play</button>
-            <button id="pause" type="button">Pause</button>
-            <button id="previous" type="button">Previous paragraph</button>
-            <button id="next" type="button">Next paragraph</button>
-            <label for="speed">Playback speed</label>
-            <select id="speed" aria-label="Playback speed">
-              <option value="0.75">0.75×</option>
-              <option value="1" selected>1×</option>
-              <option value="1.25">1.25×</option>
-              <option value="1.5">1.5×</option>
-              <option value="2">2×</option>
-            </select>
-            <label class="check" for="autoscroll"><input id="autoscroll" type="checkbox" checked> Auto-scroll to current paragraph</label>
+      <div id="application-view" hidden>
+        <section id="library-view" class="screen library-screen" aria-labelledby="library-heading" hidden>
+          <div class="screen-intro">
+            <h1 id="library-heading" tabindex="-1">Your library</h1>
+            <p>Saved articles and Markdown documents, ready when you are.</p>
           </div>
-          <p id="playback-status" role="status" aria-live="polite">Loading prepared audio…</p>
+          <button id="add-content" class="primary-button add-button" type="button"><svg aria-hidden="true"><use href="#icon-plus"/></svg>Add something to listen to</button>
+          <div class="section-heading">
+            <h2>Saved items</h2>
+            <div class="section-actions"><span id="library-count" class="item-count"></span><button id="refresh" class="icon-button" type="button" aria-label="Refresh library"><svg aria-hidden="true"><use href="#icon-refresh"/></svg></button></div>
+          </div>
+          <div id="library-empty" class="empty-state" hidden>
+            <h3>Nothing here yet</h3>
+            <p>Add an article or Markdown document to start listening.</p>
+            <button id="empty-add" class="secondary-button" type="button">Add your first item</button>
+          </div>
+          <ul id="library" class="library"></ul>
+          <p class="screen-note"><svg aria-hidden="true"><use href="#icon-clock"/></svg><span>You can leave this screen while Vesna prepares an item. Come back when it is ready.</span></p>
         </section>
 
-        <section aria-labelledby="reader-heading">
-          <h3 id="reader-heading">Listening text</h3>
-          <p id="reader-help" class="hint">Select a paragraph to play from that point when the item is ready.</p>
+        <section id="input-view" class="screen input-screen" aria-labelledby="add-heading" hidden>
+          <button id="close-input" class="back-button" type="button"><svg aria-hidden="true"><use href="#icon-back"/></svg>Library</button>
+          <div class="screen-intro">
+            <h1 id="add-heading" tabindex="-1">Add something to listen to</h1>
+            <p>Choose a public article or a Markdown document. Vesna will turn it into speech you can follow.</p>
+          </div>
+          <div class="source-selector" role="group" aria-label="Content type">
+            <button id="select-article" type="button" aria-pressed="true"><svg aria-hidden="true"><use href="#icon-doc"/></svg>Article URL</button>
+            <button id="select-markdown" type="button" aria-pressed="false"><span class="markdown-glyph" aria-hidden="true">M↓</span>Markdown file</button>
+          </div>
+          <section id="article-panel" class="input-card" aria-labelledby="article-heading">
+            <div class="card-heading"><span class="kind-icon"><svg aria-hidden="true"><use href="#icon-doc"/></svg></span><h2 id="article-heading">Public article</h2></div>
+            <p>Save the extracted article text and listen without summarization.</p>
+            <form id="article-form">
+              <label for="article-url">Article address</label>
+              <input id="article-url" name="url" type="url" inputmode="url" autocomplete="url" placeholder="https://example.com/article" required>
+              <p class="hint">Use a public HTTP or HTTPS blog or article address.</p>
+              <button id="submit-article" class="primary-button" type="submit">Prepare article</button>
+            </form>
+          </section>
+          <section id="markdown-panel" class="input-card" aria-labelledby="markdown-heading" hidden>
+            <div class="card-heading"><span class="kind-icon"><span class="markdown-glyph" aria-hidden="true">M↓</span></span><h2 id="markdown-heading">Markdown document</h2></div>
+            <p>Upload your document and listen to its text without summarization.</p>
+            <form id="markdown-form">
+              <label class="file-picker" for="markdown-file"><svg aria-hidden="true"><use href="#icon-upload"/></svg><strong>Choose a Markdown file</strong><span>UTF-8 .md or .markdown · up to 1 MiB</span></label>
+              <input id="markdown-file" name="file" type="file" accept=".md,.markdown,text/markdown,text/plain" required>
+              <p id="selected-file" class="selected-file" hidden></p>
+              <p class="hint">Linked images and other resources are not retrieved.</p>
+              <button id="upload-markdown" class="primary-button" type="submit">Prepare Markdown</button>
+            </form>
+          </section>
+          <p class="screen-note"><svg aria-hidden="true"><use href="#icon-clock"/></svg><span>You can leave Vesna after submitting. Preparation continues until your item is ready.</span></p>
+        </section>
+
+        <section id="item-view" class="screen reader-screen" aria-labelledby="item-title" hidden>
+          <button id="close-item" class="back-button" type="button"><svg aria-hidden="true"><use href="#icon-back"/></svg>Library</button>
+          <header class="item-header">
+            <div class="item-meta"><span id="item-kind" class="source-kind"></span><span id="item-state" class="state-badge"></span></div>
+            <h1 id="item-title" tabindex="-1">Item</h1>
+            <div class="item-tools">
+              <p id="item-source" class="item-source"></p>
+              <div class="item-actions">
+                <details id="source-panel" class="disclosure">
+                  <summary class="secondary-button"><svg aria-hidden="true"><use href="#icon-doc"/></svg>Source</summary>
+                  <div class="source-content">
+                    <a id="article-link" href="#" target="_blank" rel="noopener noreferrer" hidden>Open original article</a>
+                    <p id="source-detail"></p>
+                    <p id="item-error" class="error-message" role="alert" hidden></p>
+                    <button id="retry" class="secondary-button" type="button" hidden>Retry preparation</button>
+                    <section id="markdown-source" aria-labelledby="source-heading" hidden>
+                      <h2 id="source-heading">Original Markdown</h2>
+                      <p><a id="source-download" download>Download original Markdown</a></p>
+                      <pre id="source-text" tabindex="0"></pre>
+                    </section>
+                  </div>
+                </details>
+                <details id="item-menu" class="disclosure item-menu">
+                  <summary class="icon-button" aria-label="Item actions"><svg aria-hidden="true"><use href="#icon-more"/></svg></summary>
+                  <div class="item-menu-content"><button id="delete-item" class="danger-text-button" type="button">Delete item</button></div>
+                </details>
+              </div>
+            </div>
+          </header>
+          <p id="reader-help" class="hint"></p>
           <ol id="reader" class="reader"></ol>
         </section>
-      </section>
-    </div>
-    <noscript>Vesna requires JavaScript for authentication and audio playback.</noscript>
-  </main>
+      </div>
+    </main>
+
+    <section id="player" class="playback-bar" aria-label="Read-along playback controls" hidden>
+      <audio id="audio" preload="metadata" aria-hidden="true"></audio>
+      <div class="playback-inner">
+        <div class="playback-top">
+          <span class="playing-label">Now playing</span>
+          <details id="playback-settings" class="playback-settings">
+            <summary><svg aria-hidden="true"><use href="#icon-settings"/></svg><span class="settings-full">Playback settings</span><span class="settings-compact">Settings</span></summary>
+            <div class="settings-panel">
+              <label for="speed">Playback speed</label>
+              <select id="speed" aria-label="Playback speed">
+                <option value="0.75">0.75×</option>
+                <option value="1" selected>1×</option>
+                <option value="1.25">1.25×</option>
+                <option value="1.5">1.5×</option>
+                <option value="2">2×</option>
+              </select>
+              <label class="check-control" for="autoscroll"><input id="autoscroll" type="checkbox" checked>Follow the current paragraph</label>
+            </div>
+          </details>
+        </div>
+        <label class="visually-hidden" for="seekbar">Playback position in seconds</label>
+        <input id="seekbar" type="range" min="0" max="0" step="1" value="0" aria-label="Playback position in seconds">
+        <output id="position" class="playback-time" for="seekbar" aria-live="off">0:00 / 0:00</output>
+        <div class="playback-controls">
+          <button id="previous" class="control-button" type="button" aria-label="Previous paragraph"><svg aria-hidden="true"><use href="#icon-previous"/></svg></button>
+          <button id="play-pause" class="control-button play-pause" type="button" aria-label="Play"><svg aria-hidden="true"><use href="#icon-play"/></svg></button>
+          <button id="next" class="control-button" type="button" aria-label="Next paragraph"><svg aria-hidden="true"><use href="#icon-next"/></svg></button>
+        </div>
+        <p id="playback-status" class="playback-status" role="status" aria-live="polite"></p>
+      </div>
+    </section>
+  </div>
+
+  <dialog id="delete-dialog" class="delete-dialog" aria-labelledby="delete-heading" aria-describedby="delete-description">
+    <h2 id="delete-heading">Delete this item?</h2>
+    <p id="delete-item-name" class="delete-item-name"></p>
+    <p id="delete-description">Its saved listening text and audio will be removed. This cannot be undone.</p>
+    <p id="delete-error" class="error-message" role="alert" hidden></p>
+    <div class="dialog-actions"><button id="cancel-delete" class="secondary-button" type="button">Cancel</button><button id="confirm-delete" class="danger-button" type="button">Delete item</button></div>
+  </dialog>
+
+  <noscript>Vesna requires JavaScript for authentication and audio playback.</noscript>
   <script type="module" src="/app.js"></script>
 </body>
 </html>

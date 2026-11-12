@@ -98,6 +98,10 @@ export class VesnaApi {
     return this.request(`${itemPath(itemId)}/retry`, { method: 'POST' });
   }
 
+  deleteItem(itemId) {
+    return this.request(itemPath(itemId), { method: 'DELETE' });
+  }
+
   sourceUrl(itemId) {
     return `${itemPath(itemId)}/source`;
   }

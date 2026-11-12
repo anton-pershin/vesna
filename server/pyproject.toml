@@ -1,7 +1,7 @@
 [project]
 name = "vesna"
 description = "Vesna authenticated listening application and durable preparation worker"
-version = "0.3.0"
+version = "0.4.0"
 requires-python = ">=3.12"
 dependencies = [
   "comourat @ git+https://github.com/anton-pershin/comourat.git@c9bfb1604a5286d073aaceef1513e0d7496d0e33",

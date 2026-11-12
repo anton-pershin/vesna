@@ -40,16 +40,44 @@ test('library renders untrusted values as text and exposes state, open, and retr
   assert.equal(container.children.length, 3);
   assert.equal(container.querySelector('img'), null, 'no untrusted element is constructed');
   assert.match(container.children[0].textContent, /<img src=x onerror=alert\(1\)>/);
-  assert.match(container.children[0].textContent, /Status: Preparing/);
-  assert.match(container.children[1].textContent, /Status: Failed/);
-  assert.match(container.children[2].textContent, /Prepared for listening/);
-  assert.doesNotMatch(container.children[0].textContent, /Prepared for listening/);
+  assert.match(container.children[0].textContent, /Preparing…/);
+  assert.match(container.children[1].textContent, /Preparation failed/);
+  assert.match(container.children[2].textContent, /Ready to listen/);
+  assert.doesNotMatch(container.children[0].textContent, /Ready to listen/);
 
   container.children[0].querySelector('button').dispatch('click');
-  const retry = container.children[1].children.find((child) => child.textContent === 'Retry preparation');
+  const retry = container.children[1].querySelector('.secondary-button');
+  assert.equal(retry.textContent, 'Retry');
   retry.dispatch('click');
   assert.deepEqual(opened, ['item-1']);
   assert.deepEqual(retried, ['item-2']);
+});
+
+test('library state transitions preserve the focused item action', () => {
+  const documentImpl = new FakeDocument();
+  const container = new FakeElement('ul');
+  const current = [summary({ state: 'preparing' })];
+  renderLibrary(container, current, { documentImpl, onOpen: () => {}, onRetry: () => {} });
+  documentImpl.activeElement = container.querySelector('button');
+  current[0] = summary({ state: 'ready', version: 'version-1' });
+  renderLibrary(container, current, { documentImpl, onOpen: () => {}, onRetry: () => {} });
+  const replacement = container.querySelector('button');
+  assert.notEqual(replacement, documentImpl.activeElement, 'the focused button is replaced');
+  assert.deepEqual(replacement.focusCalls, [{ preventScroll: true }]);
+  assert.equal(replacement.dataset.itemId, 'item-1');
+  assert.equal(replacement.dataset.libraryAction, 'open');
+});
+
+test('retry acceptance moves focus to the item open action when retry disappears', () => {
+  const documentImpl = new FakeDocument();
+  const container = new FakeElement('ul');
+  renderLibrary(container, [summary({ state: 'failed' })], { documentImpl, onOpen: () => {}, onRetry: () => {} });
+  documentImpl.activeElement = container.querySelector('.secondary-button');
+  assert.equal(documentImpl.activeElement.dataset.libraryAction, 'retry');
+  renderLibrary(container, [summary({ state: 'accepted' })], { documentImpl, onOpen: () => {}, onRetry: () => {} });
+  const open = container.querySelector('button');
+  assert.equal(open.dataset.libraryAction, 'open');
+  assert.deepEqual(open.focusCalls, [{ preventScroll: true }]);
 });
 
 test('paragraph selection has labelled controls and a non-color current indication', () => {

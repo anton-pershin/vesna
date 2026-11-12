@@ -1,9 +1,9 @@
-const SHELL_CACHE = 'vesna-app-shell-v4';
+const SHELL_CACHE = 'vesna-app-shell-v6';
 const SHELL_RESOURCES = [
   '/index.html', '/app.js', '/styles.css', '/manifest.webmanifest', '/icon.svg',
   '/icon-192.png', '/icon-512.png', '/icon-maskable-512.png', '/sw.js',
   '/modules/api.js', '/modules/application.js', '/modules/input.js',
-  '/modules/media-session.js', '/modules/player.js', '/modules/prepared.js', '/modules/seekbar.js',
+  '/modules/media-session.js', '/modules/player.js', '/modules/playback-bar.js', '/modules/prepared.js', '/modules/seekbar.js',
   '/modules/storage.js', '/modules/timing.js', '/modules/views.js',
 ];
 

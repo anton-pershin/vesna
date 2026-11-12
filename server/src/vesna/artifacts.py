@@ -2,13 +2,15 @@
 
 from __future__ import annotations
 
+from contextlib import contextmanager
+import fcntl
 import hashlib
 import json
 import os
 from pathlib import Path, PurePosixPath
 import shutil
 import tempfile
-from typing import Any
+from typing import Any, Iterator
 
 
 class ArtifactError(RuntimeError):
@@ -23,7 +25,7 @@ class ArtifactStore:
             self.root.chmod(0o700)
         except OSError:
             pass
-        for directory in ("sources", "work", "staging", "versions"):
+        for directory in ("sources", "work", "staging", "versions", "locks"):
             (self.root / directory).mkdir(mode=0o700, exist_ok=True)
 
     def path(self, relative: str) -> Path:
@@ -86,6 +88,43 @@ class ArtifactStore:
         if len(PurePosixPath(relative).parts) < 2:
             raise ArtifactError("refusing to remove an artifact storage category")
         shutil.rmtree(path, ignore_errors=True)
+
+    def remove_file_strict(self, relative: str) -> None:
+        try:
+            self.path(relative).unlink(missing_ok=True)
+        except OSError as error:
+            raise ArtifactError("artifact file could not be removed") from error
+
+    def remove_tree_strict(self, relative: str) -> None:
+        path = self.path(relative)
+        if len(PurePosixPath(relative).parts) < 2:
+            raise ArtifactError("refusing to remove an artifact storage category")
+        try:
+            shutil.rmtree(path)
+        except FileNotFoundError:
+            pass
+        except OSError as error:
+            raise ArtifactError("artifact tree could not be removed") from error
+
+    @contextmanager
+    def item_lock(self, item_id: str) -> Iterator[None]:
+        # Lock files persist so every waiter always refers to the same lock.
+        digest = hashlib.sha256(item_id.encode("utf-8")).hexdigest()
+        path = self.path(f"locks/{digest}.lock")
+        descriptor = os.open(path, os.O_RDWR | os.O_CREAT | os.O_CLOEXEC, 0o600)
+        try:
+            os.fchmod(descriptor, 0o600)
+            fcntl.flock(descriptor, fcntl.LOCK_EX)
+        except BaseException:
+            os.close(descriptor)
+            raise
+        try:
+            yield
+        finally:
+            try:
+                fcntl.flock(descriptor, fcntl.LOCK_UN)
+            finally:
+                os.close(descriptor)
 
     def sha256(self, relative: str) -> str:
         digest = hashlib.sha256()

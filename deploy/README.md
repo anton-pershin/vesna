@@ -1,4 +1,4 @@
-# M3 single-machine deployment
+# Single-machine deployment (M3 and M4)
 
 This procedure runs the application, worker, storage, and TTS on one development machine. Cloudflare Quick Tunnel provides a temporary public HTTPS origin. No domain or inbound port 443 is required. This is not the final stable or split-host deployment.
 
@@ -129,7 +129,7 @@ export VESNA_BROWSER_RESULT=/tmp/vesna-browser-result.json
 node /opt/vesna/deploy/browser_live_check.cjs
 ```
 
-Set `VESNA_BROWSER_SCREENSHOT` to an output path if a sanitized screenshot is needed. Set `CHROMIUM_EXECUTABLE` only when using a custom Chromium installation. The check covers sign-in, real audio decoding and playback, navigation, selected paragraphs, speed, restore, mobile overflow, and private-cache exclusion.
+Set `VESNA_BROWSER_SCREENSHOT_DIR` to a directory if sanitized phone and desktop screenshots are needed. Set `CHROMIUM_EXECUTABLE` only when using a custom Chromium installation. The check covers focused screens, article and Markdown submission, real audio decoding and playback, navigation, selected paragraphs, speed, restore, source inspection, bottom-bar geometry, touch targets, 200% text scaling, private-cache exclusion, and cancellation/confirmation of a uniquely named disposable deletion item. It creates real preparation jobs and deletes only that disposable Markdown item.
 
 ## Controlled redirect security checks
 

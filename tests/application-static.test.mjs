@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import { createHash } from 'node:crypto';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -31,6 +32,14 @@ test('production PWA is installable and contains no synthetic probe composition'
     assert.equal(bytes.readUInt32BE(20), size);
   }
   assert.ok(manifest.icons.some((icon) => icon.purpose === 'maskable'));
+  const iconHashes = {
+    'public/icon-192.png': 'fb529f99a9849401530dd10aa2004f6893f51f23125be896ba7f564c782b7641',
+    'public/icon-512.png': '60807056748a14a833a5024c6d4ef73b79fd081b3af4c1281b7bbfc0ebc3453a',
+    'public/icon-maskable-512.png': '071e876ea2f07a2748de3c992ad3eb868d84a44d72e549d87196b0a7cfc5bbe4',
+  };
+  for (const [file, expected] of Object.entries(iconHashes)) {
+    assert.equal(createHash('sha256').update(fs.readFileSync(path.join(root, file))).digest('hex'), expected, `${file} preserves the approved A1 artwork`);
+  }
 
   const browserFiles = [
     'public/index.html', 'public/app.js', 'public/styles.css', 'public/sw.js',
@@ -46,15 +55,19 @@ test('production PWA is installable and contains no synthetic probe composition'
 
 test('production shell keeps private content inert and exposes labelled mobile controls', () => {
   const html = read('public/index.html');
-  for (const id of ['password', 'article-url', 'markdown-file', 'library', 'item-view', 'audio', 'seekbar', 'play', 'pause', 'previous', 'next', 'speed', 'autoscroll', 'source-download', 'article-link']) {
+  for (const id of ['password', 'article-url', 'markdown-file', 'library', 'library-view', 'input-view', 'item-view', 'audio', 'seekbar', 'play-pause', 'previous', 'next', 'speed', 'autoscroll', 'source-download', 'article-link', 'delete-dialog', 'delete-item', 'confirm-delete']) {
     assert.match(html, new RegExp(`id="${id}"`), id);
   }
   assert.match(html, /<label for="password">Password<\/label>/);
   assert.match(html, /<label for="article-url">/);
-  assert.match(html, /<label for="markdown-file">/);
+  assert.match(html, /<label class="file-picker" for="markdown-file">/);
   assert.match(html, /accept="\.md,\.markdown/);
   assert.match(html, /up to 1 MiB/);
   assert.match(html, /aria-label="Read-along playback controls"/);
+  assert.match(html, /id="position"[^>]*aria-live="off"/);
+  assert.match(html, /<audio id="audio" preload="metadata" aria-hidden="true"><\/audio>/);
+  assert.match(html, /aria-labelledby="delete-heading" aria-describedby="delete-description"/);
+  assert.match(html, /Use the password configured for this Vesna installation/);
   assert.match(html, /rel="noopener noreferrer"/);
   assert.match(html, /role="status" aria-live="polite"/);
 
@@ -64,6 +77,8 @@ test('production shell keeps private content inert and exposes labelled mobile c
   assert.match(views, /\.textContent/);
   assert.match(views, /Current paragraph/);
   assert.match(views, /aria-current/);
+  assert.match(app, /\$\('empty-add'\)\.addEventListener\('click', showInput\)/);
+  assert.match(app, /loadedSourceItem = null/);
   assert.match(app, /restoreGuard\.blocked/);
   assert.match(app, /restoreGuard\.fail\(saved\)/);
   assert.match(app, /stateStore\.load\(item\.id, item\.version\)/);
@@ -76,25 +91,26 @@ test('production shell keeps private content inert and exposes labelled mobile c
   assert.match(css, /overflow-wrap: anywhere/);
   assert.match(css, /\.reader li\.current/);
   assert.match(css, /\.current-marker/);
+  assert.match(css, /#seekbar \{[^}]*min-height: 44px/);
   assert.match(css, /max-width: 100%/);
 });
 
 test('text and control colors meet mobile accessibility contrast thresholds', () => {
   for (const [foreground, background] of [
-    ['#f1f5f9', '#0b1220'],
-    ['#f8fafc', '#172941'],
-    ['#cbd5e1', '#111d31'],
-    ['#fecaca', '#111d31'],
-    ['#99f6e4', '#111d31'],
-    ['#ccfbf1', '#124047'],
+    ['#26332d', '#f7f3eb'],
+    ['#656c64', '#f7f3eb'],
+    ['#1d5b47', '#e4eee5'],
+    ['#7b5825', '#f0eadb'],
+    ['#984e41', '#f4e6df'],
+    ['#ffffff', '#276f58'],
   ]) {
     assert.ok(contrast(foreground, background) >= 4.5, `${foreground} on ${background}`);
   }
   for (const [foreground, background] of [
-    ['#94a3b8', '#172941'],
-    ['#64748b', '#111d31'],
-    ['#fbbf24', '#111d31'],
-    ['#5eead4', '#124047'],
+    ['#7d847b', '#fffdf8'],
+    ['#276f58', '#f7f3eb'],
+    ['#276f58', '#e4eee5'],
+    ['#984e41', '#f4e6df'],
   ]) {
     assert.ok(contrast(foreground, background) >= 3, `${foreground} on ${background}`);
   }
