@@ -71,7 +71,7 @@ Start the connector first and keep its terminal open:
 cloudflared tunnel --url http://127.0.0.1:8000 --no-autoupdate
 ```
 
-Copy the printed `https://…trycloudflare.com` origin into `VESNA_PUBLIC_ORIGIN` in `/etc/vesna/api.env`. Use only the origin, without a path, query, or fragment. Then install and start the services:
+Copy the printed `https://…trycloudflare.com` origin into `VESNA_PUBLIC_ORIGIN` in `/etc/vesna/api.env`. Use only the origin, without a path, query, or fragment. Set `VESNA_BUILD_COMMIT` to the running Git commit from `git rev-parse HEAD`; the public `/api/build` endpoint and small header label use it for update verification. Static shell resources send `Cache-Control: no-cache` so the service worker and modules revalidate. Then install and start the services:
 
 ```sh
 sudo cp deploy/vesna-api.service deploy/vesna-worker.service deploy/vesna-tts.service /etc/systemd/system/

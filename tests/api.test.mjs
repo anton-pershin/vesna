@@ -49,6 +49,21 @@ test('authentication calls use documented same-origin credentialed routes withou
   }
 });
 
+test('build identity uses a public no-store API operation and validates the response', async () => {
+  const calls = [];
+  const api = new VesnaApi({
+    fetchImpl: async (url, options) => {
+      calls.push({ url, options });
+      return jsonResponse({ commit: 'c07b026-test-build' });
+    },
+  });
+  assert.equal(await api.build(), 'c07b026-test-build');
+  assert.equal(calls[0].url, '/api/build');
+  assert.equal(calls[0].options.cache, 'no-store');
+  const invalid = new VesnaApi({ fetchImpl: async () => jsonResponse({}) });
+  await assert.rejects(invalid.build(), /Invalid build response/);
+});
+
 test('article and Markdown submissions use only their JSON and multipart API operations', async () => {
   const calls = [];
   class FakeFormData {

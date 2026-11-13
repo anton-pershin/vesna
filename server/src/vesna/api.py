@@ -152,6 +152,9 @@ def create_app(
         if request.url.path.startswith("/api/"):
             response.headers["Cache-Control"] = "no-store"
             response.headers["Referrer-Policy"] = "no-referrer"
+        elif request.method in {"GET", "HEAD"}:
+            # Static shell updates must revalidate, especially sw.js and modules.
+            response.headers["Cache-Control"] = "no-cache"
         response.headers["X-Content-Type-Options"] = "nosniff"
         return response
 
@@ -215,6 +218,10 @@ def create_app(
     @app.get("/api/auth/session")
     def session(authenticated_owner: str = Depends(owner)) -> dict[str, bool]:
         return {"authenticated": True}
+
+    @app.get("/api/build")
+    def build() -> dict[str, str]:
+        return {"commit": settings.build_commit}
 
     @app.get("/api/items")
     def items(authenticated_owner: str = Depends(owner)) -> dict[str, Any]:

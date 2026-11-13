@@ -50,6 +50,7 @@ All values are read from the process environment; there is no implicit credentia
 | `VESNA_DATABASE` | API, worker | SQLite path; default `var/vesna.sqlite3`. |
 | `VESNA_ARTIFACT_ROOT` | API, worker | Private artifact directory; default `var/artifacts`; must not be inside the static directory. |
 | `VESNA_STATIC_DIR` | API | Optional static-shell override; defaults to repository `public/` when present. |
+| `VESNA_BUILD_COMMIT` | API | Public build identifier returned by `/api/build`; default `development`. Set this to the running Git commit for update verification. |
 | `VESNA_SESSION_TTL_SECONDS` | API | Server-side session lifetime; default `604800`. |
 | `VESNA_UPLOAD_MAX_BYTES` | API | Maximum Markdown file bytes; default `1048576`; the limit is inclusive. |
 | `VESNA_REQUEST_MAX_BYTES` | API | Maximum complete mutation request; default `1261568`; must exceed upload limit by at least 4096 bytes. |

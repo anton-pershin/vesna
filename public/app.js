@@ -619,11 +619,21 @@ export function startApplication() {
   audio.addEventListener('loadedmetadata', () => { saveState(); updatePosition(); });
   window.addEventListener('pagehide', saveState);
 
+  async function showBuildVersion() {
+    try {
+      const commit = await api.build();
+      $('build-version').textContent = commit.slice(0, 8);
+    } catch {
+      $('build-version').textContent = 'M4';
+    }
+  }
+
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/sw.js').catch(() => {
       $('app-status').textContent = 'Offline application launch is unavailable. Online features still work.';
     });
   }
+  showBuildVersion();
   controller.restoreSession();
   return { controller, playbackBar };
 }

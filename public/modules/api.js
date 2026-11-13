@@ -69,6 +69,14 @@ export class VesnaApi {
     return this.request('/api/auth/session');
   }
 
+  async build() {
+    const result = await this.request('/api/build');
+    if (!result || typeof result.commit !== 'string' || !result.commit) {
+      throw new ApiError('Invalid build response', 200);
+    }
+    return result.commit;
+  }
+
   async listItems() {
     const result = await this.request('/api/items');
     if (!result || !Array.isArray(result.items)) throw new ApiError('Invalid library response', 200);

@@ -55,7 +55,7 @@ test('production PWA is installable and contains no synthetic probe composition'
 
 test('production shell keeps private content inert and exposes labelled mobile controls', () => {
   const html = read('public/index.html');
-  for (const id of ['password', 'article-url', 'markdown-file', 'library', 'library-view', 'input-view', 'item-view', 'audio', 'seekbar', 'play-pause', 'previous', 'next', 'speed', 'autoscroll', 'source-download', 'article-link', 'delete-dialog', 'delete-item', 'confirm-delete']) {
+  for (const id of ['password', 'build-version', 'article-url', 'markdown-file', 'library', 'library-view', 'input-view', 'item-view', 'audio', 'seekbar', 'play-pause', 'previous', 'next', 'speed', 'autoscroll', 'source-download', 'article-link', 'delete-dialog', 'delete-item', 'confirm-delete']) {
     assert.match(html, new RegExp(`id="${id}"`), id);
   }
   assert.match(html, /<label for="password">Password<\/label>/);
@@ -77,6 +77,7 @@ test('production shell keeps private content inert and exposes labelled mobile c
   assert.match(views, /\.textContent/);
   assert.match(views, /Current paragraph/);
   assert.match(views, /aria-current/);
+  assert.match(app, /api\.build\(\)/);
   assert.match(app, /\$\('empty-add'\)\.addEventListener\('click', showInput\)/);
   assert.match(app, /loadedSourceItem = null/);
   assert.match(app, /restoreGuard\.blocked/);

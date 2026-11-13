@@ -65,6 +65,7 @@ class Settings:
     artifact_root: Path
     public_origin: str = "http://127.0.0.1"
     password_hash: str = ""
+    build_commit: str = "development"
     static_dir: Path | None = None
     session_ttl_seconds: int = 604800
     upload_max_bytes: int = 1_048_576
@@ -94,6 +95,8 @@ class Settings:
             object.__setattr__(self, "static_dir", Path(self.static_dir))
         if self.password_hash and not self.password_hash.startswith("scrypt$"):
             raise ValueError("password hash must use the vesna scrypt format")
+        if not self.build_commit.strip() or len(self.build_commit) > 64:
+            raise ValueError("build_commit must be a non-empty public identifier of at most 64 characters")
         if not self.voice_id.strip() or len(self.voice_id) > 200:
             raise ValueError("voice_id must be a non-empty public configuration identifier")
         for name in (
@@ -140,6 +143,7 @@ class Settings:
             "artifact_root": Path(os.environ.get("VESNA_ARTIFACT_ROOT", "var/artifacts")),
             "public_origin": public_origin or "http://127.0.0.1",
             "password_hash": password_hash or "",
+            "build_commit": os.environ.get("VESNA_BUILD_COMMIT", "development"),
             "static_dir": Path(os.environ["VESNA_STATIC_DIR"])
             if os.environ.get("VESNA_STATIC_DIR")
             else None,
