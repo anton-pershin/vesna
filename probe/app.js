@@ -15,7 +15,7 @@ import {
   waitForOfflineReadiness,
 } from '/probe-modules/offline.js';
 
-const PROBE_BUILD = '2026-11-13-m4-r9';
+const PROBE_BUILD = '2026-11-13-m4-r10';
 const $ = (id) => document.getElementById(id);
 const audio = $('audio');
 const stateStore = new PlaybackStateStore(localStorage);

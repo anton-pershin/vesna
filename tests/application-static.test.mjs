@@ -134,5 +134,6 @@ test('production service-worker shell list contains exactly the canonical public
   }
   assert.match(worker, /url\.pathname\.startsWith\('\/api\/'\)/);
   assert.doesNotMatch(worker, /cache\.put|cache\.add\(/);
-  assert.match(worker, /cache\.addAll\(SHELL_RESOURCES\)/);
+  assert.match(worker, /new URL\(resource, self\.location\.origin\)/);
+  assert.match(worker, /cache: 'reload'/);
 });

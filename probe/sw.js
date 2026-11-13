@@ -1,4 +1,4 @@
-const SHELL_CACHE = 'vesna-probe-shell-v16';
+const SHELL_CACHE = 'vesna-probe-shell-v17';
 const FIXTURE_POINTER_CACHE = 'vesna-probe-fixture-pointer-v1';
 const FIXTURE_POINTER_RESOURCE = '/__vesna_offline_fixture_pointer__';
 const FIXTURE_DOWNLOAD_HEADER = 'X-Vesna-Fixture-Download';
@@ -100,7 +100,12 @@ async function matchPublishedFixture(request) {
 }
 
 self.addEventListener('install', (event) => {
-  event.waitUntil(caches.open(SHELL_CACHE).then((cache) => cache.addAll(SHELL_RESOURCES)).then(() => self.skipWaiting()));
+  event.waitUntil(caches.open(SHELL_CACHE).then((cache) => cache.addAll(
+    SHELL_RESOURCES.map((resource) => new Request(
+      new URL(resource, self.location.origin),
+      { cache: 'reload' },
+    )),
+  )).then(() => self.skipWaiting()));
 });
 
 self.addEventListener('activate', (event) => {

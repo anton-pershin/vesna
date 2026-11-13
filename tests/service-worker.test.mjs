@@ -30,7 +30,7 @@ function createFetchHandler(cached) {
     async open(name) {
       return {
         async match() {
-          return name === 'vesna-probe-shell-v16' ? cached : undefined;
+          return name === 'vesna-probe-shell-v17' ? cached : undefined;
         },
       };
     },

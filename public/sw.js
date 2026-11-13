@@ -1,4 +1,4 @@
-const SHELL_CACHE = 'vesna-app-shell-v8';
+const SHELL_CACHE = 'vesna-app-shell-v9';
 const SHELL_RESOURCES = [
   '/index.html', '/app.js', '/styles.css', '/manifest.webmanifest', '/icon.svg',
   '/icon-192.png', '/icon-512.png', '/icon-maskable-512.png', '/sw.js',
@@ -10,7 +10,12 @@ const SHELL_RESOURCES = [
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(SHELL_CACHE)
-      .then((cache) => cache.addAll(SHELL_RESOURCES))
+      .then((cache) => cache.addAll(
+        SHELL_RESOURCES.map((resource) => new Request(
+          new URL(resource, self.location.origin),
+          { cache: 'reload' },
+        )),
+      ))
       .then(() => self.skipWaiting()),
   );
 });

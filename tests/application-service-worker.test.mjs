@@ -35,7 +35,7 @@ function createWorker({ cacheNames = [], shellResponse = new Response('shell') }
     async keys() { return cacheNames; },
     async delete(name) { deleted.push(name); return true; },
   };
-  const context = vm.createContext({ self, caches, fetch: async () => new Response('network'), URL, Response, Headers });
+  const context = vm.createContext({ self, caches, fetch: async () => new Response('network'), URL, Request, Response, Headers });
   new vm.Script(source, { filename: 'public/sw.js' }).runInContext(context);
 
   return {
@@ -67,14 +67,15 @@ test('installation caches only the declared public application shell', async () 
   const worker = createWorker();
   await worker.install();
   assert.equal(worker.skipWaiting, true);
-  assert.deepEqual(worker.opened, ['vesna-app-shell-v8']);
-  assert.ok(worker.added.includes('/index.html'));
-  assert.ok(worker.added.includes('/app.js'));
-  assert.equal(worker.added.some((resource) => resource.startsWith('/api/')), false);
-  assert.equal(worker.added.some((resource) => resource.includes('auth')), false);
-  assert.equal(worker.added.some((resource) => resource.includes('fixture')), false);
-  assert.equal(worker.added.some((resource) => resource.includes('/source')), false);
-  assert.equal(worker.added.some((resource) => resource.includes('/audio')), false);
+  assert.deepEqual(worker.opened, ['vesna-app-shell-v9']);
+  assert.ok(worker.added.some((resource) => resource.url.endsWith('/index.html')));
+  assert.ok(worker.added.some((resource) => resource.url.endsWith('/app.js')));
+  assert.ok(worker.added.every((resource) => resource.cache === 'reload'));
+  assert.equal(worker.added.some((resource) => resource.url.includes('/api/')), false);
+  assert.equal(worker.added.some((resource) => resource.url.includes('auth')), false);
+  assert.equal(worker.added.some((resource) => resource.url.includes('fixture')), false);
+  assert.equal(worker.added.some((resource) => resource.url.includes('/source')), false);
+  assert.equal(worker.added.some((resource) => resource.url.includes('/audio')), false);
 });
 
 test('every API route bypasses the service worker even for GET audio and source requests', async () => {
