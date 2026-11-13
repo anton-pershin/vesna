@@ -7,6 +7,25 @@ const SHELL_RESOURCES = [
   '/modules/storage.js', '/modules/timing.js', '/modules/views.js',
 ];
 
+async function networkFirstShell(request, cacheKey) {
+  const cache = await caches.open(SHELL_CACHE);
+  try {
+    const response = await fetch(request);
+    if (response.ok) {
+      try {
+        await cache.put(cacheKey, response.clone());
+      } catch {
+        // A cache-write failure must not replace a successful online response.
+      }
+    }
+    return response;
+  } catch (error) {
+    const cached = await cache.match(cacheKey);
+    if (cached) return cached;
+    throw error;
+  }
+}
+
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(SHELL_CACHE)
@@ -36,17 +55,12 @@ self.addEventListener('fetch', (event) => {
   if (url.origin !== self.location.origin || url.pathname.startsWith('/api/')) return;
 
   if (SHELL_RESOURCES.includes(url.pathname)) {
-    event.respondWith((async () => {
-      const cache = await caches.open(SHELL_CACHE);
-      return (await cache.match(request)) || fetch(request);
-    })());
+    event.respondWith(networkFirstShell(request, request));
     return;
   }
 
   if (request.mode === 'navigate') {
-    event.respondWith((async () => {
-      const cache = await caches.open(SHELL_CACHE);
-      return (await cache.match(new URL('/index.html', self.location.origin).href)) || fetch(request);
-    })());
+    const index = new URL('/index.html', self.location.origin).href;
+    event.respondWith(networkFirstShell(request, index));
   }
 });

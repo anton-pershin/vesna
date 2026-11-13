@@ -26,11 +26,17 @@ function createFetchHandler(cached) {
       listeners.set(type, listener);
     },
   };
+  const pointer = JSON.stringify({
+    version: 'fixture-v1',
+    cacheName: 'fixture-cache-v1',
+    resources: ['/fixtures/audio/fixture.mp3'],
+  });
   const caches = {
     async open(name) {
       return {
         async match() {
-          return name === 'vesna-probe-shell-v17' ? cached : undefined;
+          if (name === 'vesna-probe-fixture-pointer-v1') return new Response(pointer);
+          return name === 'fixture-cache-v1' ? cached : undefined;
         },
       };
     },

@@ -10,10 +10,11 @@ function request(path, { method = 'GET', mode = 'same-origin', url = `${ORIGIN}$
   return { method, mode, url, headers: new Headers() };
 }
 
-function createWorker({ cacheNames = [], shellResponse = new Response('shell') } = {}) {
+function createWorker({ cacheNames = [], shellResponse = new Response('shell'), networkError = false } = {}) {
   const listeners = new Map();
   const opened = [];
   const added = [];
+  const updated = [];
   const deleted = [];
   let skipWaiting = false;
   let claimed = false;
@@ -23,6 +24,7 @@ function createWorker({ cacheNames = [], shellResponse = new Response('shell') }
       const url = typeof input === 'string' ? input : input.url;
       return url.includes('/index.html') || url.endsWith('/app.js') ? shellResponse : undefined;
     },
+    async put(input, response) { updated.push({ input, response }); },
   };
   const self = {
     location: { origin: ORIGIN },
@@ -35,7 +37,18 @@ function createWorker({ cacheNames = [], shellResponse = new Response('shell') }
     async keys() { return cacheNames; },
     async delete(name) { deleted.push(name); return true; },
   };
-  const context = vm.createContext({ self, caches, fetch: async () => new Response('network'), URL, Request, Response, Headers });
+  const context = vm.createContext({
+    self,
+    caches,
+    fetch: async () => {
+      if (networkError) throw new Error('offline');
+      return new Response('network');
+    },
+    URL,
+    Request,
+    Response,
+    Headers,
+  });
   new vm.Script(source, { filename: 'public/sw.js' }).runInContext(context);
 
   return {
@@ -43,6 +56,7 @@ function createWorker({ cacheNames = [], shellResponse = new Response('shell') }
     opened,
     added,
     deleted,
+    updated,
     get skipWaiting() { return skipWaiting; },
     get claimed() { return claimed; },
     async install() {
@@ -101,18 +115,28 @@ test('cross-origin and mutating requests bypass the worker', async () => {
   assert.deepEqual(worker.opened, []);
 });
 
-test('known public shell resources use the shell cache', async () => {
-  const cached = new Response('cached public module');
+test('online shell resources update the cached copy', async () => {
+  const cached = new Response('old public module');
   const worker = createWorker({ shellResponse: cached });
+  const result = await worker.fetch(request('/app.js'));
+  assert.equal(result.handled, true);
+  assert.equal(await result.response.text(), 'network');
+  assert.equal(worker.updated.length, 1);
+  assert.equal(await worker.updated[0].response.text(), 'network');
+});
+
+test('offline shell resources fall back to the cached copy', async () => {
+  const cached = new Response('cached public module');
+  const worker = createWorker({ shellResponse: cached, networkError: true });
   const result = await worker.fetch(request('/app.js'));
   assert.equal(result.handled, true);
   assert.equal(result.response, cached);
   assert.equal(await result.response.text(), 'cached public module');
 });
 
-test('non-API navigation can use the public index fallback', async () => {
+test('offline non-API navigation can use the public index fallback', async () => {
   const cached = new Response('public index');
-  const worker = createWorker({ shellResponse: cached });
+  const worker = createWorker({ shellResponse: cached, networkError: true });
   const result = await worker.fetch(request('/library', { mode: 'navigate' }));
   assert.equal(result.handled, true);
   assert.equal(result.response, cached);
