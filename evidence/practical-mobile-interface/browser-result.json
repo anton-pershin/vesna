@@ -64,7 +64,8 @@
     "speed_and_autoscroll": true,
     "saved_position_and_speed": true,
     "final_paragraph_not_covered": true,
-    "no_audio_requests_from_scrolling": true
+    "no_audio_requests_from_scrolling": true,
+    "article_to_item_to_article_highlight": true
   },
   "deletion": {
     "cancel_preserved_item": true,

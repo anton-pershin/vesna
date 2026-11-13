@@ -1,48 +1,51 @@
 # Target-phone results
 
-Status: **pending — no M4 target-phone result has been recorded yet**
+Status: **pass**
+
+Check date: **2026-11-13**.
 
 ## Device identity
 
-- Intended device: Huawei Pura 80 Pro used for M1 and M3 procedures.
-- Previously recorded operating system: `Android 12; LMR-LX9 Build/HUAWEILMR-L29; 31; REL`
-- Previously recorded Chrome: `138.0.7204.157`
-- Confirm and record the current operating-system and Chrome versions during the M4 run.
+- Device: Huawei Pura 80 Pro used for M1 and M3 procedures.
+- Operating system: `Android 12; LMR-LX9 Build/HUAWEILMR-L29; 31; REL`
+- Chrome: `138.0.7204.157`
+- The user confirmed that the operating-system and Chrome versions are unchanged from the previous recorded run.
 - M4 application origin: `https://record-candidates-img-hwy.trycloudflare.com`
-- Isolated probe origin and build: `https://zip-shortly-str-robertson.trycloudflare.com`, `2026-11-12-m4-r8`
+- Final visible build identity: `68344897`
+- Isolated probe origin: `https://zip-shortly-str-robertson.trycloudflare.com`
+- Final isolated probe build: `2026-11-13-m4-r10`
 
-## Required M4 application procedure
+## Real M4 application
 
-Perform these checks on the target phone through the public HTTPS origin:
+Result: **pass**.
 
-1. Install/open the PWA and sign in with the configured single-user password.
-2. Add `https://example.com` as a public article. Confirm separate input and reader screens, preparation updates, and real audio playback.
-3. Upload a UTF-8 Markdown test document. Confirm source selection, preparation, and playback.
-4. Open a ready item and verify:
-   - The bottom playback bar remains visible while scrolling and does not cover the final paragraph.
-   - Play/pause, direct seeking, previous/next paragraph, selected-paragraph playback, speed, and automatic scrolling.
-   - Source information opens on demand, including original Markdown for the uploaded item.
-   - Reopening restores position and speed.
-   - Another-app and locked-screen playback continue. Check lock-screen and headset controls where exposed; record unavailable controls explicitly.
-5. Delete a disposable item:
-   - Cancel first and verify the item and playback remain.
-   - Confirm deletion and verify playback stops, the item disappears, and its source/audio cannot be retrieved again.
-6. Inspect the library, add-content, reader, source, and deletion screens for visual acceptance, readable text, touch usability, and horizontal overflow.
-7. Sign out and confirm private screens are cleared.
+The user completed the article and Markdown input-to-listening workflows through the public HTTPS application. Separate library, content-input, and reader screens worked, including preparation updates and real audio playback.
 
-Record each result explicitly as pass, fail, or blocked. Do not infer a phone pass from desktop Chromium.
+The reader passed bottom-bar visibility during scrolling, final-paragraph access, play/pause, direct seeking, previous/next and selected-paragraph playback, speed and automatic-scroll settings, on-demand source inspection, original Markdown access, saved position and speed, another-app playback, and locked-screen playback. Deletion cancellation preserved the disposable item and playback; confirmed deletion stopped playback and removed the item. Sign-out cleared private screens. The user accepted the visual result and interaction behavior.
 
-## Isolated M1 regression procedure
+### Highlight regression and correction
 
-The shared playback-state module gained a per-item deletion cleanup method. The synthetic probe is bumped to `2026-11-12-m4-r8` with a new shell cache while its playback behavior remains unchanged.
+The user initially found that the highlight disappeared after playing item A, playing item B, and returning to item A with a saved position. Audio continued at `0:04/0:09`, and paragraph controls did not restore the highlight. The cause was stale playback controllers remaining subscribed to the shared audio element after item changes.
 
-1. Open the isolated probe online and allow `2026-11-12-m4-r8` to activate without clearing site data.
-2. Disable networking and reopen the installed probe.
-3. Confirm the existing downloaded fixture remains available, playback works, and saved position and speed restore.
-4. Re-enable networking and record the result and current device/browser versions.
+The implementation now destroys playback and seekbar controllers during teardown. Deterministic lifecycle tests and live Chromium cover the exact A → B → restored A path. The user confirmed that the final build displays `68344897` and that the same procedure now passes.
 
-The prior M1 30-minute locked-screen run covered playback and timing code that is unchanged in M4. This M4 check addresses shared playback-state and update preservation; it does not establish real-item offline readiness.
+### Shell-update diagnosis and correction
 
-## Current observations
+Initial update attempts exposed stale and mixed shell resources. A diagnostic showed a `v8` cache with new `app.js` but an old API module. The final design adds:
 
-No M4 phone observations are recorded yet. All items above remain pending.
+- A public build endpoint and visible short commit ID.
+- `Cache-Control: no-cache` for static shell resources.
+- `cache: reload` for every resource during service-worker installation.
+- Network-first shell and navigation responses with cached offline fallback.
+
+The user confirmed the visible build identity, and the highlight test passed afterward. No unavailable platform control is presented as working; prior lock-screen and headset limitations remain recorded observations, not failures.
+
+## Isolated M1 regression probe
+
+Result: **pass**.
+
+The user confirmed probe build `2026-11-13-m4-r10`, updated without clearing site data, disabled networking, and verified that the downloaded fixture, audio controls, seeking, highlighting, and saved position/speed remained usable.
+
+The final **30-minute locked-screen, network-disabled run** completed at approximately **17:50–18:20 on 2026-11-13**. Playback crossed all 12 paragraph boundaries and reached the end without an application-caused stop.
+
+This probe verifies the shared playback lifecycle and update-preservation behavior. It does not establish real-item offline readiness, which remains outside M4.

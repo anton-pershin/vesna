@@ -8,15 +8,16 @@ rootdir: /home/tony/reps/github/anton-pershin/vesna/server
 configfile: pyproject.toml
 plugins: logfire-sdk-5.5.0, anyio-4.16.0, asyncio-1.4.1.post1, platformdirs-4.14.5
 asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
-collected 182 items
+collected 184 items
 
 server/tests/test_audio.py ..........                                    [  5%]
 server/tests/test_auth_api.py ............................               [ 20%]
-server/tests/test_comourat_integration.py .........................      [ 34%]
-server/tests/test_config.py .....                                        [ 37%]
+server/tests/test_build.py ..                                            [ 21%]
+server/tests/test_comourat_integration.py .........................      [ 35%]
+server/tests/test_config.py .....                                        [ 38%]
 server/tests/test_deletion.py ..............                             [ 45%]
 server/tests/test_deletion_races.py ......                               [ 48%]
-server/tests/test_e2e.py ..                                              [ 49%]
+server/tests/test_e2e.py ..                                              [ 50%]
 server/tests/test_inputs_api.py ................................         [ 67%]
 server/tests/test_live_config.py ......                                  [ 70%]
 server/tests/test_ranges.py ..............                               [ 78%]
@@ -25,4 +26,4 @@ server/tests/test_source_live_checks.py ..                               [ 81%]
 server/tests/test_tts.py .................                               [ 90%]
 server/tests/test_worker.py .................                            [100%]
 
-============================= 182 passed in 43.86s =============================
+============================= 184 passed in 49.40s =============================

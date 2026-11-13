@@ -1,17 +1,24 @@
 # Practical mobile interface result
 
-Status: **in progress — target-phone checks remain; hosted CI passes**
+Status: **pass — M4 practical mobile interface is complete and ready to merge**
 
 ## Test identity
 
-- Vesna commit: `aee1aa71c65752a930c4083091b58ed2f2a9b36c`
-- Implementation commit before the isolated-probe bump: `736bafd`
+- Spec commit: `9adfc43`
+- Final implementation commit: `68344897f03e047c3be0480fb65b30062fc2f60a`
+- Visible target-phone build: `68344897`
 - Comourat commit: `c9bfb1604a5286d073aaceef1513e0d7496d0e33`
 - Python: `3.12.3`
 - Node: `26.8.1`
 - Chromium: `141.0.7390.37`
-- Temporary application origin: `https://record-candidates-img-hwy.trycloudflare.com`
-- Isolated probe origin and build: `https://zip-shortly-str-robertson.trycloudflare.com`, `2026-11-12-m4-r8`
+- Cloudflared: `2026.10.7`
+- FFmpeg: `6.1.1-3ubuntu5`
+- TTS: `piper-tts==1.8.0`, `onnxruntime==1.31.1`
+- Voice: `en_US-joe-medium`, revision `cf910fb59f1d79ab3b625a63993a108751c6c25d`
+- Hosted CI: pass, run `43449954601` at head `6834489`
+- Phone: `Android 12; LMR-LX9 Build/HUAWEILMR-L29; 31; REL`, Chrome `138.0.7204.157`
+- Application origin: `https://record-candidates-img-hwy.trycloudflare.com`
+- Isolated probe origin and build: `https://zip-shortly-str-robertson.trycloudflare.com`, `2026-11-13-m4-r10`
 
 Additional versions and public configuration are in `environment.json`. Credentials are not recorded.
 
@@ -19,32 +26,32 @@ Additional versions and public configuration are in `environment.json`. Credenti
 
 | Criterion | Result | Raw observation |
 |---|---|---|
-| AC1 Screen navigation and content submission | pass | Controller tests cover focused screens, equivalent and distinct pending submissions, and accepted-item opening. Live Chromium submits a real article and Markdown item through separate input states and opens the correct result. |
-| AC2 Library and status presentation | pass | Fixtures cover all preparation states, concise messages, refresh behavior, focus preservation, and Retry-to-Open fallback. Live polling preserves focus, source disclosure, and a nonzero reading position. |
-| AC3 Reader, source inspection, and deletion interaction | pass | Source details load on demand and remain inert. Cancel and Escape preserve active playback and focus. Deletion stops playback, clears state, and denies artifacts. Held item, source, and prepared responses cannot restore deleted content. |
-| AC4 Bottom playback bar and preserved playback | pass | Real Chromium verifies one visible control set, direct seek, play/pause, previous/next/selected paragraphs, speed, actual auto-scroll, saved position and speed, a one-second highlight bound, and no scrolling-triggered audio requests. |
-| AC5 Responsive design and accessibility | pass | Static contrast checks and browser geometry cover phone, desktop, 320px, long content, and 200% text scaling. Visible primary targets measure at least 44px. Focus, reduced motion, non-live time, and A1 icon hashes pass. |
-| AC6 Regression, deletion safety, security, and maintainability | pass | 182 Python and 142 JavaScript tests pass. Backend tests cover every preparation state and required deletion race. Browser tests cover authentication termination, lost responses, stale reads, and navigation races. No private response is cached. Independent code re-review has no remaining substantive issues. |
-| AC7 Live browser and target-phone verification | pending | The expanded live Chromium run passes. Target-phone input, playback, background/locked-screen, deletion, visual acceptance, and isolated-probe preservation procedures are not yet performed. |
-| AC8 Evidence and milestone decision | pending | Evidence is being assembled. Hosted CI run `43160349764` passes with 182 Python application tests, 619 comourat tests, and 142 JavaScript tests. M4 cannot pass until AC7 and the final evidence review pass. |
+| AC1 Screen navigation and content submission | pass | Deterministic tests cover focused screens, true duplicate sharing, rejection of distinct pending submissions, and accepted-item opening. Live Chromium and the target phone passed real article and Markdown submission and playback. |
+| AC2 Library and status presentation | pass | Fixtures cover every preparation state, concise messages, refresh behavior, and focus preservation, including Retry-to-Open fallback. Live polling preserved focus, source disclosure, and a nonzero reading position. |
+| AC3 Reader, source inspection, and deletion interaction | pass | Source details load on demand and remain inert. Cancel and Escape preserved active playback and focus. Confirmed deletion stopped playback, cleared state, removed the item, and denied its source/audio. Held library, item, source, and prepared responses could not restore deleted content. |
+| AC4 Bottom playback bar and preserved playback | pass | Real Chromium verified one visible control set, direct seek, play/pause, previous/next/selected paragraphs, speed, actual auto-scroll, saved position and speed, a one-second highlight bound, and no scrolling-triggered audio requests. The user confirmed the A → B → restored A highlight regression is fixed. |
+| AC5 Responsive design and accessibility | pass | Static contrast checks and browser geometry covered phone, desktop, 320px, long content, and 200% text scaling. All visible primary targets measured at least 44px. Focus, reduced motion, non-live time, and A1 icon hash checks passed. |
+| AC6 Regression, deletion safety, security, and maintainability | pass | 184 Python and 146 JavaScript tests pass. Backend tests cover every preparation state and required deletion race. Browser tests cover authentication termination, old-session responses, lost responses, stale reads, and navigation races. No private response was cached. Independent implementation reviews found no remaining substantive issues. |
+| AC7 Live browser and target-phone verification | pass | Expanded Chromium 141 checks pass. The target phone passed both input workflows, playback, background/locked-screen behavior, deletion, sign-out, and visual acceptance. The isolated probe passed update preservation and a 30-minute offline locked-screen run at 17:50–18:20 on 2026-11-13. |
+| AC8 Evidence and milestone decision | pass | This directory contains exact identities, automated and live results, reproduction instructions, sanitized screenshots, CI results, and target-phone observations. AC1–AC7 pass. |
 
-## Automated results
+## Automated and hosted results
 
-- `automated-python.txt`: **182 passed, 0 failed**.
-- `automated-javascript.txt`: **142 passed, 0 failed**, plus syntax checks.
-- Locked installation with `UV_PROJECT_ENVIRONMENT=/tmp/opencode/vesna-m4-lock-venv uv sync --project server --extra test --extra tts --locked` completed with `vesna==0.4.0` and the pinned comourat commit.
-- Hosted CI run `43160349764` at `aee1aa7`: **pass**, with 182 Python application tests, 619 comourat tests, and 142 JavaScript tests.
+- `automated-python.txt`: **184 passed, 0 failed**.
+- `automated-javascript.txt`: **146 passed, 0 failed**, plus syntax checks.
+- Locked installation completed with `vesna==0.4.0` and the pinned comourat commit.
+- Hosted CI run `43449954601` at `6834489`: **pass**, with 184 Python application tests, 619 comourat tests, and 146 JavaScript tests.
 
 ## Live browser results
 
 `browser-result.json` records a passing Chromium run with real article and Markdown preparation, audio playback and restoration, direct seek, actual automatic scrolling, one-second highlighting, deletion cancellation and confirmation, stale-response rejection, focus preservation, all visible primary touch targets, and private-cache exclusion.
 
-The `screenshots/` directory contains sanitized mobile and desktop screens with public test content only. The long title, URL, filename, paragraph, and error strings are explicit public layout fixtures, not private content.
+The A → B → restored A playback scenario is included as `article_to_item_to_article_highlight: true`. The screenshots in `screenshots/` contain only public test content and explicit public layout fixtures.
 
-## Pending work
+## Target-phone results
 
-1. Complete `device-results.md` on the target phone.
-2. Confirm isolated-probe `2026-11-12-m4-r8` update and offline preservation.
-3. Update this record and obtain the final independent acceptance review.
+`device-results.md` records the passing M4 application procedure, the corrected highlight and shell-update regressions, final visible build `68344897`, unchanged Android/Chrome versions, and the successful 17:50–18:20 offline locked-screen probe run on build `2026-11-13-m4-r10`.
 
-M4 is **not Done** while these checks remain pending.
+## Milestone decision
+
+`pass`. M4 delivers the approved A1 practical mobile interface and safe item deletion. All AC1–AC8 checks pass. The implementation is ready to merge in PR #10. Mark M4 as Done only after that implementation merges to `main`; no roadmap status change is claimed by this evidence commit.

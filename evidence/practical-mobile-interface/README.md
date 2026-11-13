@@ -1,6 +1,6 @@
 # M4 verification evidence
 
-This directory records acceptance evidence for the practical mobile interface. The current milestone decision is **in progress**. A pending or blocked result is never a pass.
+This directory records complete acceptance evidence for the practical mobile interface. M4 passes all AC1–AC8 criteria. Historical procedures explain failures that were corrected before the final pass; a pending or blocked result is never a pass.
 
 ## Evidence rules
 
