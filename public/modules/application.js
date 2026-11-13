@@ -119,7 +119,7 @@ export class ApplicationController {
       if (error?.status === 401) {
         this.clearPrivateState();
         this.error = null;
-        this.emit('signed-out');
+        this.emit('sign-in-required');
         return false;
       }
       this.handleError(error, 'session-error');

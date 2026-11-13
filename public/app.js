@@ -395,7 +395,8 @@ export function startApplication() {
       $('select-article').disabled = state.submitting;
       $('select-markdown').disabled = state.submitting;
 
-      if (reason === 'signed-out') $('app-status').textContent = 'Signed out.';
+      if (reason === 'sign-in-required') $('app-status').textContent = '';
+      else if (reason === 'signed-out') $('app-status').textContent = 'Signed out.';
       else if (reason === 'session-expired') $('app-status').textContent = 'Sign in again to continue.';
       else if (reason === 'sign-in') $('app-status').textContent = 'Loading your library…';
       else if (reason === 'submitted') $('app-status').textContent = 'Submitted. Preparation continues while you do other things.';
@@ -541,6 +542,10 @@ export function startApplication() {
         $('source-text').textContent = `Original Markdown could not be loaded: ${error.message}`;
       });
     }
+  });
+  $('close-source').addEventListener('click', () => {
+    $('source-panel').open = false;
+    $('source-panel').querySelector('summary').focus({ preventScroll: true });
   });
   $('retry').addEventListener('click', () => {
     if (controller.selected) retryItem(controller.selected.item.id);

@@ -46,15 +46,22 @@ function check(value, message) {
     const errors = [];
     const audioStatuses = new Set();
     let audioRequestCount = 0;
+    let expectedDeletedItemId = null;
     page.on('request', (request) => {
       if (request.url().includes('/audio')) audioRequestCount += 1;
     });
     page.on('pageerror', (error) => errors.push(error.message));
     page.on('console', (message) => {
-      if (message.type() === 'error' && !message.text().includes('401')) errors.push(message.text());
+      if (message.type() === 'error' && !message.text().includes('401') && !message.text().includes('404')) {
+        errors.push(message.location?.url ? `${message.text()} (${message.location.url})` : message.text());
+      }
     });
     page.on('response', (response) => {
       if (response.url().includes('/audio')) audioStatuses.add(response.status());
+      if (response.status() === 404) {
+        const expectedDeletion = expectedDeletedItemId && response.url().includes(`/api/items/${expectedDeletedItemId}`);
+        if (!expectedDeletion) errors.push(`Unexpected 404: ${response.url()}`);
+      }
     });
     evidence.browser = await browser.version();
 
@@ -98,11 +105,28 @@ function check(value, message) {
       evidence.viewports.push({ label, horizontal_overflow: false, playback_bar_at_bottom: metrics.playerVisible || undefined });
     }
 
+    async function assertSourcePanelGeometry(label) {
+      const metrics = await page.evaluate(() => {
+        const panel = document.querySelector('#source-panel .source-content');
+        const rect = panel.getBoundingClientRect();
+        return {
+          left: rect.left,
+          right: rect.right,
+          width: rect.width,
+          viewportWidth: document.documentElement.clientWidth,
+        };
+      });
+      check(metrics.width > 0, `${label}: source panel is not visible`);
+      check(metrics.left >= 0 && metrics.right <= metrics.viewportWidth, `${label}: source panel is clipped ${JSON.stringify(metrics)}`);
+      evidence.accessibility.source_panel_bounds ??= [];
+      evidence.accessibility.source_panel_bounds.push({ label, clipped: false });
+    }
+
     async function assertTouchTargets() {
       const selectors = [
         '#add-content', '#refresh', '#previous', '#play-pause', '#next', '#seekbar',
         '#source-panel summary', '#playback-settings summary', '#item-menu summary', '.paragraph-button',
-        '#speed', '.check-control', '#delete-item', '#cancel-delete', '#confirm-delete',
+        '#speed', '.check-control', '#delete-item', '#cancel-delete', '#confirm-delete', '#close-source',
       ];
       for (const selector of selectors) {
         const control = page.locator(selector).first();
@@ -114,6 +138,7 @@ function check(value, message) {
     }
 
     await page.goto(origin, { waitUntil: 'networkidle' });
+    await capture('00-sign-in-mobile');
     await page.getByLabel('Password', { exact: true }).fill(password);
     await page.getByRole('button', { name: 'Sign in', exact: true }).click();
     await page.locator('#library-view').waitFor({ state: 'visible' });
@@ -125,6 +150,22 @@ function check(value, message) {
     evidence.screens.focused_library = true;
 
     const initialIds = new Set((await libraryItems()).map((item) => item.id));
+    const failureFixture = {
+      id: 'public-failure-fixture', kind: 'markdown', title: 'Public preparation failure example',
+      source_url: null, filename: 'failure-fixture.markdown', state: 'failed',
+      error: 'Public test failure message. Retry is available.', version: null, paragraph_count: 0,
+    };
+    await page.route('**/api/items', async (route) => {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ items: [...await libraryItems(), failureFixture] }) });
+    });
+    await page.locator('#refresh').click();
+    await page.getByText('Public preparation failure example', { exact: true }).waitFor();
+    await page.getByText('Public preparation failure example', { exact: true }).scrollIntoViewIfNeeded();
+    await capture('00b-library-failure-mobile');
+    evidence.accessibility.failure_state_screenshot = true;
+    await page.unroute('**/api/items');
+    await page.locator('#refresh').click();
+    await page.waitForFunction(() => !document.querySelector('#library').textContent.includes('Public preparation failure example'));
 
     await page.locator('#add-content').click();
     await page.locator('#input-view').waitFor({ state: 'visible' });
@@ -181,10 +222,11 @@ function check(value, message) {
     check(await page.locator('#source-panel').evaluate((panel) => panel.open), 'Preparation refresh closed the source panel');
     check(await page.locator('#main').evaluate((main) => main.scrollTop) === sourceScrollBefore, 'Preparation refresh changed the reading position');
     evidence.screens.refresh_preserved_source_and_scroll = true;
-    await page.locator('#source-panel summary').click();
+    await page.locator('#close-source').click();
     const afterMarkdown = await libraryItems();
     const markdownItem = afterMarkdown.find((item) => !initialIds.has(item.id) && item.id !== articleItem.id);
     check(markdownItem, 'Submitted Markdown did not create exactly one new item');
+    expectedDeletedItemId = markdownItem.id;
     evidence.screens.markdown_submission = true;
 
     await page.locator('#close-item').click();
@@ -248,16 +290,18 @@ function check(value, message) {
     await page.locator('#markdown-source').waitFor({ state: 'visible' });
     await page.waitForFunction(() => document.querySelector('#source-text').textContent.includes('Vesna'));
     check((await page.locator('#source-detail').textContent()).includes('sample'), 'Full uploaded filename is not available');
+    await assertSourcePanelGeometry('mobile');
     const originalSourceDetail = await page.locator('#source-detail').textContent();
     await page.locator('#source-detail').evaluate((source) => {
       source.textContent = `Uploaded file: ${'very-long-filename-segment-'.repeat(15)}.markdown`;
     });
     await assertLayout('long-filename-source');
+    await assertSourcePanelGeometry('long-filename-source');
     await page.locator('#source-detail').evaluate((source, value) => { source.textContent = value; }, originalSourceDetail);
     await capture('04-reader-source-mobile');
     evidence.screens.source_on_demand = true;
     evidence.accessibility.long_filename_source = true;
-    await page.locator('#source-panel summary').click();
+    await page.locator('#close-source').click();
 
     const beforeScrollAudioRequests = audioRequestCount;
     for (const position of ['top', 'middle', 'bottom']) {
@@ -370,6 +414,7 @@ function check(value, message) {
     await openItem(deletionTitle);
     await page.locator('#item-title').filter({ hasText: deletionTitle }).waitFor();
     await page.locator('#source-panel summary').click();
+    await page.locator('#close-source').click();
     await page.locator('#item-menu summary').click();
     await page.locator('#delete-item').click();
     await page.locator('#confirm-delete').click();
@@ -414,15 +459,19 @@ function check(value, message) {
     });
     await page.locator('#source-panel summary').click();
     await assertLayout('long-content-fixtures');
-    await page.locator('#source-panel summary').click();
+    await assertSourcePanelGeometry('long-content-fixtures');
+    await page.locator('#close-source').click();
     evidence.accessibility.long_content_fixtures = true;
     await page.setViewportSize({ width: 1280, height: 800 });
     await assertLayout('desktop');
     await capture('07-reader-desktop');
     await page.setViewportSize({ width: 320, height: 700 });
     await assertLayout('small-phone');
+    await page.locator('#source-panel summary').click();
+    await assertSourcePanelGeometry('small-phone');
     await page.evaluate(() => { document.documentElement.style.fontSize = '200%'; });
     await assertLayout('text-scaling-200-percent');
+    await assertSourcePanelGeometry('text-scaling-200-percent');
     const signOutBox = await page.locator('#sign-out').boundingBox();
     check(signOutBox && signOutBox.x >= 0 && signOutBox.x + signOutBox.width <= 320, 'Sign-out is clipped at 200% text scaling');
     evidence.accessibility.sign_out_visible_at_200_percent = true;
