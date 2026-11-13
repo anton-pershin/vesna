@@ -1,4 +1,4 @@
-const SHELL_CACHE = 'vesna-probe-shell-v15';
+const SHELL_CACHE = 'vesna-probe-shell-v16';
 const FIXTURE_POINTER_CACHE = 'vesna-probe-fixture-pointer-v1';
 const FIXTURE_POINTER_RESOURCE = '/__vesna_offline_fixture_pointer__';
 const FIXTURE_DOWNLOAD_HEADER = 'X-Vesna-Fixture-Download';

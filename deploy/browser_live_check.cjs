@@ -293,6 +293,34 @@ function check(value, message) {
     evidence.cached_private_responses = 0;
 
     await page.locator('#close-item').click();
+    await openItem('Example Domain');
+    await waitForRealAudio();
+    await page.locator('#seekbar').evaluate((slider) => {
+      slider.value = '4';
+      slider.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+    await page.waitForFunction(() => document.querySelector('#audio').currentTime >= 3.5);
+    await page.locator('#play-pause').click();
+    await page.waitForFunction(() => document.querySelector('#audio').currentTime > 4);
+    await page.locator('#close-item').click();
+    await openItem(sampleTitle);
+    await waitForRealAudio();
+    await page.locator('#seekbar').evaluate((slider) => {
+      slider.value = '0';
+      slider.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+    await page.locator('#play-pause').click();
+    await page.waitForFunction(() => document.querySelector('#audio').currentTime > 0.3);
+    await page.locator('#close-item').click();
+    await openItem('Example Domain');
+    await waitForRealAudio();
+    await page.locator('#play-pause').click();
+    await page.waitForFunction(() => document.querySelector('#audio').currentTime > 5.5);
+    check(await page.locator('#reader > li:first-child button').getAttribute('aria-current') === 'true', 'Restored article lost its highlight after another item played');
+    check(await page.locator('#reader > li:first-child .current-marker').isVisible(), 'Restored article current marker disappeared after another item played');
+    evidence.playback.article_to_item_to_article_highlight = true;
+
+    await page.locator('#close-item').click();
     await openItem(deletionTitle);
     await waitForRealAudio();
     await page.locator('#play-pause').click();

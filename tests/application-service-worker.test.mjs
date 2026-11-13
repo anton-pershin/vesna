@@ -67,7 +67,7 @@ test('installation caches only the declared public application shell', async () 
   const worker = createWorker();
   await worker.install();
   assert.equal(worker.skipWaiting, true);
-  assert.deepEqual(worker.opened, ['vesna-app-shell-v6']);
+  assert.deepEqual(worker.opened, ['vesna-app-shell-v7']);
   assert.ok(worker.added.includes('/index.html'));
   assert.ok(worker.added.includes('/app.js'));
   assert.equal(worker.added.some((resource) => resource.startsWith('/api/')), false);

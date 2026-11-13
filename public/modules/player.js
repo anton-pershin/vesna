@@ -44,12 +44,21 @@ export class PlaybackController {
     this.seekTimeoutMs = seekTimeoutMs;
     this.pendingSeekCount = 0;
     this.activeParagraph = null;
-    this.audio.addEventListener('timeupdate', () => this.handleTimeUpdate());
-    this.audio.addEventListener('seeking', () => this.handleTimeUpdate());
+    this.destroyed = false;
+    this.boundHandleTimeUpdate = () => this.handleTimeUpdate();
+    this.audio.addEventListener('timeupdate', this.boundHandleTimeUpdate);
+    this.audio.addEventListener('seeking', this.boundHandleTimeUpdate);
     this.handleTimeUpdate();
   }
 
+  destroy() {
+    this.destroyed = true;
+    this.audio.removeEventListener('timeupdate', this.boundHandleTimeUpdate);
+    this.audio.removeEventListener('seeking', this.boundHandleTimeUpdate);
+  }
+
   async play() {
+    if (this.destroyed) throw new Error('playback controller is no longer active');
     await this.audio.play();
   }
 
@@ -59,10 +68,11 @@ export class PlaybackController {
   }
 
   pause() {
-    this.audio.pause();
+    if (!this.destroyed) this.audio.pause();
   }
 
   setSpeed(speed) {
+    if (this.destroyed) throw new Error('playback controller is no longer active');
     if (!Number.isFinite(speed) || speed < 0.5 || speed > 3) {
       throw new RangeError('speed must be between 0.5 and 3');
     }
@@ -70,12 +80,14 @@ export class PlaybackController {
   }
 
   async seek(position) {
+    if (this.destroyed) throw new Error('playback controller is no longer active');
     if (!Number.isFinite(position) || position < 0) {
       throw new RangeError('seek position must be a non-negative number');
     }
     this.pendingSeekCount += 1;
     try {
       if (this.audio.readyState < 1) await this.waitForMetadata();
+      if (this.destroyed) throw new Error('playback controller is no longer active');
       const duration = this.audio.duration;
       const target = Number.isFinite(duration) && duration > 0
         ? Math.min(position, duration)
@@ -167,7 +179,7 @@ export class PlaybackController {
   }
 
   handleTimeUpdate() {
-    if (!Number.isFinite(this.audio.currentTime)) return;
+    if (this.destroyed || !Number.isFinite(this.audio.currentTime)) return;
     const id = resolveParagraph(this.audio.currentTime, this.timings);
     if (id !== this.activeParagraph) {
       this.activeParagraph = id;

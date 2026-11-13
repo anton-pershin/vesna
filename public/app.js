@@ -50,6 +50,8 @@ export function startApplication() {
     playbackLoadSequence += 1;
     loadingPlaybackKey = null;
     current = null;
+    player?.destroy();
+    seekbarController?.destroy();
     player = null;
     seekbarController = null;
     restoringPlaybackState = false;
