@@ -79,8 +79,31 @@
   },
   "accessibility": {
     "primary_touch_targets": "at least 44 CSS px",
+    "failure_state_screenshot": true,
     "polling_focus_preserved": true,
     "non_live_time": true,
+    "source_panel_bounds": [
+      {
+        "label": "mobile",
+        "clipped": false
+      },
+      {
+        "label": "long-filename-source",
+        "clipped": false
+      },
+      {
+        "label": "long-content-fixtures",
+        "clipped": false
+      },
+      {
+        "label": "small-phone",
+        "clipped": false
+      },
+      {
+        "label": "text-scaling-200-percent",
+        "clipped": false
+      }
+    ],
     "long_filename_source": true,
     "long_content_fixtures": true,
     "sign_out_visible_at_200_percent": true,

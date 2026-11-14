@@ -2,7 +2,7 @@
 
 Status: **pass**
 
-Check date: **2026-11-13**.
+Check dates: **2026-11-13 and 2026-11-14**.
 
 ## Device identity
 
@@ -11,7 +11,7 @@ Check date: **2026-11-13**.
 - Chrome: `138.0.7204.157`
 - The user confirmed that the operating-system and Chrome versions are unchanged from the previous recorded run.
 - M4 application origin: `https://record-candidates-img-hwy.trycloudflare.com`
-- Final visible build identity: `68344897`
+- Final visible build identity: `54b5c7a2`
 - Isolated probe origin: `https://zip-shortly-str-robertson.trycloudflare.com`
 - Final isolated probe build: `2026-11-13-m4-r10`
 
@@ -28,6 +28,10 @@ The reader passed bottom-bar visibility during scrolling, final-paragraph access
 The user initially found that the highlight disappeared after playing item A, playing item B, and returning to item A with a saved position. Audio continued at `0:04/0:09`, and paragraph controls did not restore the highlight. The cause was stale playback controllers remaining subscribed to the shared audio element after item changes.
 
 The implementation now destroys playback and seekbar controllers during teardown. Deterministic lifecycle tests and live Chromium cover the exact A → B → restored A path. The user confirmed that the final build displays `68344897` and that the same procedure now passes.
+
+### Source-panel correction and confirmation
+
+An independent acceptance review found that the original absolute-positioned Source panel could extend past the left viewport edge. The panel is now viewport-contained, scrollable, and has an explicit **Close source** action. Browser geometry checks pass at representative phone width, 320px, long-content fixtures, and 200% text scaling. On 2026-11-14, the user confirmed build `54b5c7a2` and verified on the target phone that source text is fully visible and the panel closes correctly.
 
 ### Shell-update diagnosis and correction
 
