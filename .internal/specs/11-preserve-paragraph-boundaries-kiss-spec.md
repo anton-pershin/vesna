@@ -29,7 +29,7 @@ Request TTS once for each resulting paragraph. Produce one matching timing entry
 
 **T1. Real pinned-extractor article preparation**
 
-Use `comourat.enrichment.page_fetch.extract_main_content` with controlled HTML that contains one heading and three substantial paragraphs. Assert that the real extracted text contains four expected lines separated by single LF characters. Pass that unmodified text through the article adapter, worker, controlled TTS, real audio assembly, and public API. Assert exact paragraph texts and identifiers, a paragraph count of four, four TTS calls with the same texts, four matching timing entries, and consistent final audio duration. This test covers R1, R3, R4, and B1. The generic article path used by the test is the same path used for GitHub repository pages.
+Use `comourat.enrichment.page_fetch.extract_main_content` with controlled HTML that contains one heading and three substantial paragraphs. Assert that the real extracted text contains four expected lines separated by single LF characters. Pass that unmodified text through the article adapter, worker, controlled TTS, real audio assembly, and public API. Set the worker character limit to the longest expected paragraph so the incorrectly joined article would fail validation. Assert exact paragraph texts and identifiers, a paragraph count of four, four TTS calls with the same texts, four matching timing entries, and consistent final audio duration. This test covers R1, R3, R4, and B1. The test submits a GitHub repository URL through the generic article path used for all articles.
 
 **T2. Newline and cleanup unit coverage**
 
