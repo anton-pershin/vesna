@@ -4,7 +4,7 @@ Status: **pass — M4 practical mobile interface is complete and ready to merge*
 
 ## Test identity
 
-- Spec commit: `9adfc43`
+- Original spec commit: `9adfc43`; approved section 1.3 clarification: `ec8daf6`
 - Final implementation commit: `ec8daf654b9b89ccf8e18ad13300456371b5db17`
 - Visible target-phone build for device procedures: `54b5c7a2`; later focus-only fix: `ec8daf65`
 - Comourat commit: `c9bfb1604a5286d073aaceef1513e0d7496d0e33`
