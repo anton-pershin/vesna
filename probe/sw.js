@@ -152,10 +152,6 @@ self.addEventListener('fetch', (event) => {
     }
     const fixture = await matchPublishedFixture(event.request);
     if (fixture) return responseForCachedRequest(event.request, fixture);
-    if (event.request.mode === 'navigate') {
-      const fallback = await shellCache.match(new URL('/index.html', self.location.origin).href);
-      if (fallback) return fallback;
-    }
     return fetch(event.request);
   })());
 });

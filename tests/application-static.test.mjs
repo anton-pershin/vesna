@@ -77,6 +77,7 @@ test('production shell keeps private content inert and exposes labelled mobile c
   assert.match(views, /\.textContent/);
   assert.match(views, /Current paragraph/);
   assert.match(views, /aria-current/);
+  assert.match(app, /sign-in-required', 'signed-out', 'session-expired/);
   assert.match(app, /api\.build\(\)/);
   assert.match(app, /\$\('empty-add'\)\.addEventListener\('click', showInput\)/);
   assert.match(app, /loadedSourceItem = null/);

@@ -138,6 +138,9 @@ function check(value, message) {
     }
 
     await page.goto(origin, { waitUntil: 'networkidle' });
+    await page.locator('#auth-view').waitFor({ state: 'visible' });
+    check(await page.evaluate(() => document.activeElement?.id === 'password'), 'Initial sign-in did not focus the password field');
+    evidence.accessibility.initial_sign_in_focus = true;
     await capture('00-sign-in-mobile');
     await page.getByLabel('Password', { exact: true }).fill(password);
     await page.getByRole('button', { name: 'Sign in', exact: true }).click();
@@ -380,7 +383,7 @@ function check(value, message) {
     check(await page.locator('#delete-dialog').isHidden(), 'Cancel did not close deletion dialog');
     check(await page.locator('#item-title').textContent() === deletionTitle, 'Cancellation changed the item');
     check(await page.locator('#audio').evaluate((audio) => !audio.paused), 'Cancellation stopped active playback');
-    check(await page.evaluate(() => document.activeElement === document.querySelector('#item-menu summary')), 'Cancel did not restore focus to the item-menu summary');
+    await page.waitForFunction(() => document.activeElement === document.querySelector('#item-menu summary'), null, { timeout: 1000 });
     check(await page.evaluate((itemId) => localStorage.getItem(`vesna.prepared-playback-state:${encodeURIComponent(itemId)}:${encodeURIComponent(document.querySelector('#audio').src.split('/').at(-2))}`) !== null, markdownItem.id), 'Cancellation cleared saved playback state');
     evidence.deletion.cancel_preserved_item = true;
     evidence.deletion.cancel_preserved_playback_and_focus = true;
@@ -390,7 +393,7 @@ function check(value, message) {
     await page.keyboard.press('Escape');
     await page.locator('#delete-dialog').waitFor({ state: 'hidden' });
     check(await page.locator('#audio').evaluate((audio) => !audio.paused), 'Escape stopped active playback');
-    check(await page.evaluate(() => document.activeElement === document.querySelector('#item-menu summary')), 'Escape did not restore focus to the item-menu summary');
+    await page.waitForFunction(() => document.activeElement === document.querySelector('#item-menu summary'), null, { timeout: 1000 });
     evidence.deletion.escape_preserved_playback_and_focus = true;
 
     const stalePayloads = await Promise.all([

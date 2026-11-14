@@ -13,7 +13,7 @@ M3 made Vesna functional, but its single long page, duplicated controls, expande
 #### 1.3 Implementation repos
 
 - `anton-pershin/vesna`: management repository and implementation repository for the PWA interface, item-deletion operation, browser and server tests, and target-phone verification evidence.
-- No other implementation repository is expected. Comourat remains pinned and unchanged. Existing API contracts, preparation behavior, TTS behavior, and stored prepared versions remain compatible; the only planned API addition is item deletion and its associated preparation-worker safety behavior.
+- No other implementation repository is expected. Comourat remains pinned and unchanged. Existing API contracts, preparation behavior, TTS behavior, and stored prepared versions remain compatible. The planned API additions are item deletion with its preparation-worker safety behavior and a public build-identity endpoint. Static shell resources require revalidation, service-worker installation uses reload, and online shell and navigation responses are network-first with cached offline fallback.
 
 ### 2. Requirement analysis
 

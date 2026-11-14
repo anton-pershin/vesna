@@ -21,7 +21,7 @@ Result: **pass**.
 
 The user completed the article and Markdown input-to-listening workflows through the public HTTPS application. Separate library, content-input, and reader screens worked, including preparation updates and real audio playback.
 
-The reader passed bottom-bar visibility during scrolling, final-paragraph access, play/pause, direct seeking, previous/next and selected-paragraph playback, speed and automatic-scroll settings, on-demand source inspection, original Markdown access, saved position and speed, another-app playback, and locked-screen playback. Deletion cancellation preserved the disposable item and playback; confirmed deletion stopped playback, removed the item, cleared its saved playback state, and prevented its source and audio from being retrieved again. Sign-out cleared private screens. The user accepted the visual result and interaction behavior.
+The reader passed bottom-bar visibility during scrolling, final-paragraph access, play/pause, direct seeking, previous/next and selected-paragraph playback, speed and automatic-scroll settings, on-demand source inspection, original Markdown access, saved position and speed, another-app playback, and locked-screen playback. Deletion cancellation preserved the disposable item and playback; confirmed deletion stopped playback and removed the item on the phone. Local playback-state clearing and denial of deleted source/audio were verified separately by the deterministic and live Chromium checks. Sign-out cleared private screens. The user accepted the visual result and interaction behavior.
 
 ### Highlight regression and correction
 

@@ -55,6 +55,7 @@ test('confirmed deletion clears the selected item and reports local playback cle
   assert.equal(controller.selected, null);
   assert.equal(controller.screen, 'library');
   assert.equal(controller.error, null);
+  assert.equal(controller.deleteAttempts.size, 0);
 });
 
 test('a cleanup failure keeps the reader and permits one explicit sequential retry', async () => {

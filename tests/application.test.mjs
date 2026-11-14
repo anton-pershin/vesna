@@ -62,6 +62,24 @@ test('an unauthenticated session check does not read private library data', asyn
   assert.equal(controller.error, null);
 });
 
+test('an expired session emits the dedicated initial sign-in requirement', async () => {
+  const reasons = [];
+  const controller = new ApplicationController({
+    api: apiWith({
+      session: async () => {
+        const error = new Error('Authentication required');
+        error.status = 401;
+        throw error;
+      },
+    }),
+    onChange: (_state, reason) => reasons.push(reason),
+  });
+  assert.equal(await controller.restoreSession(), false);
+  assert.deepEqual(reasons, ['sign-in-required']);
+  assert.equal(controller.screen, 'sign-in');
+  assert.deepEqual(controller.items, []);
+});
+
 test('a session response must explicitly confirm authentication', async () => {
   let libraryCalls = 0;
   const controller = new ApplicationController({

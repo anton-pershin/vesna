@@ -353,6 +353,7 @@ export class ApplicationController {
           this.deleteAttempts.get(itemId) !== attempt || authEpoch !== this.authEpoch ||
           !this.authenticated
         ) return;
+        this.deleteAttempts.delete(itemId);
         this.items = this.items.filter((candidate) => candidate.id !== itemId);
         this.lastDeletedItemId = itemId;
         this.deletion = null;

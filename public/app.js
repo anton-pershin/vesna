@@ -361,7 +361,7 @@ export function startApplication() {
     if (['close-input', 'close-item', 'deleted'].includes(reason)) {
       $('library-heading').focus({ preventScroll: true });
     }
-    if (['signed-out', 'session-expired'].includes(reason)) {
+    if (['sign-in-required', 'signed-out', 'session-expired'].includes(reason)) {
       $('password').focus({ preventScroll: true });
     }
   }
@@ -380,7 +380,10 @@ export function startApplication() {
         loadingPlaybackKey = null;
         loadedSourceItem = null;
       }
-      if (reason === 'signed-out' || reason === 'session-expired') clearPrivateViews();
+      // Expired-session restoration requires the same private-view clearing as sign-out.
+      if (['sign-in-required', 'signed-out', 'session-expired'].includes(reason)) {
+        clearPrivateViews();
+      }
 
       $('auth-view').hidden = state.authenticated;
       $('application-view').hidden = !state.authenticated;
