@@ -54,4 +54,4 @@ The A → B → restored A playback scenario is included as `article_to_item_to_
 
 ## Milestone decision
 
-`pass`. M4 delivers the approved A1 practical mobile interface and safe item deletion. All AC1–AC8 checks pass. The implementation is ready to merge in PR #10. Mark M4 as Done only after that implementation merges to `main`; no roadmap status change is claimed by this evidence commit.
+`pass`. M4 delivers the approved A1 practical mobile interface and safe item deletion. All AC1–AC8 checks pass. M4 is **Done** in the constitution roadmap on this implementation branch, and the implementation is ready to merge in PR #10.

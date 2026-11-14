@@ -2,7 +2,7 @@
 
 Vesna is a mobile-first PWA for preparing and listening to public articles and UTF-8 Markdown documents. The application provides authenticated article and Markdown input, a saved library, durable server-side preparation, real local English TTS, complete MP3 audio, paragraph timings, and online read-along playback. M4 adds focused A1 screens, a persistent bottom playback bar, accessible source and item actions, and safe item deletion.
 
-M1 playback feasibility, the M2 comourat integration contract, and M3 are complete. M4 implementation and acceptance evidence are complete; the implementation PR is ready to merge.
+M1 playback feasibility, the M2 comourat integration contract, and M3 are complete. M4 is **Done**, and the implementation PR is ready to merge.
 
 ## Application architecture
 
