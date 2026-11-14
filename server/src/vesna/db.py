@@ -11,7 +11,7 @@ from typing import Any, Iterator
 from uuid import uuid4
 
 OWNER = "local-user"
-_MIGRATIONS = ((1, "001_initial.sql"),)
+_MIGRATIONS = ((1, "001_initial.sql"), (2, "002_item_deletions.sql"))
 
 
 def summary(row: sqlite3.Row | dict[str, Any]) -> dict[str, Any]:
@@ -26,6 +26,12 @@ def summary(row: sqlite3.Row | dict[str, Any]) -> dict[str, Any]:
         "version": row["published_version"],
         "paragraph_count": row["paragraph_count"],
     }
+
+
+def _deletion_receipt(row: sqlite3.Row) -> dict[str, Any]:
+    receipt = dict(row)
+    receipt["published_paths"] = json.loads(receipt.pop("published_paths_json"))
+    return receipt
 
 
 class Database:
@@ -295,6 +301,74 @@ class Database:
             result = dict(row)
             result["metadata"] = json.loads(result.pop("metadata_json"))
             return result
+
+    def begin_item_deletion(
+        self, item_id: str, owner: str = OWNER
+    ) -> tuple[str, dict[str, Any] | None]:
+        now = time.time()
+        with self.transaction() as connection:
+            item = connection.execute(
+                "SELECT * FROM items WHERE id = ? AND owner = ?", (item_id, owner)
+            ).fetchone()
+            if item is None:
+                receipt = connection.execute(
+                    "SELECT * FROM item_deletions WHERE item_id = ? AND owner = ?",
+                    (item_id, owner),
+                ).fetchone()
+                if receipt is None:
+                    return "missing", None
+                return "existing", _deletion_receipt(receipt)
+            job = connection.execute(
+                "SELECT candidate_version FROM jobs WHERE item_id = ?", (item_id,)
+            ).fetchone()
+            if job is None:
+                raise RuntimeError("item has no preparation job")
+            published = connection.execute(
+                "SELECT root_path FROM versions WHERE item_id = ? AND owner = ? "
+                "ORDER BY created_at, id",
+                (item_id, owner),
+            ).fetchall()
+            candidate_version = job["candidate_version"]
+            published_paths = [row["root_path"] for row in published]
+            connection.execute(
+                "INSERT INTO item_deletions(item_id, owner, original_path, work_path, "
+                "staging_path, candidate_path, published_paths_json, created_at) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                (
+                    item_id,
+                    owner,
+                    item["original_path"],
+                    f"work/{candidate_version}",
+                    f"staging/{candidate_version}",
+                    f"versions/{candidate_version}",
+                    json.dumps(published_paths),
+                    now,
+                ),
+            )
+            connection.execute(
+                "DELETE FROM items WHERE id = ? AND owner = ?", (item_id, owner)
+            )
+            receipt = connection.execute(
+                "SELECT * FROM item_deletions WHERE item_id = ?", (item_id,)
+            ).fetchone()
+            return "deleted", _deletion_receipt(receipt)
+
+    def get_item_deletion(
+        self, item_id: str, owner: str = OWNER
+    ) -> dict[str, Any] | None:
+        with self.connect() as connection:
+            row = connection.execute(
+                "SELECT * FROM item_deletions WHERE item_id = ? AND owner = ?",
+                (item_id, owner),
+            ).fetchone()
+            return _deletion_receipt(row) if row else None
+
+    def complete_item_deletion(self, item_id: str, owner: str = OWNER) -> None:
+        with self.transaction() as connection:
+            connection.execute(
+                "UPDATE item_deletions SET completed_at = ? WHERE item_id = ? AND owner = ?",
+                (time.time(), item_id, owner),
+            )
 
     def retry(self, item_id: str, owner: str = OWNER) -> tuple[str, dict[str, Any] | None]:
         now = time.time()

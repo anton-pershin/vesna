@@ -8,9 +8,11 @@ import { OfflineFixtureStore } from '../probe/modules/offline-store.js';
 
 class MemoryStorage {
   values = new Map();
+  get length() { return this.values.size; }
   getItem(key) { return this.values.get(key) ?? null; }
   setItem(key, value) { this.values.set(key, value); }
   removeItem(key) { this.values.delete(key); }
+  key(index) { return [...this.values.keys()][index] ?? null; }
 }
 
 test('PlaybackStateStore restores position, speed, and fixture version', () => {
@@ -43,6 +45,20 @@ test('ItemPlaybackStateStore isolates positions by item and prepared version', (
   assert.equal(states.load('item-b', 'version-1').position, 56);
   assert.equal(states.load('item-b', 'version-2'), null);
   assert.equal(storage.values.size, 3);
+});
+
+test('ItemPlaybackStateStore removes every version for one item only', () => {
+  const storage = new MemoryStorage();
+  const states = new ItemPlaybackStateStore(storage);
+  states.save({ itemId: 'item-a', version: 'version-1', position: 12, speed: 1 });
+  states.save({ itemId: 'item-a', version: 'version-2', position: 34, speed: 1.5 });
+  states.save({ itemId: 'item-b', version: 'version-1', position: 56, speed: 0.75 });
+  states.removeItem('item-a');
+  assert.equal(states.load('item-a', 'version-1'), null);
+  assert.equal(states.load('item-a', 'version-2'), null);
+  assert.equal(states.load('item-b', 'version-1').position, 56);
+  assert.equal(storage.values.size, 1);
+  states.removeItem('item-a');
 });
 
 test('ItemPlaybackStateStore rejects invalid or mismatched saved state without overwriting it', () => {

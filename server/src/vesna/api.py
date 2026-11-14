@@ -152,6 +152,9 @@ def create_app(
         if request.url.path.startswith("/api/"):
             response.headers["Cache-Control"] = "no-store"
             response.headers["Referrer-Policy"] = "no-referrer"
+        elif request.method in {"GET", "HEAD"}:
+            # Static shell updates must revalidate, especially sw.js and modules.
+            response.headers["Cache-Control"] = "no-cache"
         response.headers["X-Content-Type-Options"] = "nosniff"
         return response
 
@@ -216,9 +219,49 @@ def create_app(
     def session(authenticated_owner: str = Depends(owner)) -> dict[str, bool]:
         return {"authenticated": True}
 
+    @app.get("/api/build")
+    def build() -> dict[str, str]:
+        return {"commit": settings.build_commit}
+
     @app.get("/api/items")
     def items(authenticated_owner: str = Depends(owner)) -> dict[str, Any]:
         return {"items": database.list_items(authenticated_owner)}
+
+    @app.delete("/api/items/{item_id}", status_code=204)
+    def delete_item(item_id: str, authenticated_owner: str = Depends(owner)) -> Response:
+        try:
+            outcome, receipt = database.begin_item_deletion(item_id, authenticated_owner)
+        except Exception:
+            raise HTTPException(
+                status_code=500, detail="Item deletion could not be started; retry."
+            ) from None
+        if outcome == "missing":
+            raise HTTPException(status_code=404, detail="Item not found.")
+        assert receipt is not None
+        try:
+            if receipt["completed_at"] is None:
+                # The item is already inaccessible before waiting for an active worker.
+                with store.item_lock(item_id):
+                    receipt = database.get_item_deletion(item_id, authenticated_owner)
+                    if receipt is None:
+                        raise RuntimeError("deletion receipt disappeared")
+                    if receipt["completed_at"] is None:
+                        if receipt["original_path"]:
+                            store.remove_file_strict(receipt["original_path"])
+                        roots = (
+                            receipt["work_path"],
+                            receipt["staging_path"],
+                            receipt["candidate_path"],
+                            *receipt["published_paths"],
+                        )
+                        for root in dict.fromkeys(roots):
+                            store.remove_tree_strict(root)
+                        database.complete_item_deletion(item_id, authenticated_owner)
+            return Response(status_code=204)
+        except Exception:
+            raise HTTPException(
+                status_code=503, detail="Item deletion is incomplete; retry cleanup."
+            ) from None
 
     @app.post("/api/items/article", status_code=202)
     def submit_article(

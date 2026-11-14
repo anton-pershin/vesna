@@ -62,6 +62,24 @@ test('an unauthenticated session check does not read private library data', asyn
   assert.equal(controller.error, null);
 });
 
+test('an expired session emits the dedicated initial sign-in requirement', async () => {
+  const reasons = [];
+  const controller = new ApplicationController({
+    api: apiWith({
+      session: async () => {
+        const error = new Error('Authentication required');
+        error.status = 401;
+        throw error;
+      },
+    }),
+    onChange: (_state, reason) => reasons.push(reason),
+  });
+  assert.equal(await controller.restoreSession(), false);
+  assert.deepEqual(reasons, ['sign-in-required']);
+  assert.equal(controller.screen, 'sign-in');
+  assert.deepEqual(controller.items, []);
+});
+
 test('a session response must explicitly confirm authentication', async () => {
   let libraryCalls = 0;
   const controller = new ApplicationController({
@@ -132,6 +150,84 @@ test('concurrent library refreshes share one API operation', async () => {
   release();
   await Promise.all([first, second]);
   assert.equal(calls, 1);
+});
+
+test('browser timer wrappers preserve the required global receiver', () => {
+  let receiver;
+  const controller = new ApplicationController({
+    api: apiWith(),
+    setIntervalImpl: function () { receiver = this; return 1; },
+    clearIntervalImpl() {},
+  });
+  controller.authenticated = true;
+  controller.screen = 'library';
+  controller.items = [item()];
+  controller.syncPolling();
+  assert.equal(receiver, globalThis);
+});
+
+test('pending submissions share one operation and open the accepted item', async () => {
+  let release;
+  let calls = 0;
+  let acceptedItems = [];
+  const controller = new ApplicationController({
+    api: apiWith({
+      listItems: async () => acceptedItems,
+      submitArticle: async () => {
+        calls += 1;
+        await new Promise((resolve) => { release = resolve; });
+        acceptedItems = [item({ id: 'accepted-item', state: 'accepted' })];
+        return acceptedItems[0];
+      },
+    }),
+  });
+  await controller.restoreSession();
+  const first = controller.submitArticle('https://example.test/story');
+  const second = controller.submitArticle('https://example.test/story');
+  release();
+  const [accepted] = await Promise.all([first, second]);
+  assert.equal(calls, 1);
+  assert.equal(accepted.id, 'accepted-item');
+  assert.equal(controller.items.filter((entry) => entry.id === accepted.id).length, 1);
+  await controller.openItem(accepted.id);
+  assert.equal(controller.selected.item.id, accepted.id);
+  assert.equal(controller.screen, 'reader');
+  controller.stopPolling();
+});
+
+test('a distinct submission cannot be coalesced with a pending article', async () => {
+  let release;
+  let acceptedItems = [];
+  let articleCalls = 0;
+  let markdownCalls = 0;
+  const controller = new ApplicationController({
+    api: apiWith({
+      listItems: async () => acceptedItems,
+      submitArticle: async () => {
+        articleCalls += 1;
+        await new Promise((resolve) => { release = resolve; });
+        acceptedItems = [item({ id: 'article-result', state: 'accepted' })];
+        return acceptedItems[0];
+      },
+      uploadMarkdown: async () => {
+        markdownCalls += 1;
+        return item({ id: 'markdown-result', kind: 'markdown', state: 'accepted' });
+      },
+    }),
+  });
+  await controller.restoreSession();
+  const article = controller.submitArticle('https://example.test/story');
+  await assert.rejects(
+    controller.uploadMarkdown({ name: 'different.md' }),
+    /Another submission is already in progress/,
+  );
+  assert.equal(markdownCalls, 0);
+  release();
+  assert.equal((await article).id, 'article-result');
+  await controller.uploadMarkdown({ name: 'different.md' });
+  assert.equal(articleCalls, 1);
+  assert.equal(markdownCalls, 1);
+  controller.stopPolling();
 });
 
 test('retry keeps one library item and resumes preparation polling', async () => {

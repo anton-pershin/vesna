@@ -62,6 +62,17 @@ export class ItemPlaybackStateStore {
     }));
   }
 
+  removeItem(itemId) {
+    if (typeof itemId !== 'string' || !itemId) throw new TypeError('item ID is required');
+    const prefix = `${this.prefix}:${encodeURIComponent(itemId)}:`;
+    const keys = [];
+    for (let index = 0; index < this.storage.length; index += 1) {
+      const key = this.storage.key(index);
+      if (key?.startsWith(prefix)) keys.push(key);
+    }
+    for (const key of keys) this.storage.removeItem(key);
+  }
+
   load(itemId, version) {
     const raw = this.storage.getItem(this.key(itemId, version));
     if (!raw) return null;

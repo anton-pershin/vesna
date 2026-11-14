@@ -1,4 +1,4 @@
-# M3 single-machine deployment
+# Single-machine deployment (M3 and M4)
 
 This procedure runs the application, worker, storage, and TTS on one development machine. Cloudflare Quick Tunnel provides a temporary public HTTPS origin. No domain or inbound port 443 is required. This is not the final stable or split-host deployment.
 
@@ -36,7 +36,7 @@ Use a clean checkout at `/opt/vesna`:
 ```sh
 sudo git clone https://github.com/anton-pershin/vesna.git /opt/vesna
 cd /opt/vesna
-git checkout b7937cf
+git checkout ec8daf654b9b89ccf8e18ad13300456371b5db17
 UV_PROJECT_ENVIRONMENT=/opt/vesna/venv uv sync --project server --extra tts --locked
 bash deploy/install_joe_model.sh
 ```
@@ -71,7 +71,7 @@ Start the connector first and keep its terminal open:
 cloudflared tunnel --url http://127.0.0.1:8000 --no-autoupdate
 ```
 
-Copy the printed `https://…trycloudflare.com` origin into `VESNA_PUBLIC_ORIGIN` in `/etc/vesna/api.env`. Use only the origin, without a path, query, or fragment. Then install and start the services:
+Copy the printed `https://…trycloudflare.com` origin into `VESNA_PUBLIC_ORIGIN` in `/etc/vesna/api.env`. Use only the origin, without a path, query, or fragment. Set `VESNA_BUILD_COMMIT` to the running Git commit from `git rev-parse HEAD`; the public `/api/build` endpoint and small header label use it for update verification. Static shell resources send `Cache-Control: no-cache` so the service worker and modules revalidate. Then install and start the services:
 
 ```sh
 sudo cp deploy/vesna-api.service deploy/vesna-worker.service deploy/vesna-tts.service /etc/systemd/system/
@@ -129,7 +129,7 @@ export VESNA_BROWSER_RESULT=/tmp/vesna-browser-result.json
 node /opt/vesna/deploy/browser_live_check.cjs
 ```
 
-Set `VESNA_BROWSER_SCREENSHOT` to an output path if a sanitized screenshot is needed. Set `CHROMIUM_EXECUTABLE` only when using a custom Chromium installation. The check covers sign-in, real audio decoding and playback, navigation, selected paragraphs, speed, restore, mobile overflow, and private-cache exclusion.
+Set `VESNA_BROWSER_SCREENSHOT_DIR` to a directory if sanitized phone and desktop screenshots are needed. Set `CHROMIUM_EXECUTABLE` only when using a custom Chromium installation. The check covers focused screens, article and Markdown submission, real audio decoding and playback, navigation, selected paragraphs, speed, restore, source inspection, bottom-bar geometry, touch targets, 200% text scaling, private-cache exclusion, and cancellation/confirmation of a uniquely named disposable deletion item. It creates real preparation jobs and deletes only that disposable Markdown item.
 
 ## Controlled redirect security checks
 

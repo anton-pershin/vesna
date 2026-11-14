@@ -341,3 +341,19 @@ def test_only_failed_items_can_retry(client):
     assert client.post(
         f"/api/items/{item['id']}/retry", headers={"Origin": ORIGIN}
     ).status_code == 409
+
+
+def test_lock_infrastructure_failure_marks_job_failed_without_details(
+    client, database, store, settings, monkeypatch
+):
+    sign_in(client)
+    item = submit_markdown(client)
+
+    def fail_lock(_item_id):
+        raise RuntimeError("private lock detail")
+
+    monkeypatch.setattr(store, "item_lock", fail_lock)
+    assert Worker(settings, database, store, tts_client=FakeTts()).run_once() is True
+    failed = database.get_item(item["id"])
+    assert failed["state"] == "failed"
+    assert failed["error"] == "Preparation failed; retry is available."

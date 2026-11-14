@@ -1,4 +1,4 @@
-const SHELL_CACHE = 'vesna-probe-shell-v14';
+const SHELL_CACHE = 'vesna-probe-shell-v17';
 const FIXTURE_POINTER_CACHE = 'vesna-probe-fixture-pointer-v1';
 const FIXTURE_POINTER_RESOURCE = '/__vesna_offline_fixture_pointer__';
 const FIXTURE_DOWNLOAD_HEADER = 'X-Vesna-Fixture-Download';
@@ -99,8 +99,32 @@ async function matchPublishedFixture(request) {
   throw new Error('published fixture changed repeatedly during a request');
 }
 
+async function networkFirstShell(request, cacheKey) {
+  const cache = await caches.open(SHELL_CACHE);
+  try {
+    const response = await fetch(request);
+    if (response.ok) {
+      try {
+        await cache.put(cacheKey, response.clone());
+      } catch {
+        // An online response remains usable if the shell update cannot be stored.
+      }
+    }
+    return response;
+  } catch (error) {
+    const cached = await cache.match(cacheKey);
+    if (cached) return cached;
+    throw error;
+  }
+}
+
 self.addEventListener('install', (event) => {
-  event.waitUntil(caches.open(SHELL_CACHE).then((cache) => cache.addAll(SHELL_RESOURCES)).then(() => self.skipWaiting()));
+  event.waitUntil(caches.open(SHELL_CACHE).then((cache) => cache.addAll(
+    SHELL_RESOURCES.map((resource) => new Request(
+      new URL(resource, self.location.origin),
+      { cache: 'reload' },
+    )),
+  )).then(() => self.skipWaiting()));
 });
 
 self.addEventListener('activate', (event) => {
@@ -119,15 +143,15 @@ self.addEventListener('fetch', (event) => {
     return;
   }
   event.respondWith((async () => {
-    const shellCache = await caches.open(SHELL_CACHE);
-    const shell = await shellCache.match(event.request);
-    if (shell) return responseForCachedRequest(event.request, shell);
+    const requestUrl = new URL(event.request.url);
+    if (requestUrl.origin === self.location.origin && SHELL_RESOURCES.includes(requestUrl.pathname)) {
+      return networkFirstShell(event.request, event.request);
+    }
+    if (event.request.mode === 'navigate') {
+      return networkFirstShell(event.request, new URL('/index.html', self.location.origin).href);
+    }
     const fixture = await matchPublishedFixture(event.request);
     if (fixture) return responseForCachedRequest(event.request, fixture);
-    if (event.request.mode === 'navigate') {
-      const fallback = await shellCache.match(new URL('/index.html', self.location.origin).href);
-      if (fallback) return fallback;
-    }
     return fetch(event.request);
   })());
 });

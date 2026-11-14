@@ -10,6 +10,7 @@ export class FakeElement {
     this.hidden = false;
     this.disabled = false;
     this.scrollCalls = [];
+    this.focusCalls = [];
     this._textContent = '';
     this.classList = {
       toggle: (name, force) => {
@@ -44,6 +45,7 @@ export class FakeElement {
 
   setAttribute(name, value) {
     this.attributes.set(name, String(value));
+    if (name === 'class') this.className = String(value);
   }
 
   getAttribute(name) {
@@ -82,10 +84,18 @@ export class FakeElement {
   scrollIntoView(options) {
     this.scrollCalls.push(options);
   }
+
+  focus(options) {
+    this.focusCalls.push(options);
+  }
 }
 
 export class FakeDocument {
   createElement(tagName) {
+    return new FakeElement(tagName);
+  }
+
+  createElementNS(_namespace, tagName) {
     return new FakeElement(tagName);
   }
 }
