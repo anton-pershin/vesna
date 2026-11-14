@@ -185,6 +185,26 @@ def test_markdown_links_images_and_html_never_fetch_recorded_endpoint(
         thread.join(timeout=1)
 
 
+def test_plain_parser_preserves_mixed_newline_boundaries():
+    paragraphs = plain_paragraphs(
+        "# Heading\r\n"
+        "First **paragraph**.\n\n"
+        "Second paragraph.\r"
+        "Third paragraph.\r\n"
+        "- First item\n"
+        "- Second item\n"
+        "   \n"
+    )
+    assert paragraphs == [
+        {"id": "p0", "text": "Heading"},
+        {"id": "p1", "text": "First paragraph."},
+        {"id": "p2", "text": "Second paragraph."},
+        {"id": "p3", "text": "Third paragraph."},
+        {"id": "p4", "text": "First item"},
+        {"id": "p5", "text": "Second item"},
+    ]
+
+
 def test_plain_parser_does_not_resolve_or_fetch_link_targets(monkeypatch):
     import http.client
 

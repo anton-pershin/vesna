@@ -115,7 +115,8 @@ def _plain_block(block: str) -> str:
     value = "".join(parser.parts)
     value = value.replace("**", "").replace("__", "").replace("~~", "")
     value = value.replace("`", "")
-    return " ".join(value.split())
+    # Keep source line boundaries while normalizing whitespace within each line.
+    return "\n".join(" ".join(line.split()) for line in value.split("\n"))
 
 
 def plain_paragraphs(text: str) -> list[dict[str, str]]:
@@ -123,9 +124,9 @@ def plain_paragraphs(text: str) -> list[dict[str, str]]:
     blocks = re.split(r"\n\s*\n", normalized)
     paragraphs = []
     for block in blocks:
-        plain = _plain_block(block)
-        if plain:
-            paragraphs.append({"id": f"p{len(paragraphs)}", "text": plain})
+        for plain in _plain_block(block).split("\n"):
+            if plain:
+                paragraphs.append({"id": f"p{len(paragraphs)}", "text": plain})
     return paragraphs
 
 
