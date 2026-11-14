@@ -5,8 +5,8 @@ Status: **pass — M4 practical mobile interface is complete and ready to merge*
 ## Test identity
 
 - Spec commit: `9adfc43`
-- Final implementation commit: `54b5c7a2bf09aace3b56acc54eb81df72e818fd9`
-- Visible target-phone build: `54b5c7a2`
+- Final implementation commit: `ec8daf654b9b89ccf8e18ad13300456371b5db17`
+- Visible target-phone build for device procedures: `54b5c7a2`; later focus-only fix: `ec8daf65`
 - Comourat commit: `c9bfb1604a5286d073aaceef1513e0d7496d0e33`
 - Python: `3.12.3`
 - Node: `26.8.1`
@@ -15,7 +15,7 @@ Status: **pass — M4 practical mobile interface is complete and ready to merge*
 - FFmpeg: `6.1.1-3ubuntu5`
 - TTS: `piper-tts==1.8.0`, `onnxruntime==1.31.1`
 - Voice: `en_US-joe-medium`, revision `cf910fb59f1d79ab3b625a63993a108751c6c25d`
-- Hosted CI: pass, run `43457717604` at head `54b5c7a`
+- Hosted CI: pass, run `43550939264` at head `ec8daf6`
 - Phone: `Android 12; LMR-LX9 Build/HUAWEILMR-L29; 31; REL`, Chrome `138.0.7204.157`
 - Application origin: `https://record-candidates-img-hwy.trycloudflare.com`
 - Isolated probe origin and build: `https://zip-shortly-str-robertson.trycloudflare.com`, `2026-11-13-m4-r10`
@@ -31,16 +31,16 @@ Additional versions and public configuration are in `environment.json`. Credenti
 | AC3 Reader, source inspection, and deletion interaction | pass | Source details load on demand and remain inert. Cancel and Escape preserved active playback and focus. Confirmed deletion stopped playback, cleared state, removed the item, and denied its source/audio. Held library, item, source, and prepared responses could not restore deleted content. |
 | AC4 Bottom playback bar and preserved playback | pass | Real Chromium verified one visible control set, direct seek, play/pause, previous/next/selected paragraphs, speed, actual auto-scroll, saved position and speed, a one-second highlight bound, and no scrolling-triggered audio requests. The user confirmed the A → B → restored A highlight regression is fixed. |
 | AC5 Responsive design and accessibility | pass | Static contrast checks and browser geometry covered phone, desktop, 320px, long content, and 200% text scaling. Open Source panel bounds are inside every tested viewport. All visible primary targets measured at least 44px. Focus, reduced motion, non-live time, A1 icon hashes, and sign-in/failure screenshots passed. |
-| AC6 Regression, deletion safety, security, and maintainability | pass | 184 Python and 146 JavaScript tests pass. Backend tests cover every preparation state and required deletion race. Browser tests cover authentication termination, old-session responses, lost responses, stale reads, and navigation races. No private response was cached. Independent implementation reviews found no remaining substantive issues. |
+| AC6 Regression, deletion safety, security, and maintainability | pass | 184 Python and 147 JavaScript tests pass. Backend tests cover every preparation state and required deletion race. Browser tests cover authentication termination, old-session responses, lost responses, stale reads, and navigation races. No private response was cached. Independent implementation reviews found no remaining substantive issues. |
 | AC7 Live browser and target-phone verification | pass | Expanded Chromium 141 checks pass. The target phone passed both input workflows, playback, background/locked-screen behavior, deletion, sign-out, and visual acceptance. The isolated probe passed update preservation and a 30-minute offline locked-screen run at 17:50–18:20 on 2026-11-13. |
 | AC8 Evidence and milestone decision | pass | This directory contains exact identities, automated and live results, reproduction instructions, sanitized screenshots, CI results, and target-phone observations. AC1–AC7 pass. |
 
 ## Automated and hosted results
 
 - `automated-python.txt`: **184 passed, 0 failed**.
-- `automated-javascript.txt`: **146 passed, 0 failed**, plus syntax checks.
+- `automated-javascript.txt`: **147 passed, 0 failed**, plus syntax checks.
 - Locked installation completed with `vesna==0.4.0` and the pinned comourat commit.
-- Hosted CI run `43457717604` at `54b5c7a`: **pass**, with 184 Python application tests, 619 comourat tests, and 146 JavaScript tests.
+- Hosted CI run `43550939264` at `ec8daf6`: **pass**, with 184 Python application tests, 619 comourat tests, and 147 JavaScript tests.
 
 ## Live browser results
 

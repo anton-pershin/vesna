@@ -26,4 +26,4 @@ server/tests/test_source_live_checks.py ..                               [ 81%]
 server/tests/test_tts.py .................                               [ 90%]
 server/tests/test_worker.py .................                            [100%]
 
-============================= 184 passed in 49.40s =============================
+============================= 184 passed in 30.41s =============================

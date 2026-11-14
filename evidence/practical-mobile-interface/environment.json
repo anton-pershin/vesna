@@ -1,5 +1,5 @@
 {
-  "vesna_commit": "54b5c7a2bf09aace3b56acc54eb81df72e818fd9",
+  "vesna_commit": "ec8daf654b9b89ccf8e18ad13300456371b5db17",
   "spec": ".internal/specs/04-practical-mobile-interface-general-spec.md",
   "python": "3.12.3",
   "node": "26.8.1",
@@ -16,6 +16,6 @@
   "application_origin": "https://record-candidates-img-hwy.trycloudflare.com",
   "isolated_probe_origin": "https://zip-shortly-str-robertson.trycloudflare.com",
   "isolated_probe_build": "2026-11-13-m4-r10",
-  "visible_build_identity": "54b5c7a2",
+  "visible_build_identity": "ec8daf65",
   "credentials_recorded": false
 }

@@ -78,6 +78,7 @@
     "server_artifacts_denied": true
   },
   "accessibility": {
+    "initial_sign_in_focus": true,
     "primary_touch_targets": "at least 44 CSS px",
     "failure_state_screenshot": true,
     "polling_focus_preserved": true,

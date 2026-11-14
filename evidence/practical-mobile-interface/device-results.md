@@ -11,7 +11,7 @@ Check dates: **2026-11-13 and 2026-11-14**.
 - Chrome: `138.0.7204.157`
 - The user confirmed that the operating-system and Chrome versions are unchanged from the previous recorded run.
 - M4 application origin: `https://record-candidates-img-hwy.trycloudflare.com`
-- Final visible build identity: `54b5c7a2`
+- Final visible build identity for device procedures: `54b5c7a2`; later focus-only fix: `ec8daf65`
 - Isolated probe origin: `https://zip-shortly-str-robertson.trycloudflare.com`
 - Final isolated probe build: `2026-11-13-m4-r10`
 
@@ -31,7 +31,7 @@ The implementation now destroys playback and seekbar controllers during teardown
 
 ### Source-panel correction and confirmation
 
-An independent acceptance review found that the original absolute-positioned Source panel could extend past the left viewport edge. The panel is now viewport-contained, scrollable, and has an explicit **Close source** action. Browser geometry checks pass at representative phone width, 320px, long-content fixtures, and 200% text scaling. On 2026-11-14, the user confirmed build `54b5c7a2` and verified on the target phone that source text is fully visible and the panel closes correctly.
+An independent acceptance review found that the original absolute-positioned Source panel could extend past the left viewport edge. The panel is now viewport-contained, scrollable, and has an explicit **Close source** action. Browser geometry checks pass at representative phone width, 320px, long-content fixtures, and 200% text scaling. On 2026-11-14, the user confirmed build `54b5c7a2` and verified on the target phone that source text is fully visible and the panel closes correctly. A later focus-only fix, `ec8daf65`, adds initial password focus and private-view clearing for expired-session restoration; deterministic and live Chromium regression checks verify that follow-up.
 
 ### Shell-update diagnosis and correction
 
