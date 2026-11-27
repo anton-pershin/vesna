@@ -326,7 +326,8 @@ export function startApplication() {
     const download = item.download || { status: 'not-downloaded' };
     const playable = typeof item.version === 'string' && Boolean(item.version) &&
       (!controller.offline || download.status !== 'lost');
-    const hasDownload = ['ready', 'update-available', 'lost'].includes(download.status);
+    const hasDownload = ['ready', 'update-available', 'lost'].includes(download.status) ||
+      (download.status === 'failed' && Boolean(download.downloadedAt));
     $('download-item').hidden = controller.offline || !playable || download.status === 'ready';
     $('download-item').disabled = download.status === 'downloading';
     $('download-item').textContent = download.status === 'update-available'

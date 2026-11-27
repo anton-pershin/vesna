@@ -135,6 +135,31 @@ test('a repeated download action shares the operation and publishes returned sta
   assert.match(controller.error, /may remove/);
 });
 
+test('a failed replacement retains the earlier downloaded version and removal metadata', async () => {
+  const current = ready({ version: 'version-2', download: undefined });
+  const downloadedAt = '2026-11-27T00:00:00.000Z';
+  const controller = new ApplicationController({
+    api: api({
+      listItems: async () => [current],
+      getItem: async () => ({ item: current, paragraphs: [], source_available: false }),
+    }),
+    downloads: downloads({
+      reconcile: async (items) => items.map((item) => ({
+        ...item,
+        download: { status: 'update-available', version: 'version-1', downloadedAt, persistent: true },
+      })),
+      download: async () => { throw new Error('interrupted'); },
+    }),
+  });
+  await controller.restoreSession();
+  await controller.openItem('item-1');
+  await assert.rejects(controller.downloadItem('item-1'), /interrupted/);
+  assert.equal(controller.selected.item.version, 'version-2');
+  assert.equal(controller.selected.item.download.status, 'failed');
+  assert.equal(controller.selected.item.download.version, 'version-1');
+  assert.equal(controller.selected.item.download.downloadedAt, downloadedAt);
+});
+
 test('offline removal updates the library without a server deletion', async () => {
   const removed = [];
   const controller = new ApplicationController({

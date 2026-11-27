@@ -385,7 +385,10 @@ export class ApplicationController {
           this.handleError(error);
         } else {
           this.updateDownload(itemId, {
-            ...current.download, status: 'failed', version: current.version, message: error.message,
+            ...current.download,
+            status: 'failed',
+            version: current.download?.version || current.version,
+            message: error.message,
           });
           this.error = `Download failed. ${error.message}`;
           this.emit('download-error');

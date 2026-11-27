@@ -94,8 +94,9 @@ function check(value, message) {
         const cache = await caches.open(name);
         for (const request of await cache.keys()) {
           const path = new URL(request.url).pathname;
-          if (/\/versions\/[^/]+\/(manifest|text|timings|audio)$/.test(path)) preparedResources += 1;
-          if (path.includes('/auth/') || path === '/api/items' || path.endsWith('/source')) forbiddenResponses += 1;
+          const isPrepared = /\/versions\/[^/]+\/(manifest|text|timings|audio)$/.test(path);
+          if (isPrepared) preparedResources += 1;
+          if (path.startsWith('/api/') && !isPrepared) forbiddenResponses += 1;
         }
       }
       return { preparedResources, forbiddenResponses, cacheCount: names.length };

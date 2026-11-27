@@ -23,14 +23,15 @@ Credentials, cookies, private item identifiers, source content, and the temporar
 | AC2 Atomic failure and storage handling | pass in automated scope | Tests cover interruption, integrity mismatch, index/item-cache write failures, insufficient estimated space, lost resources, concurrent replacement, removal, reconciliation, and old-cache cleanup failure. Previous publications survive failed replacements. |
 | AC3 Offline library and playback | pass in Chromium; phone blocked | Two full offline cold restarts open the library and reader without a password. Playback, speed/position restoration, and cached resources pass. No prepared request fails offline. Phone evidence is not available. |
 | AC4 Reconciliation, updates, and removal | pass in automated/Chromium scope | Tests cover update availability, replacement, orphan reconciliation, deletion cleanup, and update preservation. Browser removal preserves the server item. |
-| AC5 Security and regression | pass | 179 JavaScript tests and 192 Python tests pass. Browser cache inspection finds zero auth, unrelated library, or source responses. Existing probe, authentication, playback, and deletion tests remain green. |
+| AC5 Security and regression | pass | 180 JavaScript tests and 192 Python tests pass. Browser cache inspection finds zero auth, unrelated library, or source responses. Existing probe, authentication, playback, and deletion tests remain green. |
 | AC6 Live browser, target phone, and evidence | **blocked** | The controlled real-Chromium run passes. Required target-phone checks are not performed and are not claimed as passed. |
 
 ## Automated results
 
-- `automated-javascript.txt`: **179 passed, 0 failed**, plus syntax checks for browser, test, probe, and deployment JavaScript.
+- `automated-javascript.txt`: **180 passed, 0 failed**, plus syntax checks for browser, test, probe, and deployment JavaScript.
 - `automated-python.txt`: **192 passed, 0 failed**.
 - `browser-result.json`: **pass** for the controlled real-item workflow in Chromium 141.
+- `ci-results.json`: hosted CI **pass**, run `46047698482`, at head `7a7aaf19ce965d2bb2f6931eddedab4509d99a1d`.
 
 ## Material correction found by live evidence
 
