@@ -28,10 +28,11 @@ The recorded run used a temporary loopback FastAPI application, a controlled Mar
 1. Signed in and explicitly downloaded the prepared item.
 2. Verified exactly four prepared resources and zero unrelated private/auth/source responses in Cache Storage.
 3. Closed Chromium and cold-started with the same profile and networking disabled.
-4. Opened the offline library and reader without a password; checked playback and restored speed.
-5. Changed position and speed, performed a second offline cold restart, and checked both restored.
-6. Removed the device download offline and verified online that the server item remained.
-7. Verified zero failed prepared-resource requests while offline.
+4. Opened the offline library and reader without a password; checked playback, restored speed, selected-paragraph playback, previous/next controls, highlighting, and automatic scrolling.
+5. Fetched the cached audio through the worker and verified full `200`, satisfiable-range `206`, and unsatisfiable-range `416` responses.
+6. Changed position and speed, performed a second offline cold restart, and checked both restored.
+7. Removed the device download offline and verified online that the server item remained.
+8. Verified zero failed prepared-resource requests while offline.
 
 `browser-result.json` is the sanitized raw result. Persistent storage was not granted in this headless context; the UI displayed the required retention warning and the item remained usable during the test. This is not a persistent-storage or Android acceptance result.
 

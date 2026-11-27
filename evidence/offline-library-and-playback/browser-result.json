@@ -13,6 +13,15 @@
     "readerOpened": true,
     "playbackWorked": true,
     "speedRestored": true,
+    "selectedParagraph": true,
+    "previousNext": true,
+    "highlighting": true,
+    "automaticScrolling": true,
+    "cachedStatuses": [
+      200,
+      206,
+      416
+    ],
     "paragraphs": 2
   },
   "offline_second_restart": {
