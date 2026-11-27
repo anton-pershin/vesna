@@ -149,6 +149,8 @@ label { display: block; font-weight: 700; }
 .state-badge[data-state="ready"] { background: var(--accent-soft); color: var(--accent-strong); }
 .state-badge[data-state="accepted"], .state-badge[data-state="preparing"] { background: var(--warning-soft); color: var(--warning); }
 .state-badge[data-state="failed"] { background: var(--error-soft); color: var(--error); }
+.download-state { display: block; width: fit-content; margin-top: .35rem; color: var(--accent-strong); font-size: .72rem; font-weight: 700; }
+.download-state[data-download-status="lost"], .download-state[data-download-status="failed"] { color: var(--error); }
 .chevron { width: 1rem; height: 1rem; color: var(--muted); justify-self: end; }
 .retry-row { display: flex; align-items: center; justify-content: space-between; gap: .7rem; margin: -.35rem 0 .8rem 3.25rem; }
 .retry-note { color: var(--muted); font-size: .74rem; }
@@ -213,6 +215,8 @@ input[type="file"]::file-selector-button { min-height: 36px; margin-right: .6rem
 .item-menu-content button { width: 100%; text-align: left; padding: .55rem .7rem; }
 #source-detail { color: var(--muted); font-size: .82rem; }
 #source-text { max-width: 100%; max-height: 20rem; overflow: auto; white-space: pre-wrap; word-break: break-word; overflow-wrap: anywhere; background: var(--bg); border: 1px solid var(--line); border-radius: .55rem; padding: .75rem; }
+.download-controls { display: flex; flex-wrap: wrap; align-items: center; gap: .55rem; margin: 0 0 .75rem; }
+#download-status { flex-basis: 100%; margin: 0; }
 .reader { margin: 0; padding: 0; list-style: none; counter-reset: paragraph; }
 .reader li { position: relative; margin: 0 0 1rem; padding: .8rem .7rem; border-left: 3px solid transparent; border-radius: .8rem; counter-increment: paragraph; }
 .reader li.current { background: var(--accent-soft); border-left-color: var(--accent); }

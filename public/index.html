@@ -67,8 +67,8 @@
             <div class="section-actions"><span id="library-count" class="item-count"></span><button id="refresh" class="icon-button" type="button" aria-label="Refresh library"><svg aria-hidden="true"><use href="#icon-refresh"/></svg></button></div>
           </div>
           <div id="library-empty" class="empty-state" hidden>
-            <h3>Nothing here yet</h3>
-            <p>Add an article or Markdown document to start listening.</p>
+            <h3 id="empty-title">Nothing here yet</h3>
+            <p id="empty-description">Add an article or Markdown document to start listening.</p>
             <button id="empty-add" class="secondary-button" type="button">Add your first item</button>
           </div>
           <ul id="library" class="library"></ul>
@@ -139,6 +139,11 @@
               </div>
             </div>
           </header>
+          <div class="download-controls" aria-label="Offline download controls">
+            <button id="download-item" class="secondary-button" type="button">Download for offline use</button>
+            <button id="remove-download" class="secondary-button" type="button" hidden>Remove offline download</button>
+            <p id="download-status" class="hint" role="status" aria-live="polite"></p>
+          </div>
           <p id="reader-help" class="hint"></p>
           <ol id="reader" class="reader"></ol>
         </section>

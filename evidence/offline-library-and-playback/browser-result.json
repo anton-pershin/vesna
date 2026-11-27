@@ -1,0 +1,41 @@
+{
+  "check": "chromium_real_item_offline",
+  "status": "pass",
+  "browser": "141.0.7390.37",
+  "online_download": {
+    "preparedResources": 4,
+    "forbiddenResponses": 0,
+    "cacheCount": 3,
+    "offlineReady": true
+  },
+  "offline_restart": {
+    "libraryOpened": true,
+    "readerOpened": true,
+    "playbackWorked": true,
+    "speedRestored": true,
+    "selectedParagraph": true,
+    "previousNext": true,
+    "highlighting": true,
+    "automaticScrolling": true,
+    "cachedStatuses": [
+      200,
+      206,
+      416
+    ],
+    "paragraphs": 2
+  },
+  "offline_second_restart": {
+    "speedRestored": true,
+    "positionRestored": true
+  },
+  "online_after_removal": {
+    "serverItemPreserved": true
+  },
+  "credentials_recorded": false,
+  "failed_prepared_requests": [],
+  "failed_request_paths": [
+    "/api/auth/sign-in",
+    "/api/build",
+    "/api/auth/session"
+  ]
+}

@@ -1,0 +1,30 @@
+/tmp/opencode/vesna-issue13-venv/lib/python3.12/site-packages/pytest_asyncio/plugin.py:300: PytestDeprecationWarning: The configuration option "asyncio_default_fixture_loop_scope" is unset.
+The event loop scope for asynchronous fixtures will default to the "fixture" caching scope. Future versions of pytest-asyncio will default the loop scope for asynchronous fixtures to "function" scope. Set the default fixture loop scope explicitly in order to avoid unexpected behavior in the future. Valid fixture loop scopes are: "function", "class", "module", "package", "session"
+
+  warnings.warn(PytestDeprecationWarning(_DEFAULT_FIXTURE_LOOP_SCOPE_UNSET))
+============================= test session starts ==============================
+platform linux -- Python 3.12.13, pytest-9.2.0, pluggy-1.7.0
+rootdir: /home/tony/reps/github/anton-pershin/gerry-please/.gerry-stage3/worktrees/wf_218566579feb4bdd9284fd5c46bbeca1/server
+configfile: pyproject.toml
+plugins: logfire-sdk-5.5.0, anyio-4.16.0, asyncio-1.4.1.post1, platformdirs-4.14.5
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 192 items
+
+server/tests/test_audio.py ..........                                    [  5%]
+server/tests/test_auth_api.py ............................               [ 19%]
+server/tests/test_build.py ..                                            [ 20%]
+server/tests/test_comourat_integration.py .........................      [ 33%]
+server/tests/test_config.py .....                                        [ 36%]
+server/tests/test_deletion.py ..............                             [ 43%]
+server/tests/test_deletion_races.py ......                               [ 46%]
+server/tests/test_e2e.py ..                                              [ 47%]
+server/tests/test_inputs_api.py .................................        [ 65%]
+server/tests/test_live_config.py ......                                  [ 68%]
+server/tests/test_offline_manifest.py .......                            [ 71%]
+server/tests/test_ranges.py ..............                               [ 79%]
+server/tests/test_security_live_checks.py ....                           [ 81%]
+server/tests/test_source_live_checks.py ..                               [ 82%]
+server/tests/test_tts.py .................                               [ 91%]
+server/tests/test_worker.py .................                            [100%]
+
+============================= 192 passed in 45.06s =============================

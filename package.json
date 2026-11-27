@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "test": "node --test tests/*.test.mjs",
-    "check:syntax": "for file in public/app.js public/sw.js public/modules/*.js probe/app.js probe/sw.js probe/modules/*.js tests/*.mjs tests/helpers/*.mjs; do node --check \"$file\" || exit 1; done",
+    "check:syntax": "for file in public/app.js public/sw.js public/modules/*.js probe/app.js probe/sw.js probe/modules/*.js tests/*.mjs tests/helpers/*.mjs; do node --check \"$file\" || exit 1; done && node --check deploy/browser_live_check.cjs && node --check deploy/browser_offline_check.cjs",
     "serve:probe": "python3 probe/static_server.py --bind 127.0.0.1 --port 8081"
   }
 }

@@ -107,6 +107,7 @@ test('library, detail, retry, source, and prepared artifact routes use returned 
   await api.retry('item/one');
   await api.getText('item/one', 'version/two');
   await api.getTimings('item/one', 'version/two');
+  await api.getManifest('item/one', 'version/two');
   assert.equal(await api.getSourceText('item/one'), '# Original');
   assert.equal(api.audioUrl('item/one', 'version/two'),
     '/api/items/item%2Fone/versions/version%2Ftwo/audio');
@@ -117,6 +118,7 @@ test('library, detail, retry, source, and prepared artifact routes use returned 
     '/api/items/item%2Fone/retry',
     '/api/items/item%2Fone/versions/version%2Ftwo/text',
     '/api/items/item%2Fone/versions/version%2Ftwo/timings',
+    '/api/items/item%2Fone/versions/version%2Ftwo/manifest',
     '/api/items/item%2Fone/source',
   ]);
   assert.equal(calls.at(-1).options.credentials, 'same-origin');

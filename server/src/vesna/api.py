@@ -360,19 +360,52 @@ def create_app(
             raise HTTPException(status_code=404, detail="Original source is unavailable.") from None
         return Response(content=content, media_type="text/plain; charset=utf-8")
 
-    @app.get("/api/items/{item_id}/versions/{version}/text")
-    def prepared_text(
+    @app.get("/api/items/{item_id}/versions/{version}/manifest")
+    def prepared_manifest(
         item_id: str, version: str, authenticated_owner: str = Depends(owner)
     ) -> dict[str, Any]:
         item = item_or_404(item_id, authenticated_owner)
-        return version_document(database, store, item, version, "text.json", authenticated_owner)
+        record = ready_version(database, item, version, authenticated_owner)
+        try:
+            root = f"versions/{version}"
+            if record["root_path"] != root or record["manifest_path"] != f"{root}/manifest.json":
+                raise ArtifactError("invalid version root")
+            manifest = store.read_json(record["manifest_path"])
+            if not isinstance(manifest, dict):
+                raise ArtifactError("invalid version manifest")
+            if manifest.get("version") != version or manifest.get("item_id") != item["id"]:
+                raise ArtifactError("version mismatch")
+            for filename, key in (
+                ("text.json", "text_sha256"),
+                ("audio.mp3", "audio_sha256"),
+                ("timings.json", "timings_sha256"),
+            ):
+                digest = store.sha256(f"{root}/{filename}")
+                if digest != record[key] or manifest.get(key) != digest:
+                    raise ArtifactError("artifact hash mismatch")
+            return manifest
+        except (ArtifactError, KeyError, TypeError, ValueError):
+            raise HTTPException(status_code=409, detail="Prepared version is unavailable.") from None
+
+    @app.get("/api/items/{item_id}/versions/{version}/text")
+    def prepared_text(
+        item_id: str, version: str, authenticated_owner: str = Depends(owner)
+    ) -> Response:
+        item = item_or_404(item_id, authenticated_owner)
+        raw = version_document_bytes(
+            database, store, item, version, "text.json", authenticated_owner
+        )
+        return Response(content=raw, media_type="application/json")
 
     @app.get("/api/items/{item_id}/versions/{version}/timings")
     def prepared_timings(
         item_id: str, version: str, authenticated_owner: str = Depends(owner)
-    ) -> dict[str, Any]:
+    ) -> Response:
         item = item_or_404(item_id, authenticated_owner)
-        return version_document(database, store, item, version, "timings.json", authenticated_owner)
+        raw = version_document_bytes(
+            database, store, item, version, "timings.json", authenticated_owner
+        )
+        return Response(content=raw, media_type="application/json")
 
     @app.api_route("/api/items/{item_id}/versions/{version}/audio", methods=["GET", "HEAD"])
     def prepared_audio(
@@ -439,14 +472,14 @@ def ready_version(
     return record
 
 
-def version_document(
+def version_document_bytes(
     database: Database,
     store: ArtifactStore,
     item: dict[str, Any],
     version: str,
     filename: str,
     owner: str,
-) -> dict[str, Any]:
+) -> bytes:
     record = ready_version(database, item, version, owner)
     try:
         if record["root_path"] != f"versions/{version}":
@@ -464,9 +497,21 @@ def version_document(
             raise ArtifactError("artifact version mismatch")
         if filename == "text.json" and len(document["paragraphs"]) != record["paragraph_count"]:
             raise ArtifactError("paragraph count mismatch")
-        return document
+        return raw
     except (ArtifactError, KeyError, TypeError, ValueError, json.JSONDecodeError):
         raise HTTPException(status_code=409, detail="Prepared version is unavailable.") from None
+
+
+def version_document(
+    database: Database,
+    store: ArtifactStore,
+    item: dict[str, Any],
+    version: str,
+    filename: str,
+    owner: str,
+) -> dict[str, Any]:
+    raw = version_document_bytes(database, store, item, version, filename, owner)
+    return json.loads(raw)
 
 
 def parse_range(header: str | None, size: int) -> tuple[int | None, int, int]:

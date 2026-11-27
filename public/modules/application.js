@@ -1,5 +1,9 @@
 import { isPreparing } from './views.js';
 
+function isNetworkFailure(error) {
+  return error instanceof TypeError || error?.name === 'TypeError';
+}
+
 function upsert(items, item) {
   const result = items.filter((candidate) => candidate.id !== item.id);
   result.push(item);
@@ -19,6 +23,7 @@ function deletionError(error) {
 export class ApplicationController {
   constructor({
     api,
+    downloads = null,
     onChange = () => {},
     onDeleteConfirmed = () => {},
     pollIntervalMs = 3000,
@@ -26,12 +31,14 @@ export class ApplicationController {
     clearIntervalImpl = globalThis.clearInterval,
   }) {
     this.api = api;
+    this.downloads = downloads;
     this.onChange = onChange;
     this.onDeleteConfirmed = onDeleteConfirmed;
     this.pollIntervalMs = pollIntervalMs;
     this.setIntervalImpl = (callback, interval) => setIntervalImpl.call(globalThis, callback, interval);
     this.clearIntervalImpl = (id) => clearIntervalImpl.call(globalThis, id);
     this.authenticated = false;
+    this.offline = false;
     this.screen = 'sign-in';
     this.items = [];
     this.selected = null;
@@ -51,11 +58,14 @@ export class ApplicationController {
     this.deleteSequence = 0;
     this.deleteAttempts = new Map();
     this.deletionPromise = null;
+    this.downloadPromises = new Map();
+    this.downloadRevision = 0;
   }
 
   snapshot() {
     return {
       authenticated: this.authenticated,
+      offline: this.offline,
       screen: this.screen,
       items: [...this.items],
       selected: this.selected,
@@ -80,6 +90,7 @@ export class ApplicationController {
     this.operationGeneration += 1;
     this.authEpoch += 1;
     this.authenticated = false;
+    this.offline = false;
     this.screen = 'sign-in';
     this.items = [];
     this.selected = null;
@@ -108,6 +119,7 @@ export class ApplicationController {
         throw error;
       }
       this.authenticated = true;
+      this.offline = false;
       this.screen = 'library';
       this.operationGeneration += 1;
       this.authEpoch += 1;
@@ -122,15 +134,53 @@ export class ApplicationController {
         this.emit('sign-in-required');
         return false;
       }
+      if (this.downloads && isNetworkFailure(error)) return this.restoreOffline();
       this.handleError(error, 'session-error');
       return false;
     }
+  }
+
+  async restoreOffline() {
+    this.stopPolling();
+    let items;
+    try {
+      items = await this.downloads.list();
+    } catch {
+      this.clearPrivateState();
+      this.error = 'Offline downloads could not be read. Connect to the Internet to sign in.';
+      this.emit('offline-error');
+      return false;
+    }
+    this.operationGeneration += 1;
+    this.authEpoch += 1;
+    this.selected = null;
+    this.deletion = null;
+    this.error = null;
+    if (items.length === 0) {
+      this.clearPrivateState();
+      this.error = 'No offline downloads are available. Connect to the Internet to sign in.';
+      this.emit('offline-unavailable');
+      return false;
+    }
+    this.authenticated = true;
+    this.offline = true;
+    this.screen = 'library';
+    this.items = items;
+    const lostCount = items.filter((item) => item.download?.status === 'lost').length;
+    this.error = lostCount === items.length
+      ? 'No usable offline downloads remain. Connect to the Internet and sign in to download them again.'
+      : (lostCount > 0
+        ? 'Some offline data is missing. Connect to the Internet and download it again.'
+        : null);
+    this.emit('offline-library');
+    return true;
   }
 
   async signIn(password) {
     try {
       await this.api.signIn(password);
       this.authenticated = true;
+      this.offline = false;
       this.screen = 'library';
       this.operationGeneration += 1;
       this.authEpoch += 1;
@@ -151,7 +201,7 @@ export class ApplicationController {
 
   async signOut() {
     try {
-      await this.api.signOut();
+      if (!this.offline) await this.api.signOut();
     } finally {
       this.clearPrivateState();
       this.error = null;
@@ -160,7 +210,7 @@ export class ApplicationController {
   }
 
   showInput() {
-    if (!this.authenticated) return;
+    if (!this.authenticated || this.offline) return;
     this.operationGeneration += 1;
     this.screen = 'input';
     this.error = null;
@@ -186,11 +236,15 @@ export class ApplicationController {
     this.error = null;
     this.emit('item-loading');
     try {
-      const detail = await this.api.getItem(itemId);
+      const detail = this.offline
+        ? await this.downloads.get(itemId)
+        : await this.api.getItem(itemId);
       if (
         sequence !== this.openSequence || generation !== this.operationGeneration ||
         !this.authenticated
       ) return null;
+      const download = this.items.find((candidate) => candidate.id === itemId)?.download;
+      if (download) detail.item = { ...detail.item, download };
       this.pendingOpenItemId = null;
       this.selected = detail;
       this.error = null;
@@ -221,11 +275,12 @@ export class ApplicationController {
 
   async refreshLibrary() {
     if (!this.authenticated || this.deletion?.status === 'pending') return;
+    if (this.offline) return this.refreshOfflineLibrary();
     const generation = this.operationGeneration;
     if (this.refreshPromise && this.refreshGeneration === generation) return this.refreshPromise;
     const operation = (async () => {
       try {
-        const items = await this.api.listItems();
+        const serverItems = await this.api.listItems();
         if (generation !== this.operationGeneration || !this.authenticated) return;
         let selected = null;
         let detailError = null;
@@ -238,6 +293,19 @@ export class ApplicationController {
             detailError = error?.message || 'Could not refresh the selected item';
           }
           if (generation !== this.operationGeneration || !this.authenticated) return;
+        }
+        let items = serverItems;
+        if (this.downloads) {
+          let revision;
+          do {
+            revision = this.downloadRevision;
+            items = await this.downloads.reconcile(serverItems);
+            if (generation !== this.operationGeneration || !this.authenticated) return;
+          } while (revision !== this.downloadRevision);
+        }
+        if (selected) {
+          const download = items.find((candidate) => candidate.id === selected.item.id)?.download;
+          if (download) selected.item = { ...selected.item, download };
         }
         this.items = items;
         if (selected) this.selected = selected;
@@ -260,6 +328,125 @@ export class ApplicationController {
     return operation;
   }
 
+  async refreshOfflineLibrary() {
+    const generation = this.operationGeneration;
+    try {
+      const items = await this.downloads.list();
+      if (generation !== this.operationGeneration || !this.offline) return;
+      this.items = items;
+      if (this.selected) {
+        const selectedId = this.selected.item.id;
+        try {
+          this.selected = await this.downloads.get(selectedId);
+        } catch {
+          this.selected = null;
+          this.screen = 'library';
+        }
+      }
+      this.error = items.some((item) => item.download?.status === 'lost')
+        ? 'Some offline data is missing. Connect to the Internet and download it again.'
+        : null;
+      this.emit('library');
+    } catch (error) {
+      if (generation === this.operationGeneration) this.handleError(error, 'library-error');
+    }
+  }
+
+  updateDownload(itemId, download) {
+    this.items = this.items.map((item) => item.id === itemId ? { ...item, download } : item);
+    if (this.selected?.item.id === itemId) {
+      this.selected = { ...this.selected, item: { ...this.selected.item, download } };
+    }
+  }
+
+  downloadItem(itemId) {
+    if (!this.authenticated || this.offline || !this.downloads) {
+      return Promise.reject(new Error('Connect to the Internet to download this item.'));
+    }
+    if (this.downloadPromises.has(itemId)) return this.downloadPromises.get(itemId);
+    const current = this.selected?.item.id === itemId
+      ? this.selected.item
+      : this.items.find((item) => item.id === itemId);
+    if (!current?.version || current.state !== 'ready') {
+      return Promise.reject(new Error('This item is not ready to download.'));
+    }
+    const authEpoch = this.authEpoch;
+    this.updateDownload(itemId, {
+      ...current.download, status: 'downloading', version: current.version, message: 'Preparing download…',
+    });
+    this.error = null;
+    this.emit('download-pending');
+    const operation = (async () => {
+      try {
+        const result = await this.downloads.download(current, {
+          onProgress: ({ completed, total }) => {
+            if (authEpoch !== this.authEpoch) return;
+            this.updateDownload(itemId, {
+              ...current.download,
+              status: 'downloading',
+              version: current.version,
+              message: `Downloading prepared data… ${completed}/${total}`,
+            });
+            this.emit('download-progress');
+          },
+        });
+        if (authEpoch !== this.authEpoch) return result;
+        const latestVersion = (this.selected?.item.id === itemId
+          ? this.selected.item.version
+          : this.items.find((item) => item.id === itemId)?.version) ?? current.version;
+        const status = latestVersion && latestVersion !== result.download.version
+          ? 'update-available'
+          : 'ready';
+        this.downloadRevision += 1;
+        this.updateDownload(itemId, { ...result.download, status, warning: result.warning });
+        this.error = result.warning;
+        this.emit('download-complete');
+        return result;
+      } catch (error) {
+        if (authEpoch !== this.authEpoch) throw error;
+        if (error?.status === 401) {
+          this.handleError(error);
+        } else {
+          this.updateDownload(itemId, {
+            ...current.download,
+            status: 'failed',
+            version: current.download?.version || current.version,
+            message: error.message,
+          });
+          this.error = `Download failed. ${error.message}`;
+          this.emit('download-error');
+        }
+        throw error;
+      } finally {
+        this.downloadPromises.delete(itemId);
+      }
+    })();
+    this.downloadPromises.set(itemId, operation);
+    return operation;
+  }
+
+  async removeDownload(itemId) {
+    if (!this.authenticated || !this.downloads || this.downloadPromises.has(itemId)) {
+      throw new Error('This download cannot be removed now.');
+    }
+    const authEpoch = this.authEpoch;
+    await this.downloads.remove(itemId);
+    if (authEpoch !== this.authEpoch) return;
+    this.downloadRevision += 1;
+    if (this.offline) {
+      this.items = this.items.filter((item) => item.id !== itemId);
+      if (this.selected?.item.id === itemId) {
+        this.selected = null;
+        this.screen = 'library';
+        this.operationGeneration += 1;
+      }
+    } else {
+      this.updateDownload(itemId, { status: 'not-downloaded' });
+    }
+    this.error = null;
+    this.emit('download-removed');
+  }
+
   submitArticle(url) {
     return this.submit(url, () => this.api.submitArticle(url));
   }
@@ -269,6 +456,9 @@ export class ApplicationController {
   }
 
   submit(key, operation) {
+    if (!this.authenticated || this.offline) {
+      return Promise.reject(new Error('Connect to the Internet to add content.'));
+    }
     if (this.submissionPromise) {
       if (this.submissionKey === key) return this.submissionPromise;
       const error = new Error('Another submission is already in progress');
@@ -304,6 +494,7 @@ export class ApplicationController {
   }
 
   async retry(itemId) {
+    if (!this.authenticated || this.offline) throw new Error('Connect to the Internet to retry preparation.');
     const generation = ++this.operationGeneration;
     try {
       const item = await this.api.retry(itemId);
@@ -325,7 +516,9 @@ export class ApplicationController {
   }
 
   deleteItem(itemId) {
-    if (!this.authenticated) return Promise.reject(new Error('Authentication required'));
+    if (!this.authenticated || this.offline) {
+      return Promise.reject(new Error('Connect to the Internet to delete the server item.'));
+    }
     if (this.deletion?.status === 'pending' && this.deletion.itemId === itemId) {
       return this.deletionPromise;
     }
@@ -346,7 +539,7 @@ export class ApplicationController {
           await this.onDeleteConfirmed(itemId);
         } catch {
           if (authEpoch === this.authEpoch) {
-            this.cleanupWarning = 'The item was deleted, but its local playback state could not be cleared.';
+            this.cleanupWarning = 'The item was deleted, but its local playback or download data could not be fully cleared.';
           }
         }
         if (
@@ -410,7 +603,7 @@ export class ApplicationController {
 
   syncPolling() {
     if (
-      !this.authenticated || !this.needsPolling() || this.deletion ||
+      !this.authenticated || this.offline || !this.needsPolling() || this.deletion ||
       this.screen === 'input'
     ) {
       this.stopPolling();

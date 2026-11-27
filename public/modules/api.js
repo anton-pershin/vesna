@@ -122,6 +122,10 @@ export class VesnaApi {
     return versionPath(itemId, version, 'timings');
   }
 
+  manifestUrl(itemId, version) {
+    return versionPath(itemId, version, 'manifest');
+  }
+
   audioUrl(itemId, version) {
     return versionPath(itemId, version, 'audio');
   }
@@ -132,6 +136,10 @@ export class VesnaApi {
 
   getTimings(itemId, version) {
     return this.request(this.timingsUrl(itemId, version));
+  }
+
+  getManifest(itemId, version) {
+    return this.request(this.manifestUrl(itemId, version));
   }
 
   async getSourceText(itemId) {
