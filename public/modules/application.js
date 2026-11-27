@@ -59,6 +59,7 @@ export class ApplicationController {
     this.deleteAttempts = new Map();
     this.deletionPromise = null;
     this.downloadPromises = new Map();
+    this.downloadRevision = 0;
   }
 
   snapshot() {
@@ -165,6 +166,12 @@ export class ApplicationController {
     this.offline = true;
     this.screen = 'library';
     this.items = items;
+    const lostCount = items.filter((item) => item.download?.status === 'lost').length;
+    this.error = lostCount === items.length
+      ? 'No usable offline downloads remain. Connect to the Internet and sign in to download them again.'
+      : (lostCount > 0
+        ? 'Some offline data is missing. Connect to the Internet and download it again.'
+        : null);
     this.emit('offline-library');
     return true;
   }
@@ -275,21 +282,30 @@ export class ApplicationController {
       try {
         const serverItems = await this.api.listItems();
         if (generation !== this.operationGeneration || !this.authenticated) return;
-        const items = this.downloads ? await this.downloads.reconcile(serverItems) : serverItems;
-        if (generation !== this.operationGeneration || !this.authenticated) return;
         let selected = null;
         let detailError = null;
         if (this.selected && !this.deletion) {
           const selectedId = this.selected.item.id;
           try {
             selected = await this.api.getItem(selectedId);
-            const download = items.find((candidate) => candidate.id === selectedId)?.download;
-            if (download) selected.item = { ...selected.item, download };
           } catch (error) {
             if (error?.status === 401) throw error;
             detailError = error?.message || 'Could not refresh the selected item';
           }
           if (generation !== this.operationGeneration || !this.authenticated) return;
+        }
+        let items = serverItems;
+        if (this.downloads) {
+          let revision;
+          do {
+            revision = this.downloadRevision;
+            items = await this.downloads.reconcile(serverItems);
+            if (generation !== this.operationGeneration || !this.authenticated) return;
+          } while (revision !== this.downloadRevision);
+        }
+        if (selected) {
+          const download = items.find((candidate) => candidate.id === selected.item.id)?.download;
+          if (download) selected.item = { ...selected.item, download };
         }
         this.items = items;
         if (selected) this.selected = selected;
@@ -375,7 +391,14 @@ export class ApplicationController {
           },
         });
         if (authEpoch !== this.authEpoch) return result;
-        this.updateDownload(itemId, { ...result.download, warning: result.warning });
+        const latestVersion = (this.selected?.item.id === itemId
+          ? this.selected.item.version
+          : this.items.find((item) => item.id === itemId)?.version) ?? current.version;
+        const status = latestVersion && latestVersion !== result.download.version
+          ? 'update-available'
+          : 'ready';
+        this.downloadRevision += 1;
+        this.updateDownload(itemId, { ...result.download, status, warning: result.warning });
         this.error = result.warning;
         this.emit('download-complete');
         return result;
@@ -409,6 +432,7 @@ export class ApplicationController {
     const authEpoch = this.authEpoch;
     await this.downloads.remove(itemId);
     if (authEpoch !== this.authEpoch) return;
+    this.downloadRevision += 1;
     if (this.offline) {
       this.items = this.items.filter((item) => item.id !== itemId);
       if (this.selected?.item.id === itemId) {

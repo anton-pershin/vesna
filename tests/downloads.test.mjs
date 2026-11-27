@@ -27,6 +27,8 @@ class MemoryCaches {
   values = new Map();
   failIndexPut = false;
   failItemPut = false;
+  corruptNextAudioPut = false;
+  unreadableNextAudioMatch = false;
   failedDeletes = new Set();
   async open(name) {
     if (!this.values.has(name)) {
@@ -37,7 +39,20 @@ class MemoryCaches {
           urlOf(input).endsWith(DOWNLOAD_INDEX_RESOURCE)
         ) throw new Error('index full');
         if (name.startsWith(ITEM_CACHE_PREFIX) && this.failItemPut) throw new Error('item cache full');
-        cache.values.set(urlOf(input), response.clone());
+        const key = urlOf(input);
+        cache.values.set(key, response.clone());
+        if (name.startsWith(ITEM_CACHE_PREFIX) && key.endsWith('/audio') && this.corruptNextAudioPut) {
+          this.corruptNextAudioPut = false;
+          cache.values.set(key, new Response(null, { status: 200 }));
+        }
+      };
+      cache.match = async (input) => {
+        const key = urlOf(input);
+        if (name.startsWith(ITEM_CACHE_PREFIX) && key.endsWith('/audio') && this.unreadableNextAudioMatch) {
+          this.unreadableNextAudioMatch = false;
+          return { status: 200, arrayBuffer: async () => { throw new Error('unreadable body'); } };
+        }
+        return cache.values.get(key)?.clone();
       };
       this.values.set(name, cache);
     }
@@ -60,13 +75,13 @@ function item(version = 'version-1', overrides = {}) {
 
 function fixture(version = 'version-1', overrides = {}) {
   const id = overrides.id ?? 'item-1';
-  const text = JSON.stringify({ version, paragraphs: [{ id: 'p0', text: `Text for ${version}` }] });
-  const timings = JSON.stringify({ version, timings: [{ id: 'p0', start: 0, end: 1 }] });
+  const text = overrides.text ?? JSON.stringify({ version, paragraphs: [{ id: 'p0', text: `Text for ${version}` }] });
+  const timings = overrides.timings ?? JSON.stringify({ version, timings: [{ id: 'p0', start: 0, end: 1 }] });
   const audio = overrides.expectedAudio ?? encoder.encode(`complete audio ${version}`);
   const servedAudio = overrides.servedAudio ?? audio;
   const hash = (value) => createHash('sha256').update(value).digest('hex');
   const manifest = JSON.stringify({
-    format: 1, item_id: id, version, voice_id: 'fixture', paragraph_count: 1, duration: 1,
+    format: 1, item_id: overrides.manifestItemId ?? id, version, voice_id: 'fixture', paragraph_count: 1, duration: 1,
     text_sha256: hash(text), audio_sha256: hash(audio), timings_sha256: hash(timings),
     paragraphs: [{ id: 'p0', text_sha256: hash(`Text for ${version}`) }],
   });
@@ -205,6 +220,78 @@ test('missing published data is reported as lost, never offline-ready', async ()
   assert.deepEqual(detail.paragraphs, []);
 });
 
+test('malformed and mismatched manifest metadata never publish', async (t) => {
+  for (const kind of ['malformed', 'wrong-item']) {
+    await t.test(kind, async () => {
+      const w = world();
+      const current = item();
+      const data = w.add(current, kind === 'wrong-item' ? { manifestItemId: 'another-item' } : {});
+      if (kind === 'malformed') data.manifest = '{not json';
+      await assert.rejects(w.manager.download(current));
+      assert.deepEqual(await w.manager.list(), []);
+    });
+  }
+});
+
+test('non-200 resources and inconsistent prepared data never publish', async (t) => {
+  await t.test('non-200', async () => {
+    const w = world();
+    const current = item();
+    w.add(current);
+    const original = w.manager.fetch;
+    w.manager.fetch = async (input, options = {}) => (
+      urlOf(input).endsWith('/timings') ? new Response(null, { status: 503 }) : original(input, options)
+    );
+    await assert.rejects(w.manager.download(current), /could not be downloaded/);
+    assert.deepEqual(await w.manager.list(), []);
+  });
+  await t.test('text and timings mismatch', async () => {
+    const w = world();
+    const current = item();
+    w.add(current, {
+      timings: JSON.stringify({ version: current.version, timings: [{ id: 'other', start: 0, end: 1 }] }),
+    });
+    await assert.rejects(w.manager.download(current), /inconsistent/);
+    assert.deepEqual(await w.manager.list(), []);
+  });
+});
+
+test('staged empty or unreadable cached bodies fail before publication', async (t) => {
+  for (const kind of ['corruptNextAudioPut', 'unreadableNextAudioMatch']) {
+    await t.test(kind, async () => {
+      const w = world();
+      const current = item();
+      w.add(current);
+      w.caches[kind] = true;
+      await assert.rejects(w.manager.download(current), /staged download/);
+      assert.deepEqual(await w.manager.list(), []);
+    });
+  }
+});
+
+test('corrupted, truncated, empty, and unreadable published bodies become lost', async (t) => {
+  for (const kind of ['corrupted-text', 'truncated-audio', 'empty-audio', 'unreadable-audio']) {
+    await t.test(kind, async () => {
+      const w = world();
+      const current = item();
+      const data = w.add(current);
+      await w.manager.download(current);
+      const record = (await w.manager.readIndex()).items[0];
+      const cache = await w.caches.open(record.cacheName);
+      if (kind === 'corrupted-text') {
+        await cache.put(`${ORIGIN}${w.api.textUrl(current.id, current.version)}`, new Response('{}', { status: 200 }));
+      } else if (kind === 'truncated-audio') {
+        await cache.put(`${ORIGIN}${w.api.audioUrl(current.id, current.version)}`, new Response(data.audio.slice(1), { status: 200 }));
+      } else if (kind === 'empty-audio') {
+        await cache.put(`${ORIGIN}${w.api.audioUrl(current.id, current.version)}`, new Response(null, { status: 200 }));
+      } else {
+        w.caches.unreadableNextAudioMatch = true;
+      }
+      assert.equal((await w.manager.list())[0].download.status, 'lost');
+    });
+  }
+});
+
 test('insufficient estimated space stops before the audio download', async () => {
   const w = world({ quota: 105 });
   const current = item();
@@ -262,6 +349,23 @@ test('concurrent replacements are serialized and a later failure cannot roll bac
   await successful;
   await assert.rejects(failed, /integrity/);
   assert.equal((await w.manager.get(first.id)).item.version, 'version-2');
+});
+
+test('a throwing completion observer cannot delete a committed replacement', async () => {
+  const w = world();
+  const first = item();
+  w.add(first);
+  await w.manager.download(first);
+  const second = item('version-2');
+  w.add(second);
+  const result = await w.manager.download(second, {
+    onProgress: ({ stage }) => {
+      if (stage === 'complete') throw new Error('observer failed');
+    },
+  });
+  assert.equal(result.download.version, 'version-2');
+  assert.equal((await w.manager.get(first.id)).item.version, 'version-2');
+  assert.equal((await w.manager.list())[0].download.status, 'ready');
 });
 
 test('old-cache cleanup failure cannot restore or damage a publication', async () => {

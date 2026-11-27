@@ -74,6 +74,29 @@ test('offline startup with no downloads requests connection instead of showing a
   assert.match(controller.error, /No offline downloads/);
 });
 
+test('all-lost startup gives connect-and-sign-in recovery while retaining inspection entries', async () => {
+  const lost = ready({ download: { status: 'lost', version: 'version-1' } });
+  const controller = new ApplicationController({
+    api: api({ session: async () => { throw new TypeError('offline'); } }),
+    downloads: downloads({ list: async () => [lost] }),
+  });
+  assert.equal(await controller.restoreSession(), true);
+  assert.equal(controller.offline, true);
+  assert.equal(controller.items.length, 1);
+  assert.match(controller.error, /No usable offline downloads remain.*Connect to the Internet and sign in/);
+});
+
+test('mixed ready and lost startup keeps usable items and identifies partial loss', async () => {
+  const lost = ready({ id: 'item-2', download: { status: 'lost', version: 'version-1' } });
+  const controller = new ApplicationController({
+    api: api({ session: async () => { throw new TypeError('offline'); } }),
+    downloads: downloads({ list: async () => [ready(), lost] }),
+  });
+  assert.equal(await controller.restoreSession(), true);
+  assert.match(controller.error, /Some offline data is missing/);
+  assert.doesNotMatch(controller.error, /No usable offline downloads/);
+});
+
 test('an online 401 never unlocks device downloads', async () => {
   let localReads = 0;
   const controller = new ApplicationController({
@@ -133,6 +156,82 @@ test('a repeated download action shares the operation and publishes returned sta
   assert.equal(controller.selected.item.download.status, 'ready');
   assert.equal(controller.selected.item.download.persistent, false);
   assert.match(controller.error, /may remove/);
+});
+
+test('a download completing during a delayed refresh retains update-available state', async () => {
+  let serverVersion = 'version-1';
+  let localVersion = null;
+  let releaseDetail;
+  let detailStarted;
+  const started = new Promise((resolve) => { detailStarted = resolve; });
+  const controller = new ApplicationController({
+    api: api({
+      listItems: async () => [ready({ version: serverVersion, download: undefined })],
+      getItem: async () => {
+        if (serverVersion === 'version-2') {
+          detailStarted();
+          await new Promise((resolve) => { releaseDetail = resolve; });
+        }
+        return { item: ready({ version: serverVersion, download: undefined }), paragraphs: [], source_available: false };
+      },
+    }),
+    downloads: downloads({
+      reconcile: async (items) => items.map((item) => ({
+        ...item,
+        ...(localVersion ? {
+          download: {
+            status: item.version === localVersion ? 'ready' : 'update-available',
+            version: localVersion,
+            persistent: true,
+          },
+        } : {}),
+      })),
+      download: async (item) => {
+        localVersion = item.version;
+        return { item, download: { status: 'ready', version: item.version, persistent: true }, warning: null };
+      },
+    }),
+  });
+  await controller.restoreSession();
+  await controller.openItem('item-1');
+  serverVersion = 'version-2';
+  const refresh = controller.refreshLibrary();
+  await started;
+  await controller.downloadItem('item-1');
+  releaseDetail();
+  await refresh;
+  assert.equal(controller.selected.item.version, 'version-2');
+  assert.equal(controller.selected.item.download.status, 'update-available');
+  assert.equal(controller.selected.item.download.version, 'version-1');
+});
+
+test('a download completing after a refresh derives state from the latest server version', async () => {
+  let serverVersion = 'version-1';
+  let releaseDownload;
+  const controller = new ApplicationController({
+    api: api({
+      listItems: async () => [ready({ version: serverVersion, download: undefined })],
+      getItem: async () => ({ item: ready({ version: serverVersion, download: undefined }), paragraphs: [], source_available: false }),
+    }),
+    downloads: downloads({
+      reconcile: async (items) => items,
+      download: async (item) => {
+        await new Promise((resolve) => { releaseDownload = resolve; });
+        return { item, download: { status: 'ready', version: item.version, persistent: true }, warning: null };
+      },
+    }),
+  });
+  await controller.restoreSession();
+  await controller.openItem('item-1');
+  const download = controller.downloadItem('item-1');
+  serverVersion = 'version-2';
+  await controller.refreshLibrary();
+  assert.equal(controller.selected.item.version, 'version-2');
+  releaseDownload();
+  await download;
+  assert.equal(controller.selected.item.version, 'version-2');
+  assert.equal(controller.selected.item.download.status, 'update-available');
+  assert.equal(controller.selected.item.download.version, 'version-1');
 });
 
 test('a failed replacement retains the earlier downloaded version and removal metadata', async () => {

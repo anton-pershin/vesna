@@ -116,6 +116,35 @@ function check(value, message) {
     check(!(await page.locator('#add-content').isVisible()), 'Network-only input is visible offline');
     await openSample(page);
     check(await page.locator('#speed').inputValue() === '1.25', 'Saved online speed did not restore offline');
+    const cachedStatuses = await page.evaluate(async () => {
+      const audioUrl = document.querySelector('#audio').src;
+      const responses = [];
+      for (const range of [null, 'bytes=0-1', 'bytes=999999999-']) {
+        const response = await fetch(audioUrl, range ? { headers: { Range: range } } : {});
+        await response.arrayBuffer();
+        responses.push(response.status);
+      }
+      return responses;
+    });
+    check(JSON.stringify(cachedStatuses) === JSON.stringify([200, 206, 416]), `Cached response statuses differ: ${cachedStatuses}`);
+    await page.evaluate(() => {
+      window.__offlineScrollCalls = 0;
+      const original = Element.prototype.scrollIntoView;
+      Element.prototype.scrollIntoView = function (...args) {
+        window.__offlineScrollCalls += 1;
+        return original.apply(this, args);
+      };
+    });
+    await page.getByRole('button', { name: 'Play from paragraph 2', exact: true }).click();
+    await page.waitForFunction(() => (
+      document.querySelector('#reader li[data-paragraph-id="p1"] button')?.getAttribute('aria-current') === 'true'
+    ));
+    check(await page.evaluate(() => window.__offlineScrollCalls > 0), 'Automatic scrolling did not follow the selected paragraph');
+    await page.getByRole('button', { name: 'Pause', exact: true }).click();
+    await page.getByRole('button', { name: 'Previous paragraph', exact: true }).click();
+    await page.waitForFunction(() => document.querySelector('#reader li[data-paragraph-id="p0"] button')?.getAttribute('aria-current') === 'true');
+    await page.getByRole('button', { name: 'Next paragraph', exact: true }).click();
+    await page.waitForFunction(() => document.querySelector('#reader li[data-paragraph-id="p1"] button')?.getAttribute('aria-current') === 'true');
     await page.getByRole('button', { name: 'Play', exact: true }).click();
     await page.waitForTimeout(200);
     await page.getByRole('button', { name: 'Pause', exact: true }).click();
@@ -125,6 +154,11 @@ function check(value, message) {
       readerOpened: true,
       playbackWorked: true,
       speedRestored: true,
+      selectedParagraph: true,
+      previousNext: true,
+      highlighting: true,
+      automaticScrolling: true,
+      cachedStatuses,
       paragraphs: await page.locator('#reader li').count(),
     };
     await context.close();

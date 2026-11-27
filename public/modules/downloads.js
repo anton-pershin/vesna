@@ -259,16 +259,32 @@ export class DownloadManager {
     try {
       validateIndex({ format: 1, items: [record] });
       const cache = await this.caches.open(record.cacheName);
-      const responses = new Map();
+      const bodies = new Map();
       for (const url of record.resources) {
         const response = await cache.match(absolute(url, this.origin));
         if (!response || response.status !== 200) throw new Error('missing resource');
-        responses.set(url, response);
+        // Verify the stored body, not only the network bytes or response metadata.
+        bodies.set(url, await response.arrayBuffer());
       }
-      const manifest = await responses.get(this.api.manifestUrl(record.item.id, record.version)).json();
-      const text = await responses.get(this.api.textUrl(record.item.id, record.version)).json();
-      const timings = await responses.get(this.api.timingsUrl(record.item.id, record.version)).json();
-      validateManifest(manifest, { ...record.item, version: record.version, state: 'ready' });
+      const manifestUrl = this.api.manifestUrl(record.item.id, record.version);
+      const textUrl = this.api.textUrl(record.item.id, record.version);
+      const timingsUrl = this.api.timingsUrl(record.item.id, record.version);
+      const audioUrl = this.api.audioUrl(record.item.id, record.version);
+      const manifest = validateManifest(
+        JSON.parse(decoder.decode(bodies.get(manifestUrl))),
+        { ...record.item, version: record.version, state: 'ready' },
+      );
+      for (const [url, key] of [
+        [textUrl, 'text_sha256'],
+        [timingsUrl, 'timings_sha256'],
+        [audioUrl, 'audio_sha256'],
+      ]) {
+        if (await this.digest(bodies.get(url)) !== manifest[key]) throw new Error('cached hash mismatch');
+      }
+      const audio = bodies.get(audioUrl);
+      if (!audio || audio.byteLength === 0) throw new Error('empty cached audio');
+      const text = JSON.parse(decoder.decode(bodies.get(textUrl)));
+      const timings = JSON.parse(decoder.decode(bodies.get(timingsUrl)));
       const prepared = validatePreparedVersion(text, timings, record.version);
       if (
         manifest.paragraph_count !== prepared.paragraphs.length ||
@@ -357,6 +373,7 @@ export class DownloadManager {
         this.api.audioUrl(item.id, item.version),
       ];
       const staging = await this.caches.open(cacheName);
+      let published = false;
       try {
         onProgress({ stage: 'manifest', completed: 0, total: 4 });
         const manifestBytes = await this.stageResource(staging, {
@@ -410,17 +427,24 @@ export class DownloadManager {
         const verification = await this.verifyRecord(record);
         if (verification.lost) throw new DownloadError('The staged download could not be verified.', 'INVALID_STAGING');
         await this.writeIndex([...index.items.filter((record) => record.item.id !== item.id), record]);
+        published = true;
         if (previous && previous.cacheName !== cacheName) {
           try { await this.caches.delete(previous.cacheName); } catch { /* The old cache is no longer published. */ }
         }
-        onProgress({ stage: 'complete', completed: 4, total: 4 });
+        try {
+          onProgress({ stage: 'complete', completed: 4, total: 4 });
+        } catch {
+          // Observer failures cannot change or delete a committed publication.
+        }
         return {
           item: publicItem(item, downloadState(record)),
           download: downloadState(record),
           warning: persistence.warning,
         };
       } catch (error) {
-        try { await this.caches.delete(cacheName); } catch { /* An orphan staging cache is unreachable. */ }
+        if (!published) {
+          try { await this.caches.delete(cacheName); } catch { /* An orphan staging cache is unreachable. */ }
+        }
         throw error;
       }
     });

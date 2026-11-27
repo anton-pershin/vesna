@@ -133,7 +133,7 @@ Set `VESNA_BROWSER_SCREENSHOT_DIR` to a directory if sanitized phone and desktop
 
 ## Offline Chromium check
 
-Prepare a Markdown item with the title `offline-sample`, or set `VESNA_SAMPLE_TITLE` to another prepared public test item. The runner downloads that item, closes Chromium, performs two network-disabled cold restarts with the same browser profile, checks the offline library/reader and saved playback state, removes the device download offline, and verifies online that the server item remains. Use a disposable test library and public test content.
+Prepare a Markdown item with the title `offline-sample`, or set `VESNA_SAMPLE_TITLE` to another prepared public test item. The runner downloads that item, closes Chromium, performs two network-disabled cold restarts with the same browser profile, checks the offline library/reader, paragraph controls, highlighting, automatic scrolling, cached `200`/`206`/`416` audio responses, and saved playback state, removes the device download offline, and verifies online that the server item remains. Use a disposable test library and public test content.
 
 ```sh
 export VESNA_PUBLIC_ORIGIN=https://TEMPORARY_ORIGIN

@@ -187,7 +187,7 @@ flowchart LR
 
 The offline-library index is a versioned JSON response in a dedicated Cache Storage cache. Each entry contains the required item summary, prepared version, item cache name, resource URLs, download time, and persistence status. It contains no credential or authentication response. Each item cache contains exactly its manifest, text, timings, and audio responses. Cache names include the item identity, prepared version, and a unique staging suffix. The index is the only publication authority; scanning an orphan cache does not make it available.
 
-The download coordinator uses raw response bytes for SHA-256 checks before storing sanitized `200` responses. Text and timings also pass the existing prepared-version validator. The coordinator verifies every resource after staging. It writes the new index only after all checks pass. Removal writes an index without the entry before attempting item-cache deletion, so cleanup failure cannot restore offline access.
+The download coordinator uses raw response bytes for SHA-256 checks before storing sanitized `200` responses. Text and timings also pass the existing prepared-version validator. The coordinator reads and hashes every actual cached body after staging, including nonempty audio; the same deep verification applies when reading published index entries. It writes the new index only after all checks pass. A committed publication is never deleted because a completion observer fails. Removal writes an index without the entry before attempting item-cache deletion, so cleanup failure cannot restore offline access.
 
 #### 4.3 Startup and request flow
 
@@ -207,7 +207,7 @@ flowchart TD
   Match -->|no| Network[Normal authenticated network request]
 ```
 
-Only network failures enter offline startup. An online `401` does not unlock local content. Online refresh reconciles local state with the authenticated server library. Offline item details use index metadata and omit original-source availability; the existing `loadPrepared` path then requests text, timings, and audio through the worker.
+Only network failures enter offline startup. An online `401` does not unlock local content. Online refresh reconciles local state with the authenticated server library. A per-item mutation revision makes refresh rerun reconciliation if a download completes or is removed during network waits; download completion also compares its device version with the latest server version. Offline item details use index metadata and omit original-source availability; the existing `loadPrepared` path then requests text, timings, and audio through the worker.
 
 The worker handles only GET URLs recorded in an exact published item entry. Download requests carry a dedicated bypass header and `cache: no-store`, so replacement downloads cannot read an earlier published response. All other API requests, source content, mutations, and cross-origin requests continue to bypass offline retrieval. Shell navigation remains network-first with cached fallback. Shell activation deletes only old `vesna-app-shell-` caches and never item or index caches.
 
