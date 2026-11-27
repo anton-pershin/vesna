@@ -69,6 +69,7 @@ function makeStateBadge(documentImpl, state) {
 export function renderLibrary(container, items, {
   onOpen,
   onRetry,
+  offline = false,
   documentImpl = globalThis.document,
 } = {}) {
   const activeElement = documentImpl.activeElement;
@@ -82,7 +83,10 @@ export function renderLibrary(container, items, {
     open.type = 'button';
     open.dataset.itemId = item.id;
     open.dataset.libraryAction = 'open';
-    open.setAttribute('aria-label', `Open ${itemTitle(item)}`);
+    const lostOffline = offline && item.download?.status === 'lost';
+    open.setAttribute('aria-label', lostOffline
+      ? `Inspect missing offline data for ${itemTitle(item)}`
+      : `Open ${itemTitle(item)}`);
     open.addEventListener('click', () => onOpen(item.id));
 
     const kind = makeElement(documentImpl, 'span', 'kind-icon');
@@ -98,6 +102,19 @@ export function renderLibrary(container, items, {
     const state = makeElement(documentImpl, 'span', 'item-state');
     state.append(makeStateBadge(documentImpl, item.state));
     copy.append(state);
+    const downloadLabels = {
+      downloading: 'Downloading…',
+      ready: 'Available offline',
+      'update-available': 'Offline update available',
+      failed: 'Download failed',
+      lost: 'Offline data missing',
+    };
+    const downloadLabel = downloadLabels[item.download?.status];
+    if (downloadLabel) {
+      const download = makeElement(documentImpl, 'span', 'download-state', downloadLabel);
+      download.dataset.downloadStatus = item.download.status;
+      copy.append(download);
+    }
     open.append(kind, copy, makeIcon(documentImpl, 'chevron', 'chevron'));
     entry.append(open);
 

@@ -1,5 +1,6 @@
 import { VesnaApi } from '/modules/api.js';
 import { ApplicationController } from '/modules/application.js';
+import { DownloadManager } from '/modules/downloads.js';
 import { readMarkdownFile, validateArticleUrl } from '/modules/input.js';
 import { PlaybackController, PlaybackRestoreGuard, restorePlaybackState } from '/modules/player.js';
 import { PlaybackBarController } from '/modules/playback-bar.js';
@@ -27,6 +28,9 @@ export function startApplication() {
   const $ = (id) => document.getElementById(id);
   const audio = $('audio');
   const api = new VesnaApi();
+  const downloads = globalThis.caches && globalThis.crypto?.subtle
+    ? new DownloadManager({ api })
+    : null;
   const stateStore = new ItemPlaybackStateStore(localStorage);
   const deletedItems = new Set();
   let current = null;
@@ -231,7 +235,9 @@ export function startApplication() {
         onSelect: selectParagraph,
       });
       $('app-error').hidden = false;
-      $('app-error').textContent = 'Prepared audio could not be loaded. Check your connection and try again.';
+      $('app-error').textContent = controller.offline
+        ? 'Offline data is missing or incomplete. Connect to the Internet and download this item again.'
+        : 'Prepared audio could not be loaded. Check your connection and try again.';
     }
   }
 
@@ -278,6 +284,9 @@ export function startApplication() {
       $('source-text').textContent = '';
       $('article-link').removeAttribute('href');
       $('source-download').removeAttribute('href');
+      $('download-item').hidden = true;
+      $('remove-download').hidden = true;
+      $('download-status').textContent = '';
       $('player').hidden = true;
       return;
     }
@@ -302,8 +311,10 @@ export function startApplication() {
       : '';
     $('retry').hidden = item.state !== 'failed';
     setArticleLink($('article-link'), item.kind === 'article' ? item.source_url : null);
+    $('source-panel').hidden = controller.offline;
+    $('item-menu').hidden = controller.offline;
 
-    const sourceAvailable = item.kind === 'markdown' && detail.source_available;
+    const sourceAvailable = !controller.offline && item.kind === 'markdown' && detail.source_available;
     $('markdown-source').hidden = !sourceAvailable;
     if (sourceAvailable) {
       $('source-download').href = api.sourceUrl(item.id);
@@ -312,10 +323,31 @@ export function startApplication() {
       $('source-download').removeAttribute('href');
     }
 
-    const playable = typeof item.version === 'string' && Boolean(item.version);
+    const download = item.download || { status: 'not-downloaded' };
+    const playable = typeof item.version === 'string' && Boolean(item.version) &&
+      (!controller.offline || download.status !== 'lost');
+    const hasDownload = ['ready', 'update-available', 'lost'].includes(download.status);
+    $('download-item').hidden = controller.offline || !playable || download.status === 'ready';
+    $('download-item').disabled = download.status === 'downloading';
+    $('download-item').textContent = download.status === 'update-available'
+      ? 'Download offline update'
+      : (download.status === 'failed' || download.status === 'lost' ? 'Try offline download again' : 'Download for offline use');
+    $('remove-download').hidden = !hasDownload || download.status === 'downloading';
+    const downloadMessages = {
+      downloading: download.message || 'Downloading prepared data…',
+      ready: download.persistent === false
+        ? 'Available offline now. Persistent storage was not granted.'
+        : 'Available offline.',
+      'update-available': 'An earlier version is available offline. Download the update while online.',
+      failed: download.message || 'Download failed. Try again.',
+      lost: 'Offline data is missing. Connect to the Internet and download this item again.',
+    };
+    $('download-status').textContent = downloadMessages[download.status] || '';
     $('reader-help').textContent = playable
       ? 'Select a paragraph to play from that point.'
-      : 'Listening text is available while Vesna prepares this item.';
+      : (controller.offline && download.status === 'lost'
+        ? 'Offline data is missing. Remove this download or connect and download it again.'
+        : 'Listening text is available while Vesna prepares this item.');
     const key = playable ? JSON.stringify([item.id, item.version]) : null;
     if (!playable) {
       teardownPlayback();
@@ -368,9 +400,21 @@ export function startApplication() {
 
   const controller = new ApplicationController({
     api,
-    onDeleteConfirmed(itemId) {
+    downloads,
+    async onDeleteConfirmed(itemId) {
       deletedItems.add(itemId);
-      stateStore.removeItem(itemId);
+      let cleanupError = null;
+      try {
+        stateStore.removeItem(itemId);
+      } catch (error) {
+        cleanupError = error;
+      }
+      try {
+        if (downloads) await downloads.remove(itemId);
+      } catch (error) {
+        cleanupError = error;
+      }
+      if (cleanupError) throw cleanupError;
     },
     onChange(state, reason) {
       if (state.generation !== observedGeneration) {
@@ -387,18 +431,21 @@ export function startApplication() {
 
       $('auth-view').hidden = state.authenticated;
       $('application-view').hidden = !state.authenticated;
-      $('sign-out').hidden = !state.authenticated;
+      $('sign-out').hidden = !state.authenticated || state.offline;
       $('library-view').hidden = !state.authenticated || state.screen !== 'library';
       $('input-view').hidden = !state.authenticated || state.screen !== 'input';
       $('item-view').hidden = !state.authenticated || state.screen !== 'reader';
       $('app-error').hidden = !state.error && !state.cleanupWarning;
       $('app-error').textContent = state.error || state.cleanupWarning || '';
-      $('submit-article').disabled = state.submitting;
-      $('upload-markdown').disabled = state.submitting;
-      $('select-article').disabled = state.submitting;
-      $('select-markdown').disabled = state.submitting;
+      $('add-content').hidden = state.offline;
+      $('empty-add').hidden = state.offline;
+      $('submit-article').disabled = state.submitting || state.offline;
+      $('upload-markdown').disabled = state.submitting || state.offline;
+      $('select-article').disabled = state.submitting || state.offline;
+      $('select-markdown').disabled = state.submitting || state.offline;
 
-      if (reason === 'sign-in-required') $('app-status').textContent = '';
+      if (state.offline) $('app-status').textContent = 'Offline mode. Downloaded items only.';
+      else if (reason === 'sign-in-required') $('app-status').textContent = '';
       else if (reason === 'signed-out') $('app-status').textContent = 'Signed out.';
       else if (reason === 'session-expired') $('app-status').textContent = 'Sign in again to continue.';
       else if (reason === 'sign-in') $('app-status').textContent = 'Loading your library…';
@@ -413,11 +460,15 @@ export function startApplication() {
       if (state.authenticated) {
         const librarySignature = JSON.stringify(state.items);
         if (librarySignature !== renderedLibrarySignature) {
-          renderLibrary($('library'), state.items, { onOpen: openItem, onRetry: retryItem });
+          renderLibrary($('library'), state.items, { onOpen: openItem, onRetry: retryItem, offline: state.offline });
           renderedLibrarySignature = librarySignature;
         }
         $('library-count').textContent = `${state.items.length} ${state.items.length === 1 ? 'item' : 'items'}`;
         $('library-empty').hidden = state.items.length > 0;
+        $('empty-title').textContent = state.offline ? 'No offline downloads' : 'Nothing here yet';
+        $('empty-description').textContent = state.offline
+          ? 'Connect to the Internet to sign in and download prepared items.'
+          : 'Add an article or Markdown document to start listening.';
         renderSelected(state.selected, state.deletion);
         if (state.deletion) {
           $('delete-error').hidden = !state.error;
@@ -574,8 +625,22 @@ export function startApplication() {
     }
   });
 
-  $('delete-item').addEventListener('click', () => {
+  $('download-item').addEventListener('click', () => {
     if (!controller.selected) return;
+    controller.downloadItem(controller.selected.item.id).catch(() => {
+      // The controller displays the safe download error.
+    });
+  });
+  $('remove-download').addEventListener('click', () => {
+    if (!controller.selected) return;
+    controller.removeDownload(controller.selected.item.id).catch((error) => {
+      $('app-error').hidden = false;
+      $('app-error').textContent = error.message;
+    });
+  });
+
+  $('delete-item').addEventListener('click', () => {
+    if (!controller.selected || controller.offline) return;
     $('item-menu').open = false;
     $('delete-item-name').textContent = itemTitle(controller.selected.item);
     $('delete-error').hidden = true;

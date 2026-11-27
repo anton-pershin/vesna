@@ -131,6 +131,21 @@ node /opt/vesna/deploy/browser_live_check.cjs
 
 Set `VESNA_BROWSER_SCREENSHOT_DIR` to a directory if sanitized phone and desktop screenshots are needed. Set `CHROMIUM_EXECUTABLE` only when using a custom Chromium installation. The check covers focused screens, article and Markdown submission, real audio decoding and playback, navigation, selected paragraphs, speed, restore, source inspection, bottom-bar geometry, touch targets, 200% text scaling, private-cache exclusion, and cancellation/confirmation of a uniquely named disposable deletion item. It creates real preparation jobs and deletes only that disposable Markdown item.
 
+## Offline Chromium check
+
+Prepare a Markdown item with the title `offline-sample`, or set `VESNA_SAMPLE_TITLE` to another prepared public test item. The runner downloads that item, closes Chromium, performs two network-disabled cold restarts with the same browser profile, checks the offline library/reader and saved playback state, removes the device download offline, and verifies online that the server item remains. Use a disposable test library and public test content.
+
+```sh
+export VESNA_PUBLIC_ORIGIN=https://TEMPORARY_ORIGIN
+export PLAYWRIGHT_MODULE=/tmp/vesna-browser/node_modules/playwright
+export VESNA_SAMPLE_TITLE=offline-sample
+export VESNA_OFFLINE_PROFILE=/tmp/vesna-offline-browser-profile
+export VESNA_OFFLINE_RESULT=/tmp/vesna-offline-browser-result.json
+node deploy/browser_offline_check.cjs
+```
+
+Keep `VESNA_PASSWORD` in the environment without logging it. The runner deletes only its temporary browser profile; it does not delete the server item. Its JSON result contains no password, cookie, item identifier, or private source content. This explicit check is not part of deterministic CI and does not replace the target-phone procedure.
+
 ## Controlled redirect security checks
 
 Use a separate controlled redirect fixture and a separate Quick Tunnel. Do not expose TTS through this fixture.

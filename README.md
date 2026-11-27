@@ -1,8 +1,8 @@
 # Vesna
 
-Vesna is a mobile-first PWA for preparing and listening to public articles and UTF-8 Markdown documents. The application provides authenticated article and Markdown input, a saved library, durable server-side preparation, real local English TTS, complete MP3 audio, paragraph timings, and online read-along playback. M4 adds focused A1 screens, a persistent bottom playback bar, accessible source and item actions, and safe item deletion.
+Vesna is a mobile-first PWA for preparing and listening to public articles and UTF-8 Markdown documents. The application provides authenticated article and Markdown input, a saved library, durable server-side preparation, real local English TTS, complete MP3 audio, paragraph timings, and read-along playback. M4 adds focused A1 screens, a persistent bottom playback bar, accessible source and item actions, and safe item deletion. Issue #13 adds explicit per-item downloads and offline library/playback for existing article and Markdown items; target-phone acceptance remains a separate recorded check.
 
-M1 playback feasibility, the M2 comourat integration contract, and M3 are complete. M4 is **Done**, and the implementation PR is ready to merge.
+M1 playback feasibility, the M2 comourat integration contract, M3, and M4 are complete. M6 is implemented incrementally by issue #13 before M5; later source types must preserve this offline contract.
 
 ## Application architecture
 
@@ -32,7 +32,19 @@ Deterministic tests use controlled fixtures and do not require credentials, exte
 
 `public/modules/` is the canonical source for shared browser modules. Tests import these exact served files. Do not maintain a second module source. `public/app.js` composes the M4 screens and playback bar, and `public/sw.js` owns its public-shell-only service-worker behavior.
 
-Private API responses, authentication responses, source content, and prepared artifacts must not enter the public shell cache. Playback state is keyed by item and prepared version.
+Private API responses, authentication responses, and source content must not enter browser caches. Prepared manifests, text, timings, and audio may enter only a separate per-item cache after an explicit, complete download. The public shell cache never contains them. Playback state is keyed by item and prepared version.
+
+## Offline library and playback
+
+1. Sign in online and open a ready item.
+2. Select **Download for offline use** and wait for **Available offline**. A persistent-storage warning means that the item is usable now but the browser may remove it later.
+3. Close the installed PWA, disable Wi-Fi and mobile data, and reopen it from the same origin.
+4. Open the downloaded item and use the normal reader and playback controls. Content input, source inspection, retry, and server deletion require connectivity.
+5. **Remove offline download** removes only the device copy and preserves the server item. Confirmed server-item deletion also removes its local download on the requesting device.
+
+Downloads are explicit and are never automatic. Sign-out and session expiration clear online private screens but do not erase device downloads; remove a download explicitly to revoke its offline availability. Browser data clearing, uninstallation, operating-system storage removal, or a changed Quick Tunnel origin can remove or isolate the shell, downloads, and playback state. No permanent-retention guarantee is made. A missing or partial download is never presented as offline-ready.
+
+`public/modules/downloads.js` coordinates staged, hash-verified publication. `public/sw.js` serves only resources in the published offline index, including audio byte ranges. The server exposes authenticated version manifests and preserves raw text/timings JSON bytes so client hashes cover the exact transmitted artifacts. See `.internal/specs/13-offline-library-and-playback-general-spec.md` and `evidence/offline-library-and-playback/`.
 
 ## Isolated M1 regression probe
 
@@ -55,5 +67,6 @@ See [`server/README.md`](server/README.md) for process commands, environment var
 - M2: [`evidence/comourat-integration/`](evidence/comourat-integration/)
 - M3: [`evidence/first-usable-listening-application/`](evidence/first-usable-listening-application/)
 - M4: [`evidence/practical-mobile-interface/`](evidence/practical-mobile-interface/)
+- Issue #13 offline downloads: [`evidence/offline-library-and-playback/`](evidence/offline-library-and-playback/)
 
 Do not commit passwords, password hashes, session cookies, private TTS addresses, models, runtime data, or unintended private content.

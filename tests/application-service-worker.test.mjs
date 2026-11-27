@@ -81,9 +81,10 @@ test('installation caches only the declared public application shell', async () 
   const worker = createWorker();
   await worker.install();
   assert.equal(worker.skipWaiting, true);
-  assert.deepEqual(worker.opened, ['vesna-app-shell-v9']);
+  assert.deepEqual(worker.opened, ['vesna-app-shell-v10']);
   assert.ok(worker.added.some((resource) => resource.url.endsWith('/index.html')));
   assert.ok(worker.added.some((resource) => resource.url.endsWith('/app.js')));
+  assert.ok(worker.added.some((resource) => resource.url.endsWith('/modules/downloads.js')));
   assert.ok(worker.added.every((resource) => resource.cache === 'reload'));
   assert.equal(worker.added.some((resource) => resource.url.includes('/api/')), false);
   assert.equal(worker.added.some((resource) => resource.url.includes('auth')), false);
@@ -92,20 +93,31 @@ test('installation caches only the declared public application shell', async () 
   assert.equal(worker.added.some((resource) => resource.url.includes('/audio')), false);
 });
 
-test('every API route bypasses the service worker even for GET audio and source requests', async () => {
+test('auth, library, source, and unrelated API routes bypass the service worker', async () => {
   const worker = createWorker();
   for (const path of [
     '/api/auth/session',
     '/api/items',
+    '/api/items/item-1',
     '/api/items/item-1/source',
-    '/api/items/item-1/versions/version-1/text',
-    '/api/items/item-1/versions/version-1/timings',
-    '/api/items/item-1/versions/version-1/audio',
+    '/api/items/item-1/versions/version-1/source',
+    '/api/build',
   ]) {
     assert.deepEqual(await worker.fetch(request(path)), { handled: false }, path);
   }
   assert.deepEqual(await worker.fetch(request('/api/items/item-1/retry', { method: 'POST' })), { handled: false });
   assert.deepEqual(worker.opened, [], 'private requests never open a cache');
+});
+
+test('unpublished prepared resources use a network fetch fallback', async () => {
+  const worker = createWorker();
+  for (const artifact of ['manifest', 'text', 'timings', 'audio']) {
+    const path = `/api/items/item-1/versions/version-1/${artifact}`;
+    const result = await worker.fetch(request(path));
+    assert.equal(result.handled, true, path);
+    assert.equal(await result.response.text(), 'network', path);
+  }
+  assert.deepEqual(worker.opened, Array(4).fill('vesna-offline-index-v1'));
 });
 
 test('cross-origin and mutating requests bypass the worker', async () => {
@@ -147,6 +159,9 @@ test('activation removes only old application shell caches and claims clients', 
     cacheNames: [
       'vesna-app-shell-v0',
       'vesna-app-shell-v1',
+      'vesna-app-shell-v10',
+      'vesna-offline-index-v1',
+      'vesna-item-item-1-version-1-cache',
       'vesna-probe-shell-v12',
       'vesna-probe-fixture-v1',
       'unrelated-private-cache',

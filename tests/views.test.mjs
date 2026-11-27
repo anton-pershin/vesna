@@ -80,6 +80,20 @@ test('retry acceptance moves focus to the item open action when retry disappears
   assert.deepEqual(open.focusCalls, [{ preventScroll: true }]);
 });
 
+test('offline library exposes download state and allows safe inspection of missing data', () => {
+  const documentImpl = new FakeDocument();
+  const container = new FakeElement('ul');
+  renderLibrary(container, [
+    summary({ state: 'ready', version: 'v1', download: { status: 'ready', version: 'v1' } }),
+    summary({ id: 'item-2', state: 'ready', version: 'v1', download: { status: 'lost', version: 'v1' } }),
+  ], { documentImpl, offline: true, onOpen: () => {}, onRetry: () => {} });
+  assert.match(container.children[0].textContent, /Available offline/);
+  assert.match(container.children[1].textContent, /Offline data missing/);
+  assert.equal(container.children[0].querySelector('button').disabled, false);
+  assert.equal(container.children[1].querySelector('button').disabled, false);
+  assert.match(container.children[1].querySelector('button').getAttribute('aria-label'), /Inspect missing offline data/);
+});
+
 test('paragraph selection has labelled controls and a non-color current indication', () => {
   const documentImpl = new FakeDocument();
   const container = new FakeElement('ol');

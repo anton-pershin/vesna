@@ -55,7 +55,7 @@ test('production PWA is installable and contains no synthetic probe composition'
 
 test('production shell keeps private content inert and exposes labelled mobile controls', () => {
   const html = read('public/index.html');
-  for (const id of ['password', 'build-version', 'article-url', 'markdown-file', 'library', 'library-view', 'input-view', 'item-view', 'audio', 'seekbar', 'play-pause', 'previous', 'next', 'speed', 'autoscroll', 'source-download', 'article-link', 'close-source', 'delete-dialog', 'delete-item', 'confirm-delete']) {
+  for (const id of ['password', 'build-version', 'article-url', 'markdown-file', 'library', 'library-view', 'input-view', 'item-view', 'audio', 'seekbar', 'play-pause', 'previous', 'next', 'speed', 'autoscroll', 'source-download', 'article-link', 'close-source', 'delete-dialog', 'delete-item', 'confirm-delete', 'download-item', 'remove-download', 'download-status', 'empty-title', 'empty-description']) {
     assert.match(html, new RegExp(`id="${id}"`), id);
   }
   assert.match(html, /<label for="password">Password<\/label>/);
@@ -86,6 +86,12 @@ test('production shell keeps private content inert and exposes labelled mobile c
   assert.match(app, /stateStore\.load\(item\.id, item\.version\)/);
   assert.match(app, /itemId: current\.item\.id/);
   assert.match(app, /version: current\.version/);
+  assert.match(app, /new DownloadManager\(\{ api \}\)/);
+  assert.match(app, /downloads\.remove\(itemId\)/);
+  assert.match(app, /Offline mode\. Downloaded items only\./);
+  assert.match(html, /id="download-item"[^>]*>Download for offline use/);
+  assert.match(html, /id="remove-download"[^>]*>Remove offline download/);
+  assert.match(html, /id="download-status"[^>]*role="status"/);
 
   const css = read('public/styles.css');
   assert.match(css, /\* \{ box-sizing: border-box; \}/);
