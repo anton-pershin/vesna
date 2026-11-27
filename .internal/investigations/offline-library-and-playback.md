@@ -1,0 +1,68 @@
+## Offline library and playback
+
+**Status**: active
+
+### Objective
+
+Implement issue #13 so that an explicit, complete per-item download remains available in the installed PWA after a network-disabled close and reopen. Link the governing requirements: constitution FR9–FR11, NFR1–NFR4, AC4–AC6, and section 5.1.
+
+The revised issue excludes the separate intermittent failure to load the public shell. That symptom needs a new issue and fresh evidence if it occurs again.
+
+### Current constraints
+
+- Use explicit per-item downloads. Automatic downloading is outside the approved scope.
+- Only a complete, verified prepared version may be marked as an offline-ready download.
+- Offline use must not require a server request, password verification, or a refreshed authentication session.
+- Passwords, session tokens, authentication responses, and generation endpoints must not enter offline caches.
+- Preserve an earlier complete download until its replacement is complete.
+- Browser clearing, uninstallation, and operating-system storage removal cannot be prevented. Detect missing data where possible and provide a recovery action.
+- Keep the implementation in `anton-pershin/vesna`; no comourat change is required.
+- Work on the approved issue branch. Target-phone evidence requires the maintainer's device.
+
+### Current state
+
+At revision `5f14f73abd4027ff8f34e43558f76662a68852e0`, the production service worker caches 20 public shell resources and bypasses all API routes. Startup requires `/api/auth/session`; the library and prepared artifacts require authenticated network requests. The only per-item browser state is playback position and speed. The M1 synthetic probe proves staged fixture publication, cached audio ranges, offline playback, resume, and update preservation on the target phone, but it does not implement real-item downloads.
+
+### Contexts
+
+| ID | Solution implementation | Validation setup | Runtime and environment | Baseline |
+|----|-------------------------|------------------|-------------------------|----------|
+| C1 | `5f14f73abd4027ff8f34e43558f76662a68852e0` | Public shell only; no credentials or private content | Deployed Quick Tunnel origin; desktop Chromium 141.0.7390.37 | 147 JavaScript tests and syntax checks pass; no real-item offline implementation |
+| C2 | Same revision | Maintainer-controlled phone check | Huawei Pura 80 Pro; origin and short commit confirmed by the maintainer | Online build `5f14f73a`; immediate offline launch shows the password screen, `Failed to fetch`, and `M4` |
+| C3 | Issue #13 implementation branch | Deterministic unit/integration tests and real Chromium offline restart | Local controlled prepared fixtures and temporary browser profiles | To be recorded with the implementation evidence |
+
+### Current understanding
+
+#### Supported by evidence
+
+- The current password screen and `Failed to fetch` are consequences of the network-only startup path, not a password failure.
+- `M4` is the hard-coded build-label fallback when the public build request fails. It does not identify a stale installation.
+- The deployed public shell files matched the investigated revision during C1.
+- Desktop Chromium opened the cached shell after a complete browser restart and an offline reload.
+- The maintainer confirmed the current origin, explicit per-item download behavior, and the same immediate offline result on the phone.
+- The existing server has prepared-version manifests and artifact hashes, but the browser API has no manifest operation.
+
+#### Tentative or unresolved
+
+- The removed intermittent shell-launch symptom has no confirmed cause and is outside this investigation.
+- Persistent-storage behavior, quota limits, and actual offline media behavior for real items still require verification on the maintainer's phone.
+
+### Experiments and decisions
+
+| ID | Idea or question | Context | Result and evidence links | Decision and rationale |
+|----|------------------|---------|---------------------------|------------------------|
+| E1 | Identify the current offline behavior | C1 | Public files matched revision `5f14f73`; 147 JavaScript tests passed. The service worker bypassed API and artifact requests. Issue comment: https://github.com/anton-pershin/vesna/issues/13#issuecomment-7216533151 | Treat offline library and playback as missing M6 functionality, not a small authentication repair. |
+| E2 | Test cold offline shell launch | C1 | With 20 cached shell resources and an active worker, two offline launches opened the shell. Only `/api/build` and `/api/auth/session` failed. Same issue comment as E1. | Reuse the shell navigation fallback and focus the change on downloads and offline application state. |
+| E3 | Clarify origin, download behavior, and phone behavior | C2 | The maintainer selected explicit per-item downloads, confirmed the current origin and commit, and reproduced the password screen offline. Issue comment: https://github.com/anton-pershin/vesna/issues/13#issuecomment-7219200363 | Do not automatically download every prepared item. Only complete downloads receive an offline guarantee. |
+| E4 | Test whether deleting only the named shell cache explains the removed symptom | C1 | The negative desktop result did not reproduce the launch failure. Issue comment: https://github.com/anton-pershin/vesna/issues/13#issuecomment-7219291326 | Do not infer cache eviction. The maintainer later removed this symptom from issue #13. |
+| E5 | Final issue scope | C2 | The maintainer removed the shell-launch symptom and deferred it to a future issue. Issue comments: https://github.com/anton-pershin/vesna/issues/13#issuecomment-7224055336 and https://github.com/anton-pershin/vesna/issues/13#issuecomment-7224070418 | Exclude the multi-day shell investigation. Retain storage-loss handling because the constitution requires it. |
+
+### Next candidates
+
+- [ ] Implement the linked general spec with deterministic integrity, failure, and offline-restart tests.
+- [ ] Run real Chromium with controlled prepared items, complete downloads, a full browser restart, and disabled networking.
+- [ ] Obtain target-phone acceptance evidence from the maintainer after the reviewable implementation is available.
+
+### Linked specs
+
+- `.internal/specs/13-offline-library-and-playback-general-spec.md`: defines the approved issue #13 implementation.
